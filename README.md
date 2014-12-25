@@ -1,7 +1,16 @@
 seals
 =====
 
-Simple Embedded ARM Linux System project.  
+Simple Embedded ARM Linux System project:  
+
+The SEALs project consists of scripts that will enable one to build a simple yet complete skeletal ARM/Linux system, emulated using the powerful QEMU emulator. The SEAL scripts automate:  
+- using a cross-compiler
+- ARM / Linux kernel config and build
+- creating a skeletal root filesystem from scratch
+- integrating the components together, using QEMU (qemu-system-arm, particularly) to run the same in an emulated environment.  
+ 
+Very useful for developers / testers to try things out in a custom ARM/Linux guest system.  
+ 
 Please first read the 'SEALs HOWTO' page in the Wiki section to better understand how to build and use this project.
 
 Do write in your comments, suggestions, whatever.
