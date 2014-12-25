@@ -2,7 +2,9 @@ seals
 =====
 
 Simple Embedded ARM Linux System project.  
-Please read the Wiki 'HOWTO' page to understand how to build and use.
+Please first read the Wiki 'SEALs HOWTO' page to understand how to build and use this project.
 
-Thanks,
+Do write in your comments, suggestions, whatever.
+
+Thanks!
 Kaiwan.
