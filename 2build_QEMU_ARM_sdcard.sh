@@ -246,7 +246,10 @@ fi
 
 # Now copy the relevant folders to the rootfs location
 unalias cp 2>/dev/null
-cp -af ${BB_FOLDER}/_install/* ${ROOTFS}/
+cp -af ${BB_FOLDER}/_install/* ${ROOTFS}/ || {
+ FatalError "Copying required folders from busybox _install/ failed! 
+[Tip: Ensure busybox has been successfully built]. Aborting..."
+}
 
 #---------Generate other necessary pieces for the rootfs
 ShowTitle "BusyBox Build: Manually generating required /etc files..."
@@ -516,7 +519,7 @@ Pl install the libncurses5-dev package (with apt-get) & retry.  Aborting..."
  echo 
  echo "Verify toolchain :: "
  ${CXX}gcc --version
- Prompt "Is the gcc ver, rather, toolchain ver, correct?"
+ Prompt "Is the above gcc ver, rather, toolchain ver, correct?"
 
  ShowTitle "Using this config :: ${CONFIG_NAME_STR}"
 }
@@ -532,9 +535,9 @@ check_installed_pkg
 # The script expects that these folders are pre-populated with 
 # appropriate content, i.e., the source code for their resp projects:
 # KERNEL_FOLDER  : kernel source tree
-# BB_FOLDER      : busybox src tree
+# BB_FOLDER      : busybox source tree
 ###
-check_folder_AIA ${TOPDIR}
+check_folder_AIA ${STG}
 check_folder_AIA ${KERNEL_FOLDER}
 check_folder_AIA ${BB_FOLDER}
 
@@ -548,7 +551,7 @@ check_folder_createIA ${CONFIGS_FOLDER}
 # Hey, it's low-tech but works!
 ###
 #build_kernel $@
-#build_rootfs $@
+build_rootfs $@
 generate_rootfs_img_ext4
 save_images_configs
 run_it
