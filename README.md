@@ -11,7 +11,7 @@ The SEALs project consists of scripts that will enable one to build a simple yet
  
 Very useful for developers / testers to try things out in a custom ARM/Linux guest system.  
  
-Please first read the 'SEALs HOWTO' page in the Wiki section to better understand how to build and use this project.
+** Please first read the 'SEALs HOWTO' page in the Wiki section to better understand how to build and use this project. **
 
 Do write in your comments, suggestions, whatever.
 
