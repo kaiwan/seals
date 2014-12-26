@@ -1,4 +1,6 @@
 #!/bin/sh
+# Part of the SEALs project
+# (c) kaiwanTECH
 name=$(basename $0)
 if [ $# -ne 1 ]; then
 	echo "Usage: $name kernel-[b]zImage (compiled with -g)"
@@ -21,7 +23,7 @@ $ arm-none-linux-gnueabi-gdb <path-to-ARM-built-kernel-src-tree>/vmlinux  # <-- 
 "
 echo
 
-PFX=~/ARM_Balau
+PFX=$(pwd)/staging
 ARMPLAT=vexpress-a9  ## make sure it's right! ##
 PORT=1235
 qemu-system-arm -m 256 -M ${ARMPLAT} -kernel $1 -drive file=${PFX}/images/rfs.img,if=sd -append "console=ttyAMA0 root=/dev/mmcblk0 init=/sbin/init" -nographic -gdb tcp::${PORT} -S

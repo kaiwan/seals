@@ -9,7 +9,8 @@
 # well supported by QEMU.
 # It generates a static busybox and does not create any device nodes..
 # 
-# (c) Kaiwan N Billimoria <kaiwan -at- designergraphix -dot- com>
+# (c) Kaiwan N Billimoria <kaiwan -at- kaiwantech -dot- com>
+# (c) kaiwanTECH
 # [L]GPL
 # 
 

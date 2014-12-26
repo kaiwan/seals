@@ -16,7 +16,8 @@
 #    This increases space usage by the initrd image by ~85 MB!
 #    Note that valgrind will only work when you use the ARM v7 cpu variant.
 # 
-# (c) Kaiwan N Billimoria <kaiwan -at- designergraphix -dot- com>
+# (c) Kaiwan N Billimoria <kaiwan -at- kaiwantech -dot- com>
+# (c) kaiwanTECH
 # [L]GPL
 # 
 
