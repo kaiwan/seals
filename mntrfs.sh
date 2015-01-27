@@ -5,6 +5,11 @@
 IMG=staging/images/rfs.img
 MNTPT=/mnt/tmp
 
+[ $(id -u) -ne 0 ] && {
+ echo "$0: need to be root."
+ exit 1
+}
+
 mount |grep -i ${MNTPT} >/dev/null && {
   sync
   umount ${MNTPT}
