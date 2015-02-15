@@ -1,5 +1,13 @@
-# Part of the SEALs project
+#!/bin/bash
+#
+# The SEALS Opensource Project
+# SEALS : Simple Embedded Arm Linux System
+# Maintainer : Kaiwan N Billimoria
+# kaiwan -at- kaiwantech -dot- com
+# Project URL:
+# https://github.com/kaiwan/seals
 # (c) kaiwanTECH
+#
 # Loop Mount the QEMU ext4 fs 
 # so that one can update it..
 IMG=staging/images/rfs.img

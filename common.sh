@@ -5,10 +5,15 @@
 # Common convenience routines
 # 
 # (c) Kaiwan N Billimoria
-# kaiwan -at- designergraphix -dot- com
-# GPL / LGPL
-# Last Updt: 29Dec2013
+# kaiwan -at- kaiwantech -dot- com
+# GPL v2
 #------------------------------------------------------------------
+# The SEALS Opensource Project
+# SEALS : Simple Embedded Arm Linux System
+# Maintainer : Kaiwan N Billimoria
+# kaiwan -at- kaiwantech -dot- com
+# Project URL:
+# https://github.com/kaiwan/seals
 
 export TOPDIR=$(pwd)
 ON=1

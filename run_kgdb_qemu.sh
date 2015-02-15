@@ -1,5 +1,10 @@
 #!/bin/sh
-# Part of the SEALs project
+# The SEALS Opensource Project
+# SEALS : Simple Embedded Arm Linux System
+# Maintainer : Kaiwan N Billimoria
+# kaiwan -at- kaiwantech -dot- com
+# Project URL:
+# https://github.com/kaiwan/seals
 # (c) kaiwanTECH
 name=$(basename $0)
 if [ $# -ne 1 ]; then

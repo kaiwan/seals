@@ -1,5 +1,12 @@
 #!/bin/sh
 # Part of the SEALs project
+# The SEALS Opensource Project
+# SEALS : Simple Embedded Arm Linux System
+# Maintainer : Kaiwan N Billimoria
+# kaiwan -at- kaiwantech -dot- com
+# Project URL:
+# https://github.com/kaiwan/seals
+
 # (c) kaiwanTECH
 # Using the "-smp n,sockets=n" QEMU options lets us emulate n processors!
 # (can do this with n=2 for the ARM Cortex-A9)

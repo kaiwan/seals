@@ -1,4 +1,12 @@
 #!/bin/bash
+#
+# The SEALS Opensource Project
+# SEALS : Simple Embedded Arm Linux System
+# Maintainer : Kaiwan N Billimoria
+# kaiwan -at- kaiwantech -dot- com
+# Project URL:
+# https://github.com/kaiwan/seals
+#
 # Ref: 
 #  Kernel: 
 #    http://balau82.wordpress.com/2012/03/31/compile-linux-kernel-3-2-for-arm-and-emulate-with-qemu/
@@ -18,7 +26,7 @@
 # 
 # (c) Kaiwan N Billimoria <kaiwan -at- kaiwantech -dot- com>
 # (c) kaiwanTECH
-# [L]GPL
+# GPL v2
 # 
 
 ##################### UPDATE as required
@@ -390,7 +398,7 @@ check_folder_AIA ${IMAGES_FOLDER}
 check_folder_AIA ${IMAGES_BKP_FOLDER}
 check_folder_AIA ${CONFIGS_FOLDER}
 
-#build_kernel
+build_kernel
 build_rootfs
 generate_initrd
 save_images_configs
