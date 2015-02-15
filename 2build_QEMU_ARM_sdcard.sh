@@ -1,11 +1,20 @@
 #!/bin/bash
 #
+# The SEALS Opensource Project
+# SEALS : Simple Embedded Arm Linux System
+# Maintainer : Kaiwan N Billimoria
+# kaiwan -at- kaiwantech -dot- com
+# Project URL:
+# https://github.com/kaiwan/seals
+#
 # A helper script designed to build:
 # a custom kernel + root filesystem for an "embedded" QEMU/ARM Linux system.
 #
 # According to the ARM platform selected, it builds a:
-# a) Linux 3.1.5  (or 2.6.28.10) kernel for ARM platform Versatile PB platform, cpu arch ARM v5  -OR-
-# b) Linux 3.10.24 kernel for ARM platform Versatile Express (A9) platform, cpu arch ARM v7.
+# a) Linux 3.1.5  (or 2.6.28.10) kernel for ARM platform Versatile PB 
+#    platform, cpu arch ARM v5  -OR-
+# b) Linux 3.10.24 kernel for ARM platform Versatile Express (A9) 
+#    platform, cpu arch ARM v7.
 #
 # This version is better than the first script (1build_QEMU_ARM.sh):
 # besides the "usual" stuff, it populates the root filesystem with
@@ -19,20 +28,18 @@
 #
 # (c) Kaiwan N Billimoria <kaiwan -at- kaiwantech -dot- com>
 # (c) kaiwanTECH
-# [L]GPL
+# GPL v2
 # 
 
 name=$(basename $0)
 #############################
-# TODO - a configuration script that asks the user for and sets up
+# build.config : a configuration script that asks the user for and sets up
 # folder locations, toolchain PATH, any other configs as required.
-# 22Jul14: progress made..
 #############################
 source ./build.config || {
 	echo "$name: source failed! ./build.config missing or invalid?"
 	exit 1
 }
-
 source ./common.sh || {
 	echo "$name: source failed! ./common.sh missing or invalid?"
 	exit 1
@@ -146,6 +153,13 @@ The ext4 filesystem requires that this feature be enabled in order to support
 filesystems that have the huge_file feature enabled.  Otherwise, it will 
 refuse to mount in the read-write mode any filesystems that use the huge_file 
 feature, which is enabled by default by mke2fs.ext4.  ...  
+"
+echo "
+The actual fact is that without the LBDAF setting, we cannot mount the ext4 
+rootfs as read-write!
+ARM # mount -o remount,rw /
+EXT4-fs (mmcblk0): Filesystem with huge files cannot be mounted RDWR without CONFIG_LBDAF
+...
 "
 echo "<< A suggestion: The above help screen will disappear once the kernel menu config 
 menu comes up.
@@ -550,8 +564,8 @@ check_folder_createIA ${CONFIGS_FOLDER}
 # Just comment out the ones you do Not want to run  ;-)
 # Hey, it's low-tech but works!
 ###
-#build_kernel $@
-build_rootfs $@
+build_kernel $@
+#build_rootfs $@
 generate_rootfs_img_ext4
 save_images_configs
 run_it
