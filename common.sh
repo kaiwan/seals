@@ -86,6 +86,21 @@ ShowTitle()
 	echo $SEP
 }
 
+# Execute in root previlege
+# Parameters:
+# command to execute
+
+sudo_command()
+{
+   sudo $* > /dev/null
+   if [ $? -ne 0 ];then
+	  echo
+	  echo "Error: executing $*"
+	  echo
+	  exit 1
+   fi
+}
+
 # check_root_AIA
 # Check whether we are running as root user; if not, exit with failure!
 # Parameter(s):

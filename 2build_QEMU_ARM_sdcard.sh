@@ -260,7 +260,7 @@ fi
 
 # Now copy the relevant folders to the rootfs location
 unalias cp 2>/dev/null
-cp -af ${BB_FOLDER}/_install/* ${ROOTFS}/ || {
+sudo_command "cp -af ${BB_FOLDER}/_install/* ${ROOTFS}/" || {
  FatalError "Copying required folders from busybox _install/ failed! 
 [Tip: Ensure busybox has been successfully built]. Aborting..."
 }
@@ -322,44 +322,44 @@ if [ ! -d ${ARMLIBS} ]; then
 fi
 
 # Quick solution: just copy _all_ the shared libraries from the toolchain into the rfs/lib
-cp -a ${ARMLIBS}/* ${ROOTFS}/lib
+sudo_command "cp -a ${ARMLIBS}/* ${ROOTFS}/lib"
 
 # /lib/modules/`uname -r` required for rmmod to function
 KDIR=$(echo $KERNELVER | cut -d'-' -f2)
-mkdir -p ${ROOTFS}/lib/modules/${KDIR}  # for 'rmmod'
+sudo_command "mkdir -p ${ROOTFS}/lib/modules/${KDIR}"  # for 'rmmod'
 
 #---------- Device Nodes
 ShowTitle "BusyBox Build: Manually generating required Device Nodes in /dev ..."
 cd ${ROOTFS}/dev
-mknod -m 600 mem c 1 1
-mknod -m 600 kmem c 1 2
-mknod -m 666 null c 1 3
-mknod -m 666 zero c 1 5
-mknod -m 644 random c 1 8
-mknod -m 644 urandom c 1 9
+sudo_command "mknod -m 600 mem c 1 1"
+sudo_command "mknod -m 600 kmem c 1 2"
+sudo_command "mknod -m 666 null c 1 3"
+sudo_command "mknod -m 666 zero c 1 5"
+sudo_command "mknod -m 644 random c 1 8"
+sudo_command "mknod -m 644 urandom c 1 9"
 
-mknod -m 666 tty c 5 0
-mknod -m 666 tty0 c 4 0
-mknod -m 666 tty1 c 4 1
-mknod -m 666 tty2 c 4 2
-mknod -m 666 tty3 c 4 3
-mknod -m 666 tty4 c 4 4
-mknod -m 666 console c 5 1
-mknod -m 666 ttyS0 c 4 64
-mknod -m 660 fb0 c 29 0
+sudo_command "mknod -m 666 tty c 5 0"
+sudo_command "mknod -m 666 tty0 c 4 0"
+sudo_command "mknod -m 666 tty1 c 4 1"
+sudo_command "mknod -m 666 tty2 c 4 2"
+sudo_command "mknod -m 666 tty3 c 4 3"
+sudo_command "mknod -m 666 tty4 c 4 4"
+sudo_command "mknod -m 666 console c 5 1"
+sudo_command "mknod -m 666 ttyS0 c 4 64"
+sudo_command "mknod -m 660 fb0 c 29 0"
 
-mknod -m 660 ram b 1 0
-mknod -m 660 loop b 7 0
-mknod -m 640 mmcblk0 b 179 0
+sudo_command "mknod -m 660 ram b 1 0"
+sudo_command "mknod -m 660 loop b 7 0"
+sudo_command "mknod -m 640 mmcblk0 b 179 0"
 
-mknod -m 660 hda b 3 0
-mknod -m 660 sda b 8 0
+sudo_command "mknod -m 660 hda b 3 0"
+sudo_command "mknod -m 660 sda b 8 0"
 
-# recommended slinks
-ln -s /proc/self/fd fd
-ln -s /proc/self/fd/0 stdin
-ln -s /proc/self/fd/1 stdout
-ln -s /proc/self/fd/2 stderr
+# recommended links
+sudo_command "ln -s /proc/self/fd fd"
+sudo_command "ln -s /proc/self/fd/0 stdin"
+sudo_command "ln -s /proc/self/fd/1 stdout"
+sudo_command "ln -s /proc/self/fd/2 stderr"
 #---------------------
 
 #----------------------------------------------------------------
@@ -408,8 +408,8 @@ mkdir -p ${MNTPT} 2> /dev/null
 if [ ! -f ${RFS} ]; then
   #rm -f ${RFS} 2>/dev/null
   echo "*** Re-creating raw RFS image file now *** [dd, mkfs.ext4]"
-  dd if=/dev/zero of=${RFS} bs=4096 count=16384
-  mkfs.ext4 -F -L qemu_rootfs_knb ${RFS} || exit 1
+  sudo_command "dd if=/dev/zero of=${RFS} bs=4096 count=16384"
+  sudo_command "mkfs.ext4 -F -L qemu_rootfs_knb ${RFS}"
 fi
 
 # Keep FORCE_RECREATE_RFS to 0 by default!!
@@ -417,8 +417,11 @@ fi
 FORCE_RECREATE_RFS=0
 
 sync
-umount ${MNTPT} 2> /dev/null
-mount -o loop ${RFS} ${MNTPT} || {
+
+if `mount | grep ${MNTPT}`; then
+   sudo_command "umount ${MNTPT}"
+fi
+sudo_command "mount -o loop ${RFS} ${MNTPT}" || {
   echo "### $name: !WARNING! Loop mounting rootfs image file Failed! ###"
   if [ ${FORCE_RECREATE_RFS} -eq 0 ]; then
     echo "-- Aborting this function! --"
@@ -429,10 +432,10 @@ mount -o loop ${RFS} ${MNTPT} || {
     echo
     echo "### $name: !WARNING! FORCE_RECREATE_RFS flag is non-zero! Now *deleting* current RFS image and re-creating it..."
     echo
-    rm -f ${RFS} 2>/dev/null
-    dd if=/dev/zero of=${RFS} bs=4096 count=16384
-    mkfs.ext4 -F -L qemu_rootfs_knb ${RFS} || exit 1
-    mount -o loop ${RFS} ${MNTPT} || {
+    sudo_command "rm -f ${RFS} 2>/dev/null"
+    sudo_command "dd if=/dev/zero of=${RFS} bs=4096 count=16384"
+    sudo_command "mkfs.ext4 -F -L qemu_rootfs_knb ${RFS}"
+    sudo_command "mount -o loop ${RFS} ${MNTPT}" || {
 	  echo " !!! The loop mount RFS failed Again !!! Wow. Too bad. See ya :-/"
 	  return
 	}
@@ -440,8 +443,8 @@ mount -o loop ${RFS} ${MNTPT} || {
  }
 
 echo " Copying across rootfs data to ${RFS} ..."
-cp -au ${ROOTFS}/* ${MNTPT}
-umount ${MNTPT}
+sudo_command "cp -au ${ROOTFS}/* ${MNTPT}"
+sudo_command "umount ${MNTPT}"
 sync
 
 ls -l ${RFS}
@@ -519,6 +522,7 @@ check_installed_pkg()
    FatalError "QEMU packages do net seem to be installed! Pl Install qemu-system-arm and qemu-kvm and retry.."
  }
  which ${CXX}gcc > /dev/null 2>&1 || {
+   echo "CXX-gcc = ${CXX}gcc, and path = $PATH"
    FatalError "Cross toolchain does not seem to be valid! PATH issue? Aborting..."
  }
  which mkfs.ext4 > /dev/null 2>&1 || {
@@ -541,7 +545,7 @@ Pl install the libncurses5-dev package (with apt-get) & retry.  Aborting..."
 
 ### "main" here
 
-check_root_AIA
+#check_root_AIA
 check_installed_pkg
 
 ###
@@ -564,8 +568,8 @@ check_folder_createIA ${CONFIGS_FOLDER}
 # Just comment out the ones you do Not want to run  ;-)
 # Hey, it's low-tech but works!
 ###
-build_kernel $@
-#build_rootfs $@
+#build_kernel $@
+build_rootfs $@
 generate_rootfs_img_ext4
 save_images_configs
 run_it
