@@ -86,6 +86,36 @@ ShowTitle()
 	echo $SEP
 }
 
+# zenmsg
+# Wizard-like display of an informational message, using 'zenity'.
+# The zenity popup stays persistent until the user clicks on the OK button.
+# $1 : title text string
+# $2 : message text string
+# $3 : OK label text string
+zenmsg()
+{
+ [ $# -ne 3 ] && {
+  local TITLE="Pl pass a Title as 1st parameter!"
+  local MSG="Pl pass a message as 2nd parameter!"
+  local OK_LABEL="Pl pass an OK label as 3rd parameter!"
+ } || {
+  local TITLE="${1}"
+  local MSG="${2}"
+  local OK_LABEL="${3}"
+ }
+
+ while [ true ] 
+ do
+   zenity --info --title="${TITLE}" \
+    --text="${MSG}" \
+    --width 600 --height 300 \
+    --ok-label="${OK_LABEL}" \
+    --ellipsize --modal >/dev/null 2>&1
+   #echo "ret = $?"
+   [ ${?} -eq 0 ] && break
+ done
+} # end zenmsg()
+
 # check_root_AIA
 # Check whether we are running as root user; if not, exit with failure!
 # Parameter(s):
@@ -295,4 +325,3 @@ lastchar=$(echo "${prcs_name:${len}:1}")
 #echo "lastchar = ${lastchar}"
 [ ${firstchar} = "[" -a ${lastchar} = "]" ] && return 1 || return 0
 }
-
