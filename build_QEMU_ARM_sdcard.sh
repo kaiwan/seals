@@ -32,12 +32,14 @@
 # 
 
 name=$(basename $0)
+
 #############################
-# build.config : a configuration script that asks the user for and sets up
+# ${BUILD_CONFIG_FILE} : a configuration script that asks the user for and sets up
 # folder locations, toolchain PATH, any other configs as required.
 #############################
-source ./build.config || {
-	echo "$name: source failed! ./build.config missing or invalid?"
+BUILD_CONFIG_FILE=./build.config
+source ${BUILD_CONFIG_FILE} || {
+	echo "$name: source failed! ${BUILD_CONFIG_FILE} missing or invalid?"
 	exit 1
 }
 source ./common.sh || {
@@ -45,6 +47,9 @@ source ./common.sh || {
 	exit 1
 }
 
+PRJ_TITLE="SEALS: Simple Embedded ARM Linux System"
+
+# TODO : ugly: change this...
 #---Check for "wipe_*" parameters
 if [ $# -ne 2 ]; then
   FatalError \
@@ -464,6 +469,64 @@ cp ${KERNEL_FOLDER}/.config ${CONFIGS_FOLDER}/kernel_config
 cp ${BB_FOLDER}/.config ${CONFIGS_FOLDER}/busybox_config
 }
 
+report_config()
+{
+ local msg1=""
+ local msg2=""
+ #grep "CONFIG_NAME_STR" ${BUILD_CONFIG_FILE} |awk -F"\"" '{print $2}'
+
+ msg1="
+-----------------------------------------------------------------------
+Config file : ${BUILD_CONFIG_FILE}
+Config name : ${CONFIG_NAME_STR}
+
+Toolchain prefix : ${CXX}
+Staging folder   : ${STG}
+
+ARM CPU arch : ${ARM_CPU_ARCH}
+ARM Platform : ${ARM_PLATFORM_STR}
+
+Linux kernel to use            : ${KERNELVER}
+Linux kernel codebase location : ${KERNEL_FOLDER}
+-----------------------------------------------------------------------
+"
+ echo "${msg1}"
+ #zenmsg "${PRJ_TITLE}" "${msg1}" "Next"
+ zenity --question --title="${PRJ_TITLE}" --text="${msg1}" \
+        --ok-label="Confirm" --cancel-label="Abort" 2>/dev/null
+ [ $? -ne 0 ] && {
+   echo "Aborting. Edit the config file ${BUILD_CONFIG_FILE} as required and retry."
+   exit 1
+ }
+
+ local s1="Build kernel?                                      N"
+ [ ${BUILD_KERNEL} -eq 1 ] && s1="Build kernel?                                      Y"
+ local s2="Build root filesystem?                             N"
+ [ ${BUILD_ROOTFS} -eq 1 ] && s2="Build root filesystem?                             Y"
+ local s3="Generate ext4 rootfs image?                        N"
+ [ ${GEN_EXT4_ROOTFS_IMAGE} -eq 1 ] && s3="Generate ext4 rootfs image?               Y"
+ local s4="Backup kernel/busybox images and config files?     N"
+ [ ${BACKUP_IMG_CONFIGS} -eq 1 ] && s4="Backup kernel/busybox images and config files?     Y"
+ local s5="Run QEMU ARM emulator?                             N"
+ [ ${RUN_QEMU} -eq 1 ] && s5="Run QEMU ARM emulator?                             Y"
+
+ msg2="--------------------- Script Build Options ----------------------------
+${s1}
+${s2}
+${s3}
+${s4}
+${s5}
+"
+ echo "${msg2}"
+ #zenmsg "${PRJ_TITLE}" "${msg2}" "Next"
+ zenity --question --title="${PRJ_TITLE}" --text="${msg2}" \
+        --ok-label="Confirm" --cancel-label="Abort" 2>/dev/null
+ [ $? -ne 0 ] && {
+   echo "Aborting. Edit the config file ${BUILD_CONFIG_FILE} as required and retry."
+   exit 1
+ }
+}
+
 run_it()
 {
 cd ${TOPDIR} || exit 1
@@ -512,6 +575,9 @@ fi
 
 check_installed_pkg()
 {
+ which zenity > /dev/null 2>&1 || {
+   FatalError "The zenity package does not seem to be installed! Aborting..."
+ }
  which make > /dev/null 2>&1 || {
    FatalError "The GNU 'make' package does not seem to be installed! Aborting..."
  }
@@ -519,7 +585,10 @@ check_installed_pkg()
    FatalError "QEMU packages do net seem to be installed! Pl Install qemu-system-arm and qemu-kvm and retry.."
  }
  which ${CXX}gcc > /dev/null 2>&1 || {
-   FatalError "Cross toolchain does not seem to be valid! PATH issue? Aborting..."
+   FatalError "Cross toolchain does not seem to be valid! PATH issue? 
+Tip: This error can be thrown when you run the script with sudo (the 
+env vars are not setup. So run from a root shell where the PATH is correctly setup).
+Aborting..."
  }
  which mkfs.ext4 > /dev/null 2>&1 || {
    FatalError "mkfs.ext4 does not seem to be installed. Aborting..."
@@ -535,7 +604,7 @@ Pl install the libncurses5-dev package (with apt-get) & retry.  Aborting..."
  ${CXX}gcc --version
  Prompt "Is the above gcc ver, rather, toolchain ver, correct?"
 
- ShowTitle "Using this config :: ${CONFIG_NAME_STR}"
+ #ShowTitle "Using this config :: ${CONFIG_NAME_STR}"
 }
 ##----------------------------- Functions End -------------------------
 
@@ -560,12 +629,15 @@ check_folder_createIA ${IMAGES_FOLDER}
 check_folder_createIA ${IMAGES_BKP_FOLDER}
 check_folder_createIA ${CONFIGS_FOLDER}
 
-### Select which of the functions below run!
-# Just comment out the ones you do Not want to run  ;-)
-# Hey, it's low-tech but works!
+report_config
+exit 0
+
+### Which of the functions below run depends on the
+# config specified in the Build Config file!
+# So just set it there man ...
 ###
-build_kernel $@
-#build_rootfs $@
-generate_rootfs_img_ext4
-save_images_configs
-run_it
+[ ${BUILD_KERNEL} -eq 1 ] && build_kernel $@
+[ ${BUILD_ROOTFS} -eq 1 ] && build_rootfs $@
+[ ${GEN_EXT4_ROOTFS_IMAGE} -eq 1 ] && generate_rootfs_img_ext4
+[ ${BACKUP_IMG_CONFIGS} -eq 1 ] && save_images_configs
+[ ${RUN_QEMU} -eq 1 ] && run_it
