@@ -10,7 +10,8 @@
 # (c) kaiwanTECH
 # Using the "-smp n,sockets=n" QEMU options lets us emulate n processors!
 # (can do this with n=2 for the ARM Cortex-A9)
-PFX=$(pwd)/staging   # change as appropriate
+#PFX=$(pwd)/staging   # change as appropriate
+PFX=~/big/scratchpad/SEALS_staging
 
 [ $# -ne 1 ] && {
   echo "

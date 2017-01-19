@@ -29,12 +29,12 @@ echo "${name}: Rootfs image file: ${IMG}"
 echo "${name}: Please wait... checking if rootfs image file above is currently in use ..."
 lsof 2>/dev/null |grep ${IMG} && {
   echo "${name}: Rootfs image file \"${IMG}\" currently in use, aborting..." 
-  echo " Is it being used by a QEMU instance perhaps? If so, shut it down and retry."
+  echo " Is it being used by a QEMU instance perhaps? If so, shut it down and retry this."
   exit 1
 }
 
 echo "${name}: Okay, loop mounting rootfs image file now ..."
-mount |grep -i ${MNTPT} >/dev/null && {
+mount |grep -iq ${MNTPT} && {
   sync
   umount ${MNTPT}
 }

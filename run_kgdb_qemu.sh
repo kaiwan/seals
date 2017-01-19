@@ -28,11 +28,17 @@ $ arm-none-linux-gnueabi-gdb <path-to-ARM-built-kernel-src-tree>/vmlinux  # <-- 
 "
 echo
 
-PFX=$(pwd)/staging
+#####
+## UPDATE for your box
+STG=~/scratchpad/SEALS_staging/ #$(pwd)/staging
+#####
+
 ARMPLAT=vexpress-a9  ## make sure it's right! ##
 PORT=1235
-qemu-system-arm -m 256 -M ${ARMPLAT} -kernel $1 -drive file=${PFX}/images/rfs.img,if=sd -append "console=ttyAMA0 root=/dev/mmcblk0 init=/sbin/init" -nographic -gdb tcp::${PORT} -S
-#qemu-system-arm -M ${ARMPLAT} -kernel $1 -initrd images/rootfs.img.gz -append "console=ttyAMA0 root=/dev/ram rdinit=/sbin/init" -nographic -gdb tcp::${PORT} -S
+qemu-system-arm -m 256 -M ${ARMPLAT} -kernel $1 \
+	-drive file=${STG}/images/rfs.img,if=sd,format=raw \
+	-append "console=ttyAMA0 root=/dev/mmcblk0 init=/sbin/init" -nographic \
+	-gdb tcp::${PORT} -S
 
 #
 # If you get this error::
@@ -42,6 +48,5 @@ qemu-system-arm -m 256 -M ${ARMPLAT} -kernel $1 -drive file=${PFX}/images/rfs.im
 #inet_listen_opts: FAILED
 #chardev: opening backend "socket" failed
 ##
-# try using a different port #
-# (and do (gdb) target remote :<new-port#>  )
-#
+# try using a different port # (and do 
+# (gdb) target remote :<new-port#>

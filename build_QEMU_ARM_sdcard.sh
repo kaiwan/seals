@@ -333,7 +333,7 @@ cp -a ${ARMLIBS}/* ${ROOTFS}/lib
 KDIR=$(echo $KERNELVER | cut -d'-' -f2)
 mkdir -p ${ROOTFS}/lib/modules/${KDIR}  # for 'rmmod'
 
-#---------- Device Nodes
+#---------- Device Nodes [static only]
 ShowTitle "BusyBox Build: Manually generating required Device Nodes in /dev ..."
 cd ${ROOTFS}/dev
 mknod -m 600 mem c 1 1
@@ -456,17 +456,21 @@ cd ${TOPDIR}
 # fn to place final images in images/ and save imp config files as well...
 save_images_configs()
 {
-ShowTitle "Backing up images and config files now..."
+ShowTitle "Saving and Backing up kernel/busybox images and config files now..."
 cd ${TOPDIR}
 unalias cp 2>/dev/null
 cp -afu ${IMAGES_FOLDER}/ ${IMAGES_BKP_FOLDER} # backup!
 
-cp -u ${KERNEL_FOLDER}/arch/arm/boot/zImage ${IMAGES_FOLDER}/
-#cp ${TOPDIR}/rfs.img ${IMAGES_FOLDER}/
-ls -lt ${IMAGES_FOLDER}/
+[ ${BUILD_KERNEL} -eq 1 ] && {
+  cp -u ${KERNEL_FOLDER}/arch/arm/boot/zImage ${IMAGES_FOLDER}/
+  #cp ${TOPDIR}/rfs.img ${IMAGES_FOLDER}/
+  ls -lt ${IMAGES_FOLDER}/
 
-cp ${KERNEL_FOLDER}/.config ${CONFIGS_FOLDER}/kernel_config
-cp ${BB_FOLDER}/.config ${CONFIGS_FOLDER}/busybox_config
+  cp ${KERNEL_FOLDER}/.config ${CONFIGS_FOLDER}/kernel_config
+}
+[ ${BUILD_ROOTFS} -eq 1 ] && {
+  cp ${BB_FOLDER}/.config ${CONFIGS_FOLDER}/busybox_config
+}
 }
 
 report_config()
@@ -505,8 +509,8 @@ Linux kernel codebase location : ${KERNEL_FOLDER}
  [ ${BUILD_ROOTFS} -eq 1 ] && s2="Build root filesystem?                             Y"
  local s3="Generate ext4 rootfs image?                        N"
  [ ${GEN_EXT4_ROOTFS_IMAGE} -eq 1 ] && s3="Generate ext4 rootfs image?               Y"
- local s4="Backup kernel/busybox images and config files?     N"
- [ ${BACKUP_IMG_CONFIGS} -eq 1 ] && s4="Backup kernel/busybox images and config files?     Y"
+ local s4="Save/Backup kernel/busybox images and config files?     N"
+ [ ${SAVE_BACKUP_IMG_CONFIGS} -eq 1 ] && s4="Save/Backup kernel/busybox images and config files?     Y"
  local s5="Run QEMU ARM emulator?                             N"
  [ ${RUN_QEMU} -eq 1 ] && s5="Run QEMU ARM emulator?                             Y"
 
@@ -621,8 +625,8 @@ check_installed_pkg
 # BB_FOLDER      : busybox source tree
 ###
 check_folder_AIA ${STG}
-check_folder_AIA ${KERNEL_FOLDER}
-check_folder_AIA ${BB_FOLDER}
+[ ${BUILD_KERNEL} -eq 1 ] && check_folder_AIA ${KERNEL_FOLDER}
+[ ${BUILD_ROOTFS} -eq 1 ] &&check_folder_AIA ${BB_FOLDER}
 
 check_folder_createIA ${ROOTFS}
 check_folder_createIA ${IMAGES_FOLDER}
@@ -630,7 +634,7 @@ check_folder_createIA ${IMAGES_BKP_FOLDER}
 check_folder_createIA ${CONFIGS_FOLDER}
 
 report_config
-exit 0
+#exit 0
 
 ### Which of the functions below run depends on the
 # config specified in the Build Config file!
@@ -639,5 +643,5 @@ exit 0
 [ ${BUILD_KERNEL} -eq 1 ] && build_kernel $@
 [ ${BUILD_ROOTFS} -eq 1 ] && build_rootfs $@
 [ ${GEN_EXT4_ROOTFS_IMAGE} -eq 1 ] && generate_rootfs_img_ext4
-[ ${BACKUP_IMG_CONFIGS} -eq 1 ] && save_images_configs
+[ ${SAVE_BACKUP_IMG_CONFIGS} -eq 1 ] && save_images_configs
 [ ${RUN_QEMU} -eq 1 ] && run_it
