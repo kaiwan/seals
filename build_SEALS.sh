@@ -2,24 +2,15 @@
 #
 # The SEALS Opensource Project
 # SEALS : Simple Embedded Arm Linux System
-# Maintainer : Kaiwan N Billimoria
+# Author and Maintainer : Kaiwan N Billimoria
 # kaiwan -at- kaiwantech -dot- com
+# kaiwan -dot- billimoria -at- gmail -dot- com
 # Project URL:
 # https://github.com/kaiwan/seals
 #
 # A helper script designed to build:
 # a custom kernel + root filesystem for an "embedded" QEMU/ARM Linux system.
 #
-# According to the ARM platform selected, it builds a:
-# a) Linux 3.1.5  (or 2.6.28.10) kernel for ARM platform Versatile PB 
-#    platform, cpu arch ARM v5  -OR-
-# b) Linux 3.10.24 kernel for ARM platform Versatile Express (A9) 
-#    platform, cpu arch ARM v7.
-#
-# This version is better than the first script (1build_QEMU_ARM.sh):
-# besides the "usual" stuff, it populates the root filesystem with
-# shared object libraries (from the toolchain) and minimal device nodes.
-# 
 # Very good References (by 'Balau'): 
 #  Kernel: 
 #    http://balau82.wordpress.com/2012/03/31/compile-linux-kernel-3-2-for-arm-and-emulate-with-qemu/
@@ -28,8 +19,8 @@
 #
 # (c) Kaiwan N Billimoria <kaiwan -at- kaiwantech -dot- com>
 # (c) kaiwanTECH
-# GPL v2
-# 
+#
+# License: GPL v2
 
 name=$(basename $0)
 
@@ -96,80 +87,10 @@ if [ $WIPE_PREV_KERNEL_CONFIG = "y" ]; then
 fi
 
 ShowTitle "[Optional] Kernel manual Configuration:"
-echo "Edit the kernel config if required, Save & Exit..."
+echo "Edit the kernel config if required, Save & Exit...
+
+Tip: you can browse notes here: doc/kernel_config.txt"
 echo
-echo "Required & Recommended kernel configs:
- General Setup:
-      [*] Kernel .config support
-      [*]   Enable access to .config through /proc/config.gz
-	  [*] Control Group Support --->
-	       --- Control Group support                                                            
-              [*]   Example debug cgroup subsystem                                                 
-              [ ]   Freezer cgroup subsystem                                                       
-              [ ]   Device controller for cgroups                                                  
-              [*]   Cpuset support                                                                 
-              [*]     Include legacy /proc/<pid>/cpuset file                                       
-              [*]   Simple CPU accounting cgroup subsystem                                         
-              [*]   Resource counters                                                              
-              [*]     Memory Resource Controller for Control Groups 
-                   [ ]       Memory Resource Controller Swap Extension                                  
-              [ ]       Memory Resource Controller Kernel Memory accounting                        
-              [ ]   Enable perf_event per-cpu per-container group (cgroup) monitoring              
-              [*]   Group CPU scheduler  --->                                                      
-              [ ]   Block IO controller           
-      [*] KProbes
- -*- Enable the block layer  --->
-       [*]   Support for large (2TB+) block devices and files     <<see note below>>  [MANDATORY]
- Kernel Features
-      [ ] Tickless System (Dynamic Ticks)                 [RECOMMENDED]
-      [*] Use the ARM EABI to compile the kernel          [MANDATORY]
-          [*]   Allow old ABI binaries to run with this kernel (EXPERIMENTAL) (NEW)   [MANDATORY]
-Filesystems
-	 <*> The Extended 4 (ext4) filesystem                 [MANDATORY]
-     [*]   Ext4 extended attributes (NEW)
- Kernel Hacking
-      [*] Show timing information on printks
-      [*] Debug Filesystem
-      [*] Sleep inside atomic section checking
-      [*] Compile the kernel with debug info           <Optional>
-          [ ]   Reduce debugging information               <Turning this ON causes build to fail! ??>
-      [*] Tracers  --->
-          [*]   Kernel Function Tracer
-          [*]     Kernel Function Graph Tracer (NEW)
-          [*]   Interrupts-off Latency Tracer
-          [*]   Scheduling Latency Tracer
-          Branch Profiling (No branch profiling)  --->
-          [ ]   Trace max stack
-          [ ]   Support for tracing block IO actions
-          [*]   Enable kprobes-based dynamic events (NEW)
-          [*]   enable/disable ftrace tracepoints dynamically (NEW)
-          [*]   Kernel function profiler
-          [ ]   Perform a startup test on ftrace (NEW)
-          < >   Ring buffer benchmark stress tester (NEW)
-      [*] KGDB: kernel debugger  --->
-          <*>   KGDB: use kgdb over the serial console (NEW)
-          [ ]   KGDB: internal test suite (NEW)
-          [*]   KGDB_KDB: include kdb frontend for kgdb (NEW)
-"
-echo "
-MUST enable CONFIG_LBDAF (Block) to remount / as rw : 
-...
-The ext4 filesystem requires that this feature be enabled in order to support 
-filesystems that have the huge_file feature enabled.  Otherwise, it will 
-refuse to mount in the read-write mode any filesystems that use the huge_file 
-feature, which is enabled by default by mke2fs.ext4.  ...  
-"
-echo "
-The actual fact is that without the LBDAF setting, we cannot mount the ext4 
-rootfs as read-write!
-ARM # mount -o remount,rw /
-EXT4-fs (mmcblk0): Filesystem with huge files cannot be mounted RDWR without CONFIG_LBDAF
-...
-"
-echo "<< A suggestion: The above help screen will disappear once the kernel menu config 
-menu comes up.
-So, if you'd like to, copy/paste it into an editor... >>
-"
 Prompt " "
 
 USE_QT=n   # make 'y' to use a GUI Qt configure environment
@@ -626,7 +547,7 @@ check_installed_pkg
 ###
 check_folder_AIA ${STG}
 [ ${BUILD_KERNEL} -eq 1 ] && check_folder_AIA ${KERNEL_FOLDER}
-[ ${BUILD_ROOTFS} -eq 1 ] &&check_folder_AIA ${BB_FOLDER}
+[ ${BUILD_ROOTFS} -eq 1 ] && check_folder_AIA ${BB_FOLDER}
 
 check_folder_createIA ${ROOTFS}
 check_folder_createIA ${IMAGES_FOLDER}
@@ -645,3 +566,5 @@ report_config
 [ ${GEN_EXT4_ROOTFS_IMAGE} -eq 1 ] && generate_rootfs_img_ext4
 [ ${SAVE_BACKUP_IMG_CONFIGS} -eq 1 ] && save_images_configs
 [ ${RUN_QEMU} -eq 1 ] && run_it
+
+exit 0
