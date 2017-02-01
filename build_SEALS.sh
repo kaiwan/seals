@@ -38,9 +38,12 @@ source ./common.sh || {
 	exit 1
 }
 
+### "Globals"
 PRJ_TITLE="SEALS: Simple Embedded ARM Linux System"
 PSWD_IF_REQD="If asked, please enter password"
 STEPS=5
+CPU_CORES=$(getconf -a|grep _NPROCESSORS_ONLN|awk '{print $2}')
+[ -z ${CPU_CORES} ] && CPU_CORES=2
 
 TESTMODE=0
 [ ${TESTMODE} -eq 1 ] && {
@@ -48,48 +51,16 @@ TESTMODE=0
   exit 0
 }
 
-# TODO : ugly: change this...
-#---Check for "wipe_*" parameters
-if [ $# -ne 2 ]; then
-  FatalError \
-"\n\Usage: $name   wipe_kernel_config    wipe_busybox_config\n\
- Use y/n for each wipe-config option above.\n\
- \n\
- Eg\n\
- ${name} n y\n\
- means: do Not wipe kernel config, do wipe busybox config.\n\
-"
-fi
-
 
 ##-------------------- Functions Start --------------------------------
 
 #------------------ b u i l d _ k e r n e l ---------------------------
 build_kernel()
 {
-#---Check for "wipe_*" parameters
-if [ $# -ne 2 ]; then
-  FatalError \
-"Usage: $name wipe_kernel_config wipe_busybox_config\n\
- Use y/n for each wipe-config option above.\n\
- Eg\n\
- ${name} n y\n\
- means: do Not wipe kernel config, do wipe busybox config.\n\
-"
-fi
-
-p1=${1}
-p2=${2}
-#Prompt "Params = ${#} = p1 = $1 p2 = $2 : p = ${@}"
-[ ${p1} = "y" -o ${p1} = "Y" ] && export WIPE_PREV_KERNEL_CONFIG=y || export WIPE_PREV_KERNEL_CONFIG=n
-[ ${p2} = "y" -o ${p2} = "Y" ] && export WIPE_PREV_BB_CONFIG=y || export WIPE_PREV_BB_CONFIG=n
-echo "WIPE_PREV_KERNEL_CONFIG = ${WIPE_PREV_KERNEL_CONFIG} WIPE_PREV_BB_CONFIG = ${WIPE_PREV_BB_CONFIG}"
-WIPE_PARAMS_CHECKED=1
-
 cd ${KERNEL_FOLDER} || exit 1
 ShowTitle "Building kernel ver ${KERNELVER} now ..."
 
-if [ $WIPE_PREV_KERNEL_CONFIG = "y" ]; then
+if [ "${WIPE_KERNEL_CONFIG}" = "y" ]; then
 	ShowTitle "Kernel config for ARM ${ARM_PLATFORM_STR} platform:"
 	make ARCH=arm ${ARM_PLATFORM}_defconfig || {
 	   FatalError "Kernel config for ARM ${ARM_PLATFORM_STR} platform failed.."
@@ -98,8 +69,7 @@ fi
 
 echo "[Optional] Kernel Manual Configuration:
 Edit the kernel config if required, Save & Exit...
-Tip: you can browse notes on this here: doc/kernel_config.txt"
-echo
+ Tip: you can browse notes on this here: doc/kernel_config.txt"
 Prompt " "
 
 USE_QT=n   # make 'y' to use a GUI Qt configure environment
@@ -116,8 +86,6 @@ fi
 
 ShowTitle "Kernel Build:"
 
-CPU_CORES=$(getconf -a|grep _NPROCESSORS_ONLN|awk '{print $2}')
-[ -z ${CPU_CORES} ] && CPU_CORES=2
 #echo "--- # detected CPU cores is ${CPU_CORES}" ; read
 CPU_OPT=$((${CPU_CORES}*2))
 
@@ -127,11 +95,12 @@ time make -j${CPU_OPT} ARCH=arm CROSS_COMPILE=${CXX} all || {
   FatalError "Kernel build failed! Aborting ..."
 }
 
-ShowTitle "Done!"
 [ ! -f arch/arm/boot/zImage ] && {
   FatalError "Kernel build problem? image file zImage not existing!?? Aborting..."
 }
-ls -l arch/arm/boot/zImage
+ls -lh arch/arm/boot/zImage
+cp -u ${KERNEL_FOLDER}/arch/arm/boot/zImage ${IMAGES_FOLDER}/
+echo "... and done."
 cd ${TOPDIR}
 } # end build_kernel()
 
@@ -147,7 +116,7 @@ if [ -z "${ROOTFS}" ]; then
 	FatalError "SEALS: ROOTFS has dangerous value of null or '/'. Aborting..."
 fi
 
-if [ $WIPE_PREV_BB_CONFIG = "y" ]; then
+if [ "${WIPE_BUSYBOX_CONFIG}" = "y" ]; then
 	ShowTitle "BusyBox default config:"
 	make ARCH=arm CROSS_COMPILE=${CXX} defconfig
 fi
@@ -165,15 +134,6 @@ fi
 ShowTitle "BusyBox Build:"
 make -j${CPU_CORES} ARCH=arm CROSS_COMPILE=${CXX} install
 
-# Now copy the relevant folders to the rootfs location
-#zenmsg "${PRJ_TITLE}" \
-#  "About to copy required files to root filesystem \
-#[please provide password if requested]" \
-#  "Proceed"
-
-#gksudo --description "SEALS Build: Please enter password to enable copying of required busybox files" \
-# --preserve-env --sudo-mode \
-# -- cp -af ${BB_FOLDER}/_install/* ${ROOTFS}/ || {
 mysudo "SEALS Build:Step 1 of ${STEPS}: Copying of required busybox files. ${PSWD_IF_REQD}" \
  cp -af ${BB_FOLDER}/_install/* ${ROOTFS}/ || {
   FatalError "Copying required folders from busybox _install/ failed! 
@@ -229,7 +189,6 @@ none         /proc     proc nodev,noexec
 none         /sys      sysfs noexec
 none         /sys/kernel/debug debugfs
 @MYMARKER@
-echo "Done.."
 } # end setup_etc_in_rootfs
 
 #-------- s e t u p _ l i b _ i n _ r o o t f s -----------------------
@@ -356,29 +315,7 @@ fi
 #
 build_rootfs()
 {
-###---If not done already, check for "wipe_*" parameters
-if [ ${WIPE_PARAMS_CHECKED} -eq 0 ]; then
- if [ $# -ne 2 ]; then
-   FatalError \
-"Usage: $name wipe_kernel_config wipe_busybox_config\n\
- Use y/n for each wipe-config option above.\n\
- Eg\n\
- ${name} n y\n\
- means: do Not wipe kernel config, do wipe busybox config.\n\
-"
- fi
-
- p1=${1}
- p2=${2}
- #Prompt "Params = ${#} = p1 = $1 p2 = $2 : p = ${@}"
- [ ${p1} = "y" -o ${p1} = "Y" ] && export WIPE_PREV_KERNEL_CONFIG=y || export WIPE_PREV_KERNEL_CONFIG=n
- [ ${p2} = "y" -o ${p2} = "Y" ] && export WIPE_PREV_BB_CONFIG=y || export WIPE_PREV_BB_CONFIG=n
- echo "WIPE_PREV_KERNEL_CONFIG = ${WIPE_PREV_KERNEL_CONFIG} WIPE_PREV_BB_CONFIG = ${WIPE_PREV_BB_CONFIG}"
- WIPE_PARAMS_CHECKED=1
-fi
-###
-
-# Reset 'rootfs' staging area so that regular user can update
+# First reset the 'rootfs' staging area so that regular user can update
 mysudo "SEALS Build: reset SEALS root fs. ${PSWD_IF_REQD}" \
  chown -R ${LOGNAME}:${LOGNAME} ${ROOTFS}/*
 
@@ -420,9 +357,7 @@ local COUNT=$((${RFS_SZ_MB}*256))  # for given blocksize (bs) of 4096
 # If RFS does not exist, create from scratch.
 # If it does exist, just loop mount and update.
 if [ ! -f ${RFS} ]; then
-  #rm -f ${RFS} 2>/dev/null
   echo "SEALS Build: *** Re-creating raw RFS image file now *** [dd, mkfs.ext4]"
-  #dd if=/dev/zero of=${RFS} bs=4096 count=16384
   dd if=/dev/zero of=${RFS} bs=4096 count=${COUNT}
   mysudo "SEALS Build: root fs image generation: enable mkfs. ${PSWD_IF_REQD}" \
    mkfs.ext4 -F -L qemu_rootfs_SEALS ${RFS} || FatalError "mkfs failed!"
@@ -487,14 +422,14 @@ report_config()
 {
  local msg1=""
  local msg2=""
- #grep "CONFIG_NAME_STR" ${BUILD_CONFIG_FILE} |awk -F"\"" '{print $2}'
+ local gccver=$(arm-none-linux-gnueabi-gcc --version |head -n1 |cut -f2- -d" ")
 
- msg1="
------------------------------------------------------------------------
-Config file : ${BUILD_CONFIG_FILE}
+ msg1="Config file : ${BUILD_CONFIG_FILE}
 Config name : ${CONFIG_NAME_STR}
 
 Toolchain prefix : ${CXX}
+Toolchain version: ${gccver}
+
 Staging folder   : ${STG}
 
 ARM CPU arch : ${ARM_CPU_ARCH}
@@ -502,41 +437,47 @@ ARM Platform : ${ARM_PLATFORM_STR}
 
 Linux kernel to use            : ${KERNELVER}
 Linux kernel codebase location : ${KERNEL_FOLDER}
------------------------------------------------------------------------
+
+Busybox to use            : ${BB_VER}
+Busybox codebase location : ${BB_FOLDER}
 "
  echo "${msg1}"
- #zenmsg "${PRJ_TITLE}" "${msg1}" "Next"
  zenity --question --title="${PRJ_TITLE}" --text="${msg1}" \
         --ok-label="Confirm" --cancel-label="Abort" 2>/dev/null
  [ $? -ne 0 ] && {
-   echo "Aborting. Edit the config file ${BUILD_CONFIG_FILE} as required and retry."
+   echo "Aborting. Edit the config file ${BUILD_CONFIG_FILE} as required and re-run."
    exit 1
  }
 
- local s1="Build kernel?                                      N"
- [ ${BUILD_KERNEL} -eq 1 ] && s1="Build kernel?                                      Y"
- local s2="Build root filesystem?                             N"
- [ ${BUILD_ROOTFS} -eq 1 ] && s2="Build root filesystem?                             Y"
- local s3="Generate ext4 rootfs image?                        N"
- [ ${GEN_EXT4_ROOTFS_IMAGE} -eq 1 ] && s3="Generate ext4 rootfs image?               Y"
- local s4="Save/Backup kernel/busybox images and config files?     N"
- [ ${SAVE_BACKUP_IMG_CONFIGS} -eq 1 ] && s4="Save/Backup kernel/busybox images and config files?     Y"
- local s5="Run QEMU ARM emulator?                             N"
- [ ${RUN_QEMU} -eq 1 ] && s5="Run QEMU ARM emulator?                             Y"
+ local s1="Build kernel?                                    N"
+ [ ${BUILD_KERNEL} -eq 1 ] && s1="Build kernel?                                    Y"
+ local s1_2=" Wipe kernel config?                             N"
+ [ "${WIPE_KERNEL_CONFIG}" = "y" ] && s1_2=" Wipe kernel config?                     Y"
+ local s2="Build root filesystem?                           N"
+ [ ${BUILD_ROOTFS} -eq 1 ] && s2="Build root filesystem?                           Y"
+ local s2_2=" Wipe busybox config?                            N"
+ [ "${WIPE_BUSYBOX_CONFIG}" = "y" ] && s2_2=" Wipe busybox config?                   Y"
+ local s3="Generate ext4 rootfs image?                      N"
+ [ ${GEN_EXT4_ROOTFS_IMAGE} -eq 1 ] && s3="Generate ext4 rootfs image?             Y"
+ local s4="Save/Backup kernel/busybox images and config files? N"
+ [ ${SAVE_BACKUP_IMG_CONFIGS} -eq 1 ] && s4="Save/Backup kernel/busybox images and config files? Y"
+ local s5="Run QEMU ARM emulator?                           N"
+ [ ${RUN_QEMU} -eq 1 ] && s5="Run QEMU ARM emulator?                         Y"
 
  msg2="--------------------- Script Build Options ----------------------------
 ${s1}
+${s1_2}
 ${s2}
+${s2_2}
 ${s3}
 ${s4}
 ${s5}
 "
  echo "${msg2}"
- #zenmsg "${PRJ_TITLE}" "${msg2}" "Next"
  zenity --question --title="${PRJ_TITLE}" --text="${msg2}" \
         --ok-label="Confirm" --cancel-label="Abort" 2>/dev/null
  [ $? -ne 0 ] && {
-   echo "Aborting. Edit the config file ${BUILD_CONFIG_FILE} as required and retry."
+   echo "Aborting. Edit the config file ${BUILD_CONFIG_FILE} as required and re-run."
    exit 1
  }
 }
@@ -545,11 +486,6 @@ ${s5}
 run_qemu_SEALS()
 {
 cd ${TOPDIR} || exit 1
-
-#echo "----------------------------------------------------------------------"
-#echo "Build done. Press [Enter] to run QEMU-ARM-Linux system, ^C to abort..."
-#echo "----------------------------------------------------------------------"
-#read
 
 echo
 
@@ -584,7 +520,8 @@ and then have gdb connect to the target kernel using
 
 	qemu-system-arm -M ${ARM_PLATFORM_OPT} -kernel ${IMAGES_FOLDER}/zImage -initrd ${IMAGES_FOLDER}/rootfs.img.gz -append "console=ttyAMA0 rdinit=/sbin/init" -nographic -gdb tcp::1234 -s -S
 fi
-echo "... and done."
+echo "
+... and done."
 } # end run_qemu_SEALS()
 
 check_installed_pkg()
@@ -596,7 +533,7 @@ check_installed_pkg()
    FatalError "The GNU 'make' package does not seem to be installed! Aborting..."
  }
  which qemu-system-arm > /dev/null 2>&1 || {
-   FatalError "QEMU packages do net seem to be installed! Pl Install qemu-system-arm and qemu-kvm and retry.."
+   FatalError "QEMU packages do net seem to be installed! Pl Install qemu-system-arm and qemu-kvm and re-run .."
  }
  which ${CXX}gcc > /dev/null 2>&1 || {
    FatalError "Cross toolchain does not seem to be valid! PATH issue? 
@@ -610,15 +547,8 @@ Aborting..."
  dpkg -l |grep libncurses5-dev > /dev/null 2>&1 || {
    FatalError "The libncurses5-dev dev library and headers does not seem to be installed.
 (Required for kernel config UI).
-Pl install the libncurses5-dev package (with apt-get) & retry.  Aborting..."
+Pl install the libncurses5-dev package (with apt-get) & re-run.  Aborting..."
  }
-
- echo 
- echo "Verify toolchain :: "
- ${CXX}gcc --version
- Prompt "Is the above gcc and thus, toolchain version, correct?"
-
- #ShowTitle "Using this config :: ${CONFIG_NAME_STR}"
 }
 ##----------------------------- Functions End -------------------------
 
@@ -656,4 +586,6 @@ report_config
 [ ${SAVE_BACKUP_IMG_CONFIGS} -eq 1 ] && save_images_configs
 [ ${RUN_QEMU} -eq 1 ] && run_qemu_SEALS
 
+echo "
+${name}: all done, exiting."
 exit 0
