@@ -405,32 +405,38 @@ generate_rootfs_img_ext4()
 {
 cd ${ROOTFS} || exit 1
 
-ShowTitle "Generating ext4 image now:"
+ShowTitle "SEALS Build: Generating ext4 image for root fs now:"
 
 # RFS should be the final one ie the one in images/
-RFS=${IMAGES_FOLDER}/rfs.img
-MNTPT=/mnt/tmp
-RFS_SZ_MB=256  #64
+local RFS=${IMAGES_FOLDER}/rfs.img
+local MNTPT=/mnt/tmp
+local RFS_SZ_MB=256  #64
 local COUNT=$((${RFS_SZ_MB}*256))  # for given blocksize (bs) of 4096
 
-mkdir -p ${MNTPT} 2> /dev/null
+[ ! -d ${MNTPT} ] && {
+  mysudo "SEALS Build: root fs image generation: enable mount dir creation. ${PSWD_IF_REQD}" \
+   mkdir -p ${MNTPT}
+}
 # If RFS does not exist, create from scratch.
 # If it does exist, just loop mount and update.
 if [ ! -f ${RFS} ]; then
   #rm -f ${RFS} 2>/dev/null
-  echo "*** Re-creating raw RFS image file now *** [dd, mkfs.ext4]"
+  echo "SEALS Build: *** Re-creating raw RFS image file now *** [dd, mkfs.ext4]"
   #dd if=/dev/zero of=${RFS} bs=4096 count=16384
   dd if=/dev/zero of=${RFS} bs=4096 count=${COUNT}
-  mkfs.ext4 -F -L qemu_rootfs_SEALS ${RFS} || exit 1
+  mysudo "SEALS Build: root fs image generation: enable mkfs. ${PSWD_IF_REQD}" \
+   mkfs.ext4 -F -L qemu_rootfs_SEALS ${RFS} || FatalError "mkfs failed!"
 fi
 
 # Keep FORCE_RECREATE_RFS to 0 by default!!
 # Alter at your Own Risk!!
-FORCE_RECREATE_RFS=0
+local FORCE_RECREATE_RFS=0
 
 sync
+mysudo "SEALS Build: root fs image generation: enable umount. ${PSWD_IF_REQD}" \
 umount ${MNTPT} 2> /dev/null
-mount -o loop ${RFS} ${MNTPT} || {
+mysudo "SEALS Build: root fs image generation: enable mount. ${PSWD_IF_REQD}" \
+ mount -o loop ${RFS} ${MNTPT} || {
   echo "### $name: !WARNING! Loop mounting rootfs image file Failed! ###"
   if [ ${FORCE_RECREATE_RFS} -eq 0 ]; then
     echo "-- Aborting this function! --"
@@ -444,40 +450,37 @@ mount -o loop ${RFS} ${MNTPT} || {
     rm -f ${RFS} 2>/dev/null
     #dd if=/dev/zero of=${RFS} bs=4096 count=16384
     dd if=/dev/zero of=${RFS} bs=4096 count=${COUNT}
-    mkfs.ext4 -F -L qemu_rootfs_SEALS ${RFS} || exit 1
-    mount -o loop ${RFS} ${MNTPT} || {
+    mysudo "SEALS Build: root fs image generation: enable mkfs (in force_recreate_rfs). ${PSWD_IF_REQD}" \
+     mkfs.ext4 -F -L qemu_rootfs_SEALS ${RFS} || exit 1
+    mysudo "SEALS Build: root fs image generation: enable mount (in force_recreate_rfs). ${PSWD_IF_REQD}" \
+     mount -o loop ${RFS} ${MNTPT} || {
 	  FatalError " !!! The loop mount RFS failed Again !!! Wow. Too bad. See ya :-/"
 	}
   fi
  }
 
-echo " Copying across rootfs data to ${RFS} ..."
-cp -au ${ROOTFS}/* ${MNTPT}
-umount ${MNTPT}
+echo " Now copying across rootfs data to ${RFS} ..."
+mysudo "SEALS Build: root fs image generation: enable copying into SEALS root fs image. ${PSWD_IF_REQD}" \
+ cp -au ${ROOTFS}/* ${MNTPT}
+mysudo "SEALS Build: root fs image generation: enable unmount. ${PSWD_IF_REQD}" \
+ umount ${MNTPT}
 sync
-
-ls -l ${RFS}
+ls -lh ${RFS}
+echo "... and done."
 cd ${TOPDIR}
 }
 
 # fn to place final images in images/ and save imp config files as well...
 save_images_configs()
 {
-ShowTitle "Saving and Backing up kernel/busybox images and config files now..."
+ShowTitle "Backing up kernel and busybox images and config files now (as necessary) ..."
 cd ${TOPDIR}
 unalias cp 2>/dev/null
 cp -afu ${IMAGES_FOLDER}/ ${IMAGES_BKP_FOLDER} # backup!
-
-[ ${BUILD_KERNEL} -eq 1 ] && {
-  cp -u ${KERNEL_FOLDER}/arch/arm/boot/zImage ${IMAGES_FOLDER}/
-  #cp ${TOPDIR}/rfs.img ${IMAGES_FOLDER}/
-  ls -lt ${IMAGES_FOLDER}/
-
-  cp ${KERNEL_FOLDER}/.config ${CONFIGS_FOLDER}/kernel_config
-}
-[ ${BUILD_ROOTFS} -eq 1 ] && {
-  cp ${BB_FOLDER}/.config ${CONFIGS_FOLDER}/busybox_config
-}
+cp -u ${KERNEL_FOLDER}/arch/arm/boot/zImage ${IMAGES_FOLDER}/
+cp ${KERNEL_FOLDER}/.config ${CONFIGS_FOLDER}/kernel_config
+cp ${BB_FOLDER}/.config ${CONFIGS_FOLDER}/busybox_config
+echo " ... and done."
 }
 
 report_config()
@@ -560,14 +563,14 @@ if [ ${KGDB_MODE} -eq 0 ]; then
      SMP_EMU="-smp 2,sockets=2"
   fi
 
-	ShowTitle "Running qmeu-system-arm now!"
+	ShowTitle "Running qmeu-system-arm now ..."
 	echo "qemu-system-arm -m 256 -M ${ARM_PLATFORM_OPT} ${SMP_EMU} -kernel ${IMAGES_FOLDER}/zImage -drive file=${IMAGES_FOLDER}/rfs.img,if=sd -append "console=ttyAMA0 root=/dev/mmcblk0 init=/sbin/init" -nographic"
 	echo
 	qemu-system-arm -m 256 -M ${ARM_PLATFORM_OPT} ${SMP_EMU} -kernel ${IMAGES_FOLDER}/zImage -drive file=${IMAGES_FOLDER}/rfs.img,if=sd -append "console=ttyAMA0 root=/dev/mmcblk0 init=/sbin/init" -nographic
 else
 	# KGDB/QEMU cmdline
 	#  -just add the '-S' option [freeze CPU at startup (use 'c' to start execution)] to qemu cmdline
-	ShowTitle "Running qmeu-system-arm in KGDB mode now!"
+	ShowTitle "Running qemu-system-arm in KGDB mode now ..."
 	echo "REMEMBER this kernel is run w/ the -s : it *waits* for a gdb client to connect to it..."
 	echo
 	echo "You are expected to run (in another terminal window):
@@ -581,6 +584,7 @@ and then have gdb connect to the target kernel using
 
 	qemu-system-arm -M ${ARM_PLATFORM_OPT} -kernel ${IMAGES_FOLDER}/zImage -initrd ${IMAGES_FOLDER}/rootfs.img.gz -append "console=ttyAMA0 rdinit=/sbin/init" -nographic -gdb tcp::1234 -s -S
 fi
+echo "... and done."
 } # end run_qemu_SEALS()
 
 check_installed_pkg()
