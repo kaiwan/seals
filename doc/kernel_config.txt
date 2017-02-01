@@ -1,0 +1,69 @@
+SEALs Project
+Required & Recommended kernel configs
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+ General Setup:
+      [*] Kernel .config support
+      [*]   Enable access to .config through /proc/config.gz
+	  [*] Control Group Support --->
+	       --- Control Group support                                                            
+              [*]   Example debug cgroup subsystem                                                 
+              [ ]   Freezer cgroup subsystem                                                       
+              [ ]   Device controller for cgroups                                                  
+              [*]   Cpuset support                                                                 
+              [*]     Include legacy /proc/<pid>/cpuset file                                       
+              [*]   Simple CPU accounting cgroup subsystem                                         
+              [*]   Resource counters                                                              
+              [*]     Memory Resource Controller for Control Groups 
+                   [ ]       Memory Resource Controller Swap Extension                                  
+              [ ]       Memory Resource Controller Kernel Memory accounting                        
+              [ ]   Enable perf_event per-cpu per-container group (cgroup) monitoring              
+              [*]   Group CPU scheduler  --->                                                      
+              [ ]   Block IO controller           
+      [*] KProbes
+ -*- Enable the block layer  --->
+       [*]   Support for large (2TB+) block devices and files     <<see note below>>  [MANDATORY]
+ Kernel Features
+      [ ] Tickless System (Dynamic Ticks)                 [RECOMMENDED]
+      [*] Use the ARM EABI to compile the kernel          [MANDATORY]
+          [*]   Allow old ABI binaries to run with this kernel (EXPERIMENTAL) (NEW)   [MANDATORY]
+Filesystems
+	 <*> The Extended 4 (ext4) filesystem                 [MANDATORY]
+     [*]   Ext4 extended attributes (NEW)
+ Kernel Hacking
+      [*] Show timing information on printks
+      [*] Debug Filesystem
+      [*] Sleep inside atomic section checking
+      [*] Compile the kernel with debug info           <Optional>
+          [ ]   Reduce debugging information               <Turning this ON causes build to fail! ??>
+      [*] Tracers  --->
+          [*]   Kernel Function Tracer
+          [*]     Kernel Function Graph Tracer (NEW)
+          [*]   Interrupts-off Latency Tracer
+          [*]   Scheduling Latency Tracer
+          Branch Profiling (No branch profiling)  --->
+          [ ]   Trace max stack
+          [ ]   Support for tracing block IO actions
+          [*]   Enable kprobes-based dynamic events (NEW)
+          [*]   enable/disable ftrace tracepoints dynamically (NEW)
+          [*]   Kernel function profiler
+          [ ]   Perform a startup test on ftrace (NEW)
+          < >   Ring buffer benchmark stress tester (NEW)
+      [*] KGDB: kernel debugger  --->
+          <*>   KGDB: use kgdb over the serial console (NEW)
+          [ ]   KGDB: internal test suite (NEW)
+          [*]   KGDB_KDB: include kdb frontend for kgdb (NEW)
+
+
+MUST enable CONFIG_LBDAF (Block) to remount / as rw : 
+...
+The ext4 filesystem requires that this feature be enabled in order to support 
+filesystems that have the huge_file feature enabled.  Otherwise, it will 
+refuse to mount in the read-write mode any filesystems that use the huge_file 
+feature, which is enabled by default by mke2fs.ext4.  ...  
+
+The actual fact is that without the LBDAF setting, we cannot mount the ext4 
+rootfs as read-write!
+ARM # mount -o remount,rw /
+EXT4-fs (mmcblk0): Filesystem with huge files cannot be mounted RDWR without CONFIG_LBDAF
+
