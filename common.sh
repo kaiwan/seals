@@ -72,6 +72,26 @@ Echo()
 }
 
 
+# mysudo
+# Simple front end to gksudo/sudo
+# Parameter(s):
+#  $1 : descriptive message
+#  $2 ... $n : command to execute
+mysudo()
+{
+[ $# -lt 2 ] && {
+ #echo "Usage: mysudo "
+ return
+}
+local msg=$1
+shift
+local cmd="$@"
+echo "${LOGNAME}: ${msg}"
+#echo "mysudo: cmd: ${cmd}"
+sudo --preserve-env sh -c "${cmd}"
+}
+
+
 # ShowTitle
 # Display a string in "title" form
 # Parameter(s):
@@ -85,6 +105,7 @@ ShowTitle()
 	echo $1
 	echo $SEP
 }
+
 
 # zenmsg
 # Wizard-like display of an informational message, using 'zenity'.

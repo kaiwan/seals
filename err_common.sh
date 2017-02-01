@@ -70,7 +70,7 @@ FatalError()
 	  }
 	}
 	# gui err handling, zenity there; whew
-	zenity --error --title="${name}: Error" --text="Fatal Error :: $@"
+	zenity --error --title="${name}: Error" --text="Fatal Error :: $@" 2>/dev/null
     cli_handle_error $@
 	exit -1
 }

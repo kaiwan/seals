@@ -39,6 +39,14 @@ source ./common.sh || {
 }
 
 PRJ_TITLE="SEALS: Simple Embedded ARM Linux System"
+PSWD_IF_REQD="If asked, please enter password"
+STEPS=5
+
+TESTMODE=0
+[ ${TESTMODE} -eq 1 ] && {
+  mysudo "desc of mysudo ..." "/bin/cp build.config /"
+  exit 0
+}
 
 # TODO : ugly: change this...
 #---Check for "wipe_*" parameters
@@ -55,6 +63,8 @@ fi
 
 
 ##-------------------- Functions Start --------------------------------
+
+#------------------ b u i l d _ k e r n e l ---------------------------
 build_kernel()
 {
 #---Check for "wipe_*" parameters
@@ -86,10 +96,9 @@ if [ $WIPE_PREV_KERNEL_CONFIG = "y" ]; then
 	}
 fi
 
-ShowTitle "[Optional] Kernel manual Configuration:"
-echo "Edit the kernel config if required, Save & Exit...
-
-Tip: you can browse notes here: doc/kernel_config.txt"
+echo "[Optional] Kernel Manual Configuration:
+Edit the kernel config if required, Save & Exit...
+Tip: you can browse notes on this here: doc/kernel_config.txt"
 echo
 Prompt " "
 
@@ -124,75 +133,59 @@ ShowTitle "Done!"
 }
 ls -l arch/arm/boot/zImage
 cd ${TOPDIR}
-}
+} # end build_kernel()
 
-#
-# NOTE: The root filesystem is now populated in the ${ROOTFS} folder under ${TOPDIR}
-#
-build_rootfs()
+#--------------- b u i l d _ c o p y _ b u s y b o x ------------------
+build_copy_busybox()
 {
-###---If not done already, check for "wipe_*" parameters
-if [ ${WIPE_PARAMS_CHECKED} -eq 0 ]; then
- if [ $# -ne 2 ]; then
-   FatalError \
-"Usage: $name wipe_kernel_config wipe_busybox_config\n\
- Use y/n for each wipe-config option above.\n\
- Eg\n\
- ${name} n y\n\
- means: do Not wipe kernel config, do wipe busybox config.\n\
-"
- fi
-
- p1=${1}
- p2=${2}
- #Prompt "Params = ${#} = p1 = $1 p2 = $2 : p = ${@}"
- [ ${p1} = "y" -o ${p1} = "Y" ] && export WIPE_PREV_KERNEL_CONFIG=y || export WIPE_PREV_KERNEL_CONFIG=n
- [ ${p2} = "y" -o ${p2} = "Y" ] && export WIPE_PREV_BB_CONFIG=y || export WIPE_PREV_BB_CONFIG=n
- echo "WIPE_PREV_KERNEL_CONFIG = ${WIPE_PREV_KERNEL_CONFIG} WIPE_PREV_BB_CONFIG = ${WIPE_PREV_BB_CONFIG}"
- WIPE_PARAMS_CHECKED=1
-fi
-###
-
 cd ${BB_FOLDER} || exit 1
 
-ShowTitle "Building Busybox now ..."
-echo "+++ ROOTFS=$ROOTFS"
+ShowTitle "Building Busybox now ... [$(basename ${BB_FOLDER})]"
+echo " [sanity chk: ROOTFS=${ROOTFS}]"
 # safety check!
-if [ -z ${ROOTFS} ]; then
-	echo "ROOTFS has dangerous value of null or '/'. Aborting..."
-	exit 1
+if [ -z "${ROOTFS}" ]; then
+	FatalError "SEALS: ROOTFS has dangerous value of null or '/'. Aborting..."
 fi
 
 if [ $WIPE_PREV_BB_CONFIG = "y" ]; then
 	ShowTitle "BusyBox default config:"
 	make ARCH=arm CROSS_COMPILE=${CXX} defconfig
-
-	ShowTitle "[Optional] BusyBox manual Configuration:"
-	echo "Edit the BusyBox config if required, Save & Exit..."
-	echo
-	echo "[Enter] to continue..."
-	read
-
-	USE_QT=n   # make 'y' to use a GUI Qt configure environment
-	if [ ${USE_QT} = "y" ]; then
-		make ARCH=arm CROSS_COMPILE=${CXX} xconfig
-	else
-		make ARCH=arm CROSS_COMPILE=${CXX} menuconfig
-	fi
-
-	ShowTitle "BusyBox Build:"
-	make -j${CPU_CORES} ARCH=arm CROSS_COMPILE=${CXX} install
 fi
 
-# Now copy the relevant folders to the rootfs location
-unalias cp 2>/dev/null
-cp -af ${BB_FOLDER}/_install/* ${ROOTFS}/ || {
- FatalError "Copying required folders from busybox _install/ failed! 
-[Tip: Ensure busybox has been successfully built]. Aborting..."
-}
+echo "Edit the BusyBox config if required, Save & Exit..."
+Prompt " "
 
-#---------Generate other necessary pieces for the rootfs
-ShowTitle "BusyBox Build: Manually generating required /etc files..."
+USE_QT=n   # make 'y' to use a GUI Qt configure environment
+if [ ${USE_QT} = "y" ]; then
+	make ARCH=arm CROSS_COMPILE=${CXX} xconfig
+else
+	make ARCH=arm CROSS_COMPILE=${CXX} menuconfig
+fi
+
+ShowTitle "BusyBox Build:"
+make -j${CPU_CORES} ARCH=arm CROSS_COMPILE=${CXX} install
+
+# Now copy the relevant folders to the rootfs location
+#zenmsg "${PRJ_TITLE}" \
+#  "About to copy required files to root filesystem \
+#[please provide password if requested]" \
+#  "Proceed"
+
+#gksudo --description "SEALS Build: Please enter password to enable copying of required busybox files" \
+# --preserve-env --sudo-mode \
+# -- cp -af ${BB_FOLDER}/_install/* ${ROOTFS}/ || {
+mysudo "SEALS Build:Step 1 of ${STEPS}: Copying of required busybox files. ${PSWD_IF_REQD}" \
+ cp -af ${BB_FOLDER}/_install/* ${ROOTFS}/ || {
+  FatalError "Copying required folders from busybox _install/ failed! 
+ [Tip: Ensure busybox has been successfully built]. Aborting..."
+}
+echo "SEALS Build: busybox files copied across successfully ..."
+} # end build_copy_busybox()
+
+#---------- s e t u p _ e t c _ i n _ r o o t f s ---------------------
+setup_etc_in_rootfs()
+{
+echo "SEALS Build: Manually generating required SEALS rootfs /etc files ..."
 cd ${ROOTFS}
 MYPRJ=myprj
 mkdir -p dev etc/init.d lib ${MYPRJ} proc sys tmp
@@ -237,26 +230,58 @@ none         /sys      sysfs noexec
 none         /sys/kernel/debug debugfs
 @MYMARKER@
 echo "Done.."
+} # end setup_etc_in_rootfs
 
+#-------- s e t u p _ l i b _ i n _ r o o t f s -----------------------
+setup_lib_in_rootfs()
+{
 #------------- Shlibs..
-ShowTitle "BusyBox Build: Manually copying across shared objects /lib files..."
+echo "SEALS Build: copying across shared objects, etc to SEALS /lib /sbin /usr ..."
 
-ARMLIBS=${CXX_LOC}/arm-none-linux-gnueabi/libc/lib/
+#ARMLIBS=${CXX_LOC}/arm-none-linux-gnueabi/libc/lib/
+ARMLIBS=${CXX_LOC}/arm-none-linux-gnueabi/libc
 if [ ! -d ${ARMLIBS} ]; then
 	cd ${TOPDIR}
-	FatalError "Toolchain shared library location invalid? Aborting..."
+	FatalError "Toolchain shared library locations invalid? Aborting..."
 fi
 
-# Quick solution: just copy _all_ the shared libraries from the toolchain into the rfs/lib
-cp -a ${ARMLIBS}/* ${ROOTFS}/lib
+# Quick solution: just copy _all_ the shared libraries, etc from the toolchain into the rfs/lib
+
+mysudo "SEALS Build:Step 2 of ${STEPS}: [SEALS rootfs]:setup of library objects. ${PSWD_IF_REQD}" \
+  cp -a ${ARMLIBS}/lib/* ${ROOTFS}/lib || {
+   FatalError "Copying required libs [/lib] from toolchain failed!"
+}
+mysudo "SEALS Build:Step 3 of ${STEPS}: [SEALS rootfs]:setup of /sbin. ${PSWD_IF_REQD}" \
+  cp -a ${ARMLIBS}/sbin/* ${ROOTFS}/sbin || {
+   FatalError "Copying required libs [/sbin] from toolchain failed!"
+}
+mysudo "SEALS Build:Step 4 of ${STEPS}: [SEALS rootfs]:setup of /usr. ${PSWD_IF_REQD}" \
+  cp -a ${ARMLIBS}/usr/* ${ROOTFS}/usr || {
+   FatalError "Copying required libs [/sbin] from toolchain failed!"
+}
+  # RELOOK: 
+  # $ ls rootfs/usr/
+  # bin/  include/  lib/  libexec/  sbin/  share/
+  # $ 
+  # usr/include - not really required?
 
 # /lib/modules/`uname -r` required for rmmod to function
-KDIR=$(echo $KERNELVER | cut -d'-' -f2)
-mkdir -p ${ROOTFS}/lib/modules/${KDIR}  # for 'rmmod'
+local KDIR=$(echo ${KERNELVER} | cut -d'-' -f2)
+# for 'rmmod'
+mkdir -p ${ROOTFS}/lib/modules/${KDIR} || FatalError "rmmod setup failure!"
+} # end setup_lib_in_rootfs
 
+#------ s e t u p _ d e v _ i n _ r o o t f s -------------------------
+setup_dev_in_rootfs()
+{
 #---------- Device Nodes [static only]
-ShowTitle "BusyBox Build: Manually generating required Device Nodes in /dev ..."
+echo "SEALS Build: Manually generating required Device Nodes in /dev ..."
 cd ${ROOTFS}/dev
+
+cat > mkdevtmp.sh << @MYMARKER@
+#!/bin/sh
+rm -f *
+
 mknod -m 600 mem c 1 1
 mknod -m 600 kmem c 1 2
 mknod -m 666 null c 1 3
@@ -281,41 +306,100 @@ mknod -m 640 mmcblk0 b 179 0
 mknod -m 660 hda b 3 0
 mknod -m 660 sda b 8 0
 
-# recommended slinks
-ln -s /proc/self/fd fd
-ln -s /proc/self/fd/0 stdin
-ln -s /proc/self/fd/1 stdout
-ln -s /proc/self/fd/2 stderr
-#---------------------
+# FIXME / TODO :: FAILS
+## recommended slinks
+#ln -s /proc/self/fd fd
+#ln -s /proc/self/fd/0 stdin
+#ln -s /proc/self/fd/1 stdout
+#ln -s /proc/self/fd/2 stderr
+@MYMARKER@
 
-#----------------------------------------------------------------
+chmod u+x ${ROOTFS}/dev/mkdevtmp.sh
+mysudo "SEALS Build:Step 5 of ${STEPS}: [SEALS rootfs]:setup of device nodes. ${PSWD_IF_REQD}" \
+  ${ROOTFS}/dev/mkdevtmp.sh || {
+   rm -f mkdevtmp.sh
+   FatalError "Setup of device nodes failed!"
+}
+rm -f mkdevtmp.sh
+} # end setup_dev_in_rootfs
+
+#---------- r o o t f s _ x t r a s -----------------------------------
+rootfs_xtras()
+{
 # To be copied into the RFS..any special cases
 # strace, tcpdump, gdb[server], misc scripts (strace, gdb copied from buildroot build)
 if [ -d ${TOPDIR}/xtras ]; then
-	ShowTitle "Copying 'xtras' (goodies!) into the root filesystem..."
+	echo "SEALS Build: Copying 'xtras' (goodies!) into the root filesystem..."
 	cd ${TOPDIR}/xtras
-	cp strace ${ROOTFS}/usr/bin
-	cp tcpdump ${ROOTFS}/usr/sbin
+
+	[ -f strace ] && cp strace ${ROOTFS}/usr/bin
+	[ -f tcpdump ] && cp tcpdump ${ROOTFS}/usr/sbin
 
 	# for gdb on-board, we need libncurses* & libz* (for gdb v7.1)
 	mkdir -p ${ROOTFS}/usr/lib
 	cp -a libncurses* libz* ${ROOTFS}/usr/lib
-	cp gdb* ${ROOTFS}/usr/bin
+	[ -f gdb ] && cp gdb ${ROOTFS}/usr/bin
 
 	# misc
-	cp 0setup ${ROOTFS}/
-	chmod +x procshow.sh
+	[ -f 0setup ] && cp 0setup ${ROOTFS}/
+	[ -f procshow.sh ] && chmod +x procshow.sh
 	#cp common.sh procshow.sh pidshow.sh ${ROOTFS}/${MYPRJ}
 
 	# useful for k debug stuff
 	cp ${KERNEL_FOLDER}/System.map ${ROOTFS}/
 fi
-#----------------------------------------------------------------
+} # end rootfs_xtras
+
+#------------------ b u i l d _ r o o t f s ---------------------------
+#
+# NOTE: The root filesystem is now populated in the ${ROOTFS} folder under ${TOPDIR}
+#
+build_rootfs()
+{
+###---If not done already, check for "wipe_*" parameters
+if [ ${WIPE_PARAMS_CHECKED} -eq 0 ]; then
+ if [ $# -ne 2 ]; then
+   FatalError \
+"Usage: $name wipe_kernel_config wipe_busybox_config\n\
+ Use y/n for each wipe-config option above.\n\
+ Eg\n\
+ ${name} n y\n\
+ means: do Not wipe kernel config, do wipe busybox config.\n\
+"
+ fi
+
+ p1=${1}
+ p2=${2}
+ #Prompt "Params = ${#} = p1 = $1 p2 = $2 : p = ${@}"
+ [ ${p1} = "y" -o ${p1} = "Y" ] && export WIPE_PREV_KERNEL_CONFIG=y || export WIPE_PREV_KERNEL_CONFIG=n
+ [ ${p2} = "y" -o ${p2} = "Y" ] && export WIPE_PREV_BB_CONFIG=y || export WIPE_PREV_BB_CONFIG=n
+ echo "WIPE_PREV_KERNEL_CONFIG = ${WIPE_PREV_KERNEL_CONFIG} WIPE_PREV_BB_CONFIG = ${WIPE_PREV_BB_CONFIG}"
+ WIPE_PARAMS_CHECKED=1
+fi
+###
+
+# Reset 'rootfs' staging area so that regular user can update
+mysudo "SEALS Build: reset SEALS root fs. ${PSWD_IF_REQD}" \
+ chown -R ${LOGNAME}:${LOGNAME} ${ROOTFS}/*
+
+#---------Generate necessary pieces for the rootfs
+build_copy_busybox
+setup_etc_in_rootfs
+setup_lib_in_rootfs
+setup_dev_in_rootfs
+rootfs_xtras
+
+mysudo "SEALS Build: enable final setup of SEALS root fs. ${PSWD_IF_REQD}" \
+  chown -R root:root ${ROOTFS}/* || {
+   FatalError "SEALS Build: chown on rootfs/ failed!"
+}
 
 cd ${TOPDIR}/
 ShowTitle "Done!"
 ls -l ${ROOTFS}/
-}
+local RFS_ACTUAL_SZ_MB=$(du -ms ${ROOTFS}/ |awk '{print $1}')
+echo "SEALS root fs: actual size = ${RFS_ACTUAL_SZ_MB} MB"
+} # end build_rootfs()
 
 generate_rootfs_img_ext4()
 {
@@ -326,7 +410,8 @@ ShowTitle "Generating ext4 image now:"
 # RFS should be the final one ie the one in images/
 RFS=${IMAGES_FOLDER}/rfs.img
 MNTPT=/mnt/tmp
-RFS_SZ_MB=64
+RFS_SZ_MB=256  #64
+local COUNT=$((${RFS_SZ_MB}*256))  # for given blocksize (bs) of 4096
 
 mkdir -p ${MNTPT} 2> /dev/null
 # If RFS does not exist, create from scratch.
@@ -334,8 +419,9 @@ mkdir -p ${MNTPT} 2> /dev/null
 if [ ! -f ${RFS} ]; then
   #rm -f ${RFS} 2>/dev/null
   echo "*** Re-creating raw RFS image file now *** [dd, mkfs.ext4]"
-  dd if=/dev/zero of=${RFS} bs=4096 count=16384
-  mkfs.ext4 -F -L qemu_rootfs_knb ${RFS} || exit 1
+  #dd if=/dev/zero of=${RFS} bs=4096 count=16384
+  dd if=/dev/zero of=${RFS} bs=4096 count=${COUNT}
+  mkfs.ext4 -F -L qemu_rootfs_SEALS ${RFS} || exit 1
 fi
 
 # Keep FORCE_RECREATE_RFS to 0 by default!!
@@ -356,11 +442,11 @@ mount -o loop ${RFS} ${MNTPT} || {
     echo "### $name: !WARNING! FORCE_RECREATE_RFS flag is non-zero! Now *deleting* current RFS image and re-creating it..."
     echo
     rm -f ${RFS} 2>/dev/null
-    dd if=/dev/zero of=${RFS} bs=4096 count=16384
-    mkfs.ext4 -F -L qemu_rootfs_knb ${RFS} || exit 1
+    #dd if=/dev/zero of=${RFS} bs=4096 count=16384
+    dd if=/dev/zero of=${RFS} bs=4096 count=${COUNT}
+    mkfs.ext4 -F -L qemu_rootfs_SEALS ${RFS} || exit 1
     mount -o loop ${RFS} ${MNTPT} || {
-	  echo " !!! The loop mount RFS failed Again !!! Wow. Too bad. See ya :-/"
-	  return
+	  FatalError " !!! The loop mount RFS failed Again !!! Wow. Too bad. See ya :-/"
 	}
   fi
  }
@@ -452,7 +538,8 @@ ${s5}
  }
 }
 
-run_it()
+#-------------- r u n _ q e m u _ S E A L S ---------------------------
+run_qemu_SEALS()
 {
 cd ${TOPDIR} || exit 1
 
@@ -477,7 +564,6 @@ if [ ${KGDB_MODE} -eq 0 ]; then
 	echo "qemu-system-arm -m 256 -M ${ARM_PLATFORM_OPT} ${SMP_EMU} -kernel ${IMAGES_FOLDER}/zImage -drive file=${IMAGES_FOLDER}/rfs.img,if=sd -append "console=ttyAMA0 root=/dev/mmcblk0 init=/sbin/init" -nographic"
 	echo
 	qemu-system-arm -m 256 -M ${ARM_PLATFORM_OPT} ${SMP_EMU} -kernel ${IMAGES_FOLDER}/zImage -drive file=${IMAGES_FOLDER}/rfs.img,if=sd -append "console=ttyAMA0 root=/dev/mmcblk0 init=/sbin/init" -nographic
-	 # rm 'root=/dev/ram' ; not really necessary as we always use a ramdisk & never a real rootfs..
 else
 	# KGDB/QEMU cmdline
 	#  -just add the '-S' option [freeze CPU at startup (use 'c' to start execution)] to qemu cmdline
@@ -494,9 +580,8 @@ and then have gdb connect to the target kernel using
 	echo
 
 	qemu-system-arm -M ${ARM_PLATFORM_OPT} -kernel ${IMAGES_FOLDER}/zImage -initrd ${IMAGES_FOLDER}/rootfs.img.gz -append "console=ttyAMA0 rdinit=/sbin/init" -nographic -gdb tcp::1234 -s -S
-	 # rm 'root=/dev/ram' ; not really necessary as we always use a ramdisk & never a real rootfs..
 fi
-}
+} # end run_qemu_SEALS()
 
 check_installed_pkg()
 {
@@ -527,15 +612,16 @@ Pl install the libncurses5-dev package (with apt-get) & retry.  Aborting..."
  echo 
  echo "Verify toolchain :: "
  ${CXX}gcc --version
- Prompt "Is the above gcc ver, rather, toolchain ver, correct?"
+ Prompt "Is the above gcc and thus, toolchain version, correct?"
 
  #ShowTitle "Using this config :: ${CONFIG_NAME_STR}"
 }
 ##----------------------------- Functions End -------------------------
 
+
 ### "main" here
 
-check_root_AIA
+unalias cp 2>/dev/null
 check_installed_pkg
 
 ###
@@ -555,7 +641,6 @@ check_folder_createIA ${IMAGES_BKP_FOLDER}
 check_folder_createIA ${CONFIGS_FOLDER}
 
 report_config
-#exit 0
 
 ### Which of the functions below run depends on the
 # config specified in the Build Config file!
@@ -565,6 +650,6 @@ report_config
 [ ${BUILD_ROOTFS} -eq 1 ] && build_rootfs $@
 [ ${GEN_EXT4_ROOTFS_IMAGE} -eq 1 ] && generate_rootfs_img_ext4
 [ ${SAVE_BACKUP_IMG_CONFIGS} -eq 1 ] && save_images_configs
-[ ${RUN_QEMU} -eq 1 ] && run_it
+[ ${RUN_QEMU} -eq 1 ] && run_qemu_SEALS
 
 exit 0
