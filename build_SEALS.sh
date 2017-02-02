@@ -40,7 +40,17 @@ source ./common.sh || {
 
 ### "Globals"
 PRJ_TITLE="SEALS: Simple Embedded ARM Linux System"
-PSWD_IF_REQD="If asked, please enter password"
+
+# Message strings
+MSG_GIVE_PSWD_IF_REQD="If asked, please enter password"
+MSG_EXITING="
+${name}: all done, exiting.
+Thank you for using SEALS! We hope you like it.
+There is much scope for improvement of course; would love to hear your feedback,
+ideas, and contribution!
+Please visit :
+https://github.com/kaiwan/seals ."
+
 STEPS=5
 CPU_CORES=$(getconf -a|grep _NPROCESSORS_ONLN|awk '{print $2}')
 [ -z ${CPU_CORES} ] && CPU_CORES=2
@@ -134,7 +144,7 @@ fi
 ShowTitle "BusyBox Build:"
 make -j${CPU_CORES} ARCH=arm CROSS_COMPILE=${CXX} install
 
-mysudo "SEALS Build:Step 1 of ${STEPS}: Copying of required busybox files. ${PSWD_IF_REQD}" \
+mysudo "SEALS Build:Step 1 of ${STEPS}: Copying of required busybox files. ${MSG_GIVE_PSWD_IF_REQD}" \
  cp -af ${BB_FOLDER}/_install/* ${ROOTFS}/ || {
   FatalError "Copying required folders from busybox _install/ failed! 
  [Tip: Ensure busybox has been successfully built]. Aborting..."
@@ -194,27 +204,25 @@ none         /sys/kernel/debug debugfs
 #-------- s e t u p _ l i b _ i n _ r o o t f s -----------------------
 setup_lib_in_rootfs()
 {
-#------------- Shlibs..
 echo "SEALS Build: copying across shared objects, etc to SEALS /lib /sbin /usr ..."
 
-#ARMLIBS=${CXX_LOC}/arm-none-linux-gnueabi/libc/lib/
 ARMLIBS=${CXX_LOC}/arm-none-linux-gnueabi/libc
 if [ ! -d ${ARMLIBS} ]; then
 	cd ${TOPDIR}
 	FatalError "Toolchain shared library locations invalid? Aborting..."
 fi
 
-# Quick solution: just copy _all_ the shared libraries, etc from the toolchain into the rfs/lib
-
-mysudo "SEALS Build:Step 2 of ${STEPS}: [SEALS rootfs]:setup of library objects. ${PSWD_IF_REQD}" \
+# Quick solution: just copy _all_ the shared libraries, etc from the toolchain
+# into the rfs/lib.
+mysudo "SEALS Build:Step 2 of ${STEPS}: [SEALS rootfs]:setup of library objects. ${MSG_GIVE_PSWD_IF_REQD}" \
   cp -a ${ARMLIBS}/lib/* ${ROOTFS}/lib || {
    FatalError "Copying required libs [/lib] from toolchain failed!"
 }
-mysudo "SEALS Build:Step 3 of ${STEPS}: [SEALS rootfs]:setup of /sbin. ${PSWD_IF_REQD}" \
+mysudo "SEALS Build:Step 3 of ${STEPS}: [SEALS rootfs]:setup of /sbin. ${MSG_GIVE_PSWD_IF_REQD}" \
   cp -a ${ARMLIBS}/sbin/* ${ROOTFS}/sbin || {
    FatalError "Copying required libs [/sbin] from toolchain failed!"
 }
-mysudo "SEALS Build:Step 4 of ${STEPS}: [SEALS rootfs]:setup of /usr. ${PSWD_IF_REQD}" \
+mysudo "SEALS Build:Step 4 of ${STEPS}: [SEALS rootfs]:setup of /usr. ${MSG_GIVE_PSWD_IF_REQD}" \
   cp -a ${ARMLIBS}/usr/* ${ROOTFS}/usr || {
    FatalError "Copying required libs [/sbin] from toolchain failed!"
 }
@@ -274,7 +282,7 @@ mknod -m 660 sda b 8 0
 @MYMARKER@
 
 chmod u+x ${ROOTFS}/dev/mkdevtmp.sh
-mysudo "SEALS Build:Step 5 of ${STEPS}: [SEALS rootfs]:setup of device nodes. ${PSWD_IF_REQD}" \
+mysudo "SEALS Build:Step 5 of ${STEPS}: [SEALS rootfs]:setup of device nodes. ${MSG_GIVE_PSWD_IF_REQD}" \
   ${ROOTFS}/dev/mkdevtmp.sh || {
    rm -f mkdevtmp.sh
    FatalError "Setup of device nodes failed!"
@@ -316,7 +324,7 @@ fi
 build_rootfs()
 {
 # First reset the 'rootfs' staging area so that regular user can update
-mysudo "SEALS Build: reset SEALS root fs. ${PSWD_IF_REQD}" \
+mysudo "SEALS Build: reset SEALS root fs. ${MSG_GIVE_PSWD_IF_REQD}" \
  chown -R ${LOGNAME}:${LOGNAME} ${ROOTFS}/*
 
 #---------Generate necessary pieces for the rootfs
@@ -326,7 +334,7 @@ setup_lib_in_rootfs
 setup_dev_in_rootfs
 rootfs_xtras
 
-mysudo "SEALS Build: enable final setup of SEALS root fs. ${PSWD_IF_REQD}" \
+mysudo "SEALS Build: enable final setup of SEALS root fs. ${MSG_GIVE_PSWD_IF_REQD}" \
   chown -R root:root ${ROOTFS}/* || {
    FatalError "SEALS Build: chown on rootfs/ failed!"
 }
@@ -338,6 +346,7 @@ local RFS_ACTUAL_SZ_MB=$(du -ms ${ROOTFS}/ |awk '{print $1}')
 echo "SEALS root fs: actual size = ${RFS_ACTUAL_SZ_MB} MB"
 } # end build_rootfs()
 
+#------- g e n e r a t e _ r o o t f s _ i m g _ e x t 4 --------------
 generate_rootfs_img_ext4()
 {
 cd ${ROOTFS} || exit 1
@@ -351,7 +360,7 @@ local RFS_SZ_MB=256  #64
 local COUNT=$((${RFS_SZ_MB}*256))  # for given blocksize (bs) of 4096
 
 [ ! -d ${MNTPT} ] && {
-  mysudo "SEALS Build: root fs image generation: enable mount dir creation. ${PSWD_IF_REQD}" \
+  mysudo "SEALS Build: root fs image generation: enable mount dir creation. ${MSG_GIVE_PSWD_IF_REQD}" \
    mkdir -p ${MNTPT}
 }
 # If RFS does not exist, create from scratch.
@@ -359,7 +368,7 @@ local COUNT=$((${RFS_SZ_MB}*256))  # for given blocksize (bs) of 4096
 if [ ! -f ${RFS} ]; then
   echo "SEALS Build: *** Re-creating raw RFS image file now *** [dd, mkfs.ext4]"
   dd if=/dev/zero of=${RFS} bs=4096 count=${COUNT}
-  mysudo "SEALS Build: root fs image generation: enable mkfs. ${PSWD_IF_REQD}" \
+  mysudo "SEALS Build: root fs image generation: enable mkfs. ${MSG_GIVE_PSWD_IF_REQD}" \
    mkfs.ext4 -F -L qemu_rootfs_SEALS ${RFS} || FatalError "mkfs failed!"
 fi
 
@@ -368,9 +377,9 @@ fi
 local FORCE_RECREATE_RFS=0
 
 sync
-mysudo "SEALS Build: root fs image generation: enable umount. ${PSWD_IF_REQD}" \
+mysudo "SEALS Build: root fs image generation: enable umount. ${MSG_GIVE_PSWD_IF_REQD}" \
 umount ${MNTPT} 2> /dev/null
-mysudo "SEALS Build: root fs image generation: enable mount. ${PSWD_IF_REQD}" \
+mysudo "SEALS Build: root fs image generation: enable mount. ${MSG_GIVE_PSWD_IF_REQD}" \
  mount -o loop ${RFS} ${MNTPT} || {
   echo "### $name: !WARNING! Loop mounting rootfs image file Failed! ###"
   if [ ${FORCE_RECREATE_RFS} -eq 0 ]; then
@@ -385,9 +394,9 @@ mysudo "SEALS Build: root fs image generation: enable mount. ${PSWD_IF_REQD}" \
     rm -f ${RFS} 2>/dev/null
     #dd if=/dev/zero of=${RFS} bs=4096 count=16384
     dd if=/dev/zero of=${RFS} bs=4096 count=${COUNT}
-    mysudo "SEALS Build: root fs image generation: enable mkfs (in force_recreate_rfs). ${PSWD_IF_REQD}" \
+    mysudo "SEALS Build: root fs image generation: enable mkfs (in force_recreate_rfs). ${MSG_GIVE_PSWD_IF_REQD}" \
      mkfs.ext4 -F -L qemu_rootfs_SEALS ${RFS} || exit 1
-    mysudo "SEALS Build: root fs image generation: enable mount (in force_recreate_rfs). ${PSWD_IF_REQD}" \
+    mysudo "SEALS Build: root fs image generation: enable mount (in force_recreate_rfs). ${MSG_GIVE_PSWD_IF_REQD}" \
      mount -o loop ${RFS} ${MNTPT} || {
 	  FatalError " !!! The loop mount RFS failed Again !!! Wow. Too bad. See ya :-/"
 	}
@@ -395,16 +404,17 @@ mysudo "SEALS Build: root fs image generation: enable mount. ${PSWD_IF_REQD}" \
  }
 
 echo " Now copying across rootfs data to ${RFS} ..."
-mysudo "SEALS Build: root fs image generation: enable copying into SEALS root fs image. ${PSWD_IF_REQD}" \
+mysudo "SEALS Build: root fs image generation: enable copying into SEALS root fs image. ${MSG_GIVE_PSWD_IF_REQD}" \
  cp -au ${ROOTFS}/* ${MNTPT}
-mysudo "SEALS Build: root fs image generation: enable unmount. ${PSWD_IF_REQD}" \
+mysudo "SEALS Build: root fs image generation: enable unmount. ${MSG_GIVE_PSWD_IF_REQD}" \
  umount ${MNTPT}
 sync
 ls -lh ${RFS}
 echo "... and done."
 cd ${TOPDIR}
-}
+} # end generate_rootfs_img_ext4()
 
+#-------- s a v e _ i m a g e s _ c o n f i g s -----------------------
 # fn to place final images in images/ and save imp config files as well...
 save_images_configs()
 {
@@ -416,8 +426,9 @@ cp -u ${KERNEL_FOLDER}/arch/arm/boot/zImage ${IMAGES_FOLDER}/
 cp ${KERNEL_FOLDER}/.config ${CONFIGS_FOLDER}/kernel_config
 cp ${BB_FOLDER}/.config ${CONFIGS_FOLDER}/busybox_config
 echo " ... and done."
-}
+} # end save_images_configs()
 
+#---------- r e p o r t _ c o n f i g ---------------------------------
 report_config()
 {
  local msg1=""
@@ -480,7 +491,7 @@ ${s5}
    echo "Aborting. Edit the config file ${BUILD_CONFIG_FILE} as required and re-run."
    exit 1
  }
-}
+} # end report_config()
 
 #-------------- r u n _ q e m u _ S E A L S ---------------------------
 run_qemu_SEALS()
@@ -524,6 +535,7 @@ echo "
 ... and done."
 } # end run_qemu_SEALS()
 
+#--------- c h e c k _ i n s t a l l e d _ p k g ----------------------
 check_installed_pkg()
 {
  which zenity > /dev/null 2>&1 || {
@@ -549,7 +561,7 @@ Aborting..."
 (Required for kernel config UI).
 Pl install the libncurses5-dev package (with apt-get) & re-run.  Aborting..."
  }
-}
+} # end check_installed_pkg()
 ##----------------------------- Functions End -------------------------
 
 
@@ -586,6 +598,5 @@ report_config
 [ ${SAVE_BACKUP_IMG_CONFIGS} -eq 1 ] && save_images_configs
 [ ${RUN_QEMU} -eq 1 ] && run_qemu_SEALS
 
-echo "
-${name}: all done, exiting."
+echo "${MSG_EXITING}"
 exit 0
