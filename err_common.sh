@@ -64,7 +64,7 @@ FatalError()
 	  #echo "n=$n"
 	  #return
 	  [ $(verify_zenity) -eq 0 ] && {
-	    echo "FatalError :: !WARNING! zenity not installed?? "
+	    echo "In FatalError() :: !WARNING! zenity not installed?? "
 		# fallback to non-gui err handling
 	    cli_handle_error $@
 	  }

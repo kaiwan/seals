@@ -55,12 +55,6 @@ STEPS=5
 CPU_CORES=$(getconf -a|grep _NPROCESSORS_ONLN|awk '{print $2}')
 [ -z ${CPU_CORES} ] && CPU_CORES=2
 
-TESTMODE=0
-[ ${TESTMODE} -eq 1 ] && {
-  mysudo "desc of mysudo ..." "/bin/cp build.config /"
-  exit 0
-}
-
 
 ##-------------------- Functions Start --------------------------------
 
@@ -70,8 +64,8 @@ build_kernel()
 cd ${KERNEL_FOLDER} || exit 1
 ShowTitle "Building kernel ver ${KERNELVER} now ..."
 
-if [ "${WIPE_KERNEL_CONFIG}" = "y" ]; then
-	ShowTitle "Kernel config for ARM ${ARM_PLATFORM_STR} platform:"
+if [ "${WIPE_KERNEL_CONFIG}" = "TRUE" ]; then
+	ShowTitle "Setting default kernel config for ARM ${ARM_PLATFORM_STR} platform:"
 	make ARCH=arm ${ARM_PLATFORM}_defconfig || {
 	   FatalError "Kernel config for ARM ${ARM_PLATFORM_STR} platform failed.."
 	}
@@ -126,7 +120,7 @@ if [ -z "${ROOTFS}" ]; then
 	FatalError "SEALS: ROOTFS has dangerous value of null or '/'. Aborting..."
 fi
 
-if [ "${WIPE_BUSYBOX_CONFIG}" = "y" ]; then
+if [ "${WIPE_BUSYBOX_CONFIG}" = "TRUE" ]; then
 	ShowTitle "BusyBox default config:"
 	make ARCH=arm CROSS_COMPILE=${CXX} defconfig
 fi
@@ -428,8 +422,59 @@ cp ${BB_FOLDER}/.config ${CONFIGS_FOLDER}/busybox_config
 echo " ... and done."
 } # end save_images_configs()
 
-#---------- r e p o r t _ c o n f i g ---------------------------------
-report_config()
+
+#-------------- r u n _ q e m u _ S E A L S ---------------------------
+run_qemu_SEALS()
+{
+cd ${TOPDIR} || exit 1
+
+echo
+
+# Run it!
+if [ ${KGDB_MODE} -eq 0 ]; then
+
+  SMP_EMU=""
+  if [ ${SMP_EMU_MODE} -eq 1 ]; then
+    # Using the "-smp n,sockets=n" QEMU options lets us emulate n processors!
+    # (can do this with n=2 for the ARM Cortex-A9)
+     SMP_EMU="-smp 2,sockets=2"
+  fi
+
+	ShowTitle "Running qmeu-system-arm now ..."
+	echo "qemu-system-arm -m 256 -M ${ARM_PLATFORM_OPT} ${SMP_EMU} -kernel ${IMAGES_FOLDER}/zImage -drive file=${IMAGES_FOLDER}/rfs.img,if=sd,format=raw -append "console=ttyAMA0 root=/dev/mmcblk0 init=/sbin/init" -nographic"
+	echo
+	qemu-system-arm -m 256 -M ${ARM_PLATFORM_OPT} ${SMP_EMU} -kernel ${IMAGES_FOLDER}/zImage -drive file=${IMAGES_FOLDER}/rfs.img,if=sd,format=raw -append "console=ttyAMA0 root=/dev/mmcblk0 init=/sbin/init" -nographic
+else
+	# KGDB/QEMU cmdline
+	#  -just add the '-S' option [freeze CPU at startup (use 'c' to start execution)] to qemu cmdline
+	ShowTitle "Running qemu-system-arm in KGDB mode now ..."
+	echo "REMEMBER this kernel is run w/ the -s : it *waits* for a gdb client to connect to it..."
+	echo
+	echo "You are expected to run (in another terminal window):
+$ arm-none-linux-gnueabi-gdb <path-to-ARM-built-kernel-src-tree>/vmlinux  <-- built w/ -g
+...
+and then have gdb connect to the target kernel using
+(gdb) target remote :1234
+...
+"
+	echo
+
+	qemu-system-arm -M ${ARM_PLATFORM_OPT} -kernel ${IMAGES_FOLDER}/zImage -initrd ${IMAGES_FOLDER}/rootfs.img.gz -append "console=ttyAMA0 rdinit=/sbin/init" -nographic -gdb tcp::1234 -s -S
+fi
+echo "
+... and done."
+} # end run_qemu_SEALS()
+
+#---------- c o n f i g _ s e t u p -----------------------------------
+# config_setup
+# Based on values in the build.config file,
+# display the current configurables, and,
+# allow the end-user to _change_ what is done by the script now.
+# The change applies ONLY for this run, i.e., it is volatile and NOT
+# written into the build.config file.
+# Parameters:
+# -none-
+config_setup()
 {
  local msg1=""
  local msg2=""
@@ -470,12 +515,12 @@ Busybox codebase location : ${BB_FOLDER}
  [ "${WIPE_BUSYBOX_CONFIG}" = "y" ] && s2_2=" Wipe busybox config?                   Y"
  local s3="Generate ext4 rootfs image?                      N"
  [ ${GEN_EXT4_ROOTFS_IMAGE} -eq 1 ] && s3="Generate ext4 rootfs image?             Y"
- local s4="Save/Backup kernel/busybox images and config files? N"
- [ ${SAVE_BACKUP_IMG_CONFIGS} -eq 1 ] && s4="Save/Backup kernel/busybox images and config files? Y"
+ local s4="Backup kernel/busybox images and config files?   N"
+ [ ${SAVE_BACKUP_IMG_CONFIGS} -eq 1 ] && s4="Save/Backup kernel/busybox images and config files?   Y"
  local s5="Run QEMU ARM emulator?                           N"
  [ ${RUN_QEMU} -eq 1 ] && s5="Run QEMU ARM emulator?                         Y"
 
- msg2="--------------------- Script Build Options ----------------------------
+ msg2="--------------------- Preset Script Build Options ----------------------
 ${s1}
 ${s1_2}
 ${s2}
@@ -485,61 +530,76 @@ ${s4}
 ${s5}
 "
  echo "${msg2}"
- zenity --question --title="${PRJ_TITLE}" --text="${msg2}" \
-        --ok-label="Confirm" --cancel-label="Abort" 2>/dev/null
- [ $? -ne 0 ] && {
-   echo "Aborting. Edit the config file ${BUILD_CONFIG_FILE} as required and re-run."
-   exit 1
- }
-} # end report_config()
 
-#-------------- r u n _ q e m u _ S E A L S ---------------------------
-run_qemu_SEALS()
-{
-cd ${TOPDIR} || exit 1
+ #--- YAD
+ local disp_kernel="FALSE"
+ [ ${BUILD_KERNEL} -eq 1 ] && disp_kernel="TRUE"
 
-echo
+ local disp_kwipe="FALSE"
+ [ "${WIPE_KERNEL_CONFIG}" = "y" ] && disp_kwipe="TRUE"
 
-# Run it!
-if [ ${KGDB_MODE} -eq 0 ]; then
+ local disp_rootfs="FALSE"
+ [ ${BUILD_ROOTFS} -eq 1 ] && disp_rootfs="TRUE"
 
-  SMP_EMU=""
-  if [ ${SMP_EMU_MODE} -eq 1 ]; then
-    # Using the "-smp n,sockets=n" QEMU options lets us emulate n processors!
-    # (can do this with n=2 for the ARM Cortex-A9)
-     SMP_EMU="-smp 2,sockets=2"
-  fi
+ local disp_bbwipe="FALSE"
+ [ "${WIPE_BUSYBOX_CONFIG}" = "y" ] && disp_bbwipe="TRUE"
 
-	ShowTitle "Running qmeu-system-arm now ..."
-	echo "qemu-system-arm -m 256 -M ${ARM_PLATFORM_OPT} ${SMP_EMU} -kernel ${IMAGES_FOLDER}/zImage -drive file=${IMAGES_FOLDER}/rfs.img,if=sd -append "console=ttyAMA0 root=/dev/mmcblk0 init=/sbin/init" -nographic"
-	echo
-	qemu-system-arm -m 256 -M ${ARM_PLATFORM_OPT} ${SMP_EMU} -kernel ${IMAGES_FOLDER}/zImage -drive file=${IMAGES_FOLDER}/rfs.img,if=sd -append "console=ttyAMA0 root=/dev/mmcblk0 init=/sbin/init" -nographic
-else
-	# KGDB/QEMU cmdline
-	#  -just add the '-S' option [freeze CPU at startup (use 'c' to start execution)] to qemu cmdline
-	ShowTitle "Running qemu-system-arm in KGDB mode now ..."
-	echo "REMEMBER this kernel is run w/ the -s : it *waits* for a gdb client to connect to it..."
-	echo
-	echo "You are expected to run (in another terminal window):
-$ arm-none-linux-gnueabi-gdb <path-to-ARM-built-kernel-src-tree>/vmlinux  <-- built w/ -g
-...
-and then have gdb connect to the target kernel using
-(gdb) target remote :1234
-...
+ local disp_genrfsimg="FALSE"
+ [ ${GEN_EXT4_ROOTFS_IMAGE} -eq 1 ] && disp_genrfsimg="TRUE"
+
+ local disp_bkp="FALSE"
+ [ ${SAVE_BACKUP_IMG_CONFIGS} -eq 1 ] && disp_bkp="TRUE"
+
+ local disp_run="FALSE"
+ [ ${RUN_QEMU} -eq 1 ] && disp_run="TRUE"
+
+ local MSG_CONFIG_VOLATILE="The settings you make now are volatile, i.e., they will take
+effect for ONLY this run. Once completed, the default (build.config) settings resume.
+To change settings permenantly, please edit the build.config file.
 "
-	echo
 
-	qemu-system-arm -M ${ARM_PLATFORM_OPT} -kernel ${IMAGES_FOLDER}/zImage -initrd ${IMAGES_FOLDER}/rootfs.img.gz -append "console=ttyAMA0 rdinit=/sbin/init" -nographic -gdb tcp::1234 -s -S
-fi
-echo "
-... and done."
-} # end run_qemu_SEALS()
+ local yad_dothis=$(yad --form \
+   --field="Build Kernel (ver ${KERNELVER})":CHK \
+   --field=" Wipe kernel config (Careful!)":CHK \
+   --field="Build Root Filesystem":CHK \
+   --field=" Wipe busybox config (Careful!)":CHK \
+   --field="Generate Root Filesystem EXT4 image file":CHK \
+   --field="Backup the kernel and root fs images and configs":CHK \
+   --field="Run QEMU":CHK \
+   ${disp_kernel} ${disp_kwipe} ${disp_rootfs} ${disp_bbwipe} \
+   ${disp_genrfsimg} ${disp_bkp} ${disp_run} \
+   --title="${PRJ_TITLE}" \
+   --center --on-top --no-escape --fixed \
+   --text="${MSG_CONFIG_VOLATILE}")
+
+ BUILD_KERNEL=$(echo "${yad_dothis}" |awk -F"|" '{print $1}')
+ WIPE_KERNEL_CONFIG=$(echo "${yad_dothis}" |awk -F"|" '{print $2}')
+ BUILD_ROOTFS=$(echo "${yad_dothis}" |awk -F"|" '{print $3}')
+ WIPE_BUSYBOX_CONFIG=$(echo "${yad_dothis}" |awk -F"|" '{print $4}')
+ GEN_EXT4_ROOTFS_IMAGE=$(echo "${yad_dothis}" |awk -F"|" '{print $5}')
+ SAVE_BACKUP_IMG_CONFIGS=$(echo "${yad_dothis}" |awk -F"|" '{print $6}')
+ RUN_QEMU=$(echo "${yad_dothis}" |awk -F"|" '{print $7}')
+
+ [ 1 -eq 1 ] && echo "
+ ${BUILD_KERNEL}
+ ${WIPE_KERNEL_CONFIG}
+ ${BUILD_ROOTFS}
+ ${WIPE_BUSYBOX_CONFIG}
+ ${GEN_EXT4_ROOTFS_IMAGE}
+ ${SAVE_BACKUP_IMG_CONFIGS}
+ ${RUN_QEMU}
+ "
+
+} # end config_setup()
 
 #--------- c h e c k _ i n s t a l l e d _ p k g ----------------------
 check_installed_pkg()
 {
  which zenity > /dev/null 2>&1 || {
    FatalError "The zenity package does not seem to be installed! Aborting..."
+ }
+ which yad > /dev/null 2>&1 || {
+   FatalError "The yad package does not seem to be installed! Aborting..."
  }
  which make > /dev/null 2>&1 || {
    FatalError "The GNU 'make' package does not seem to be installed! Aborting..."
@@ -568,6 +628,14 @@ Pl install the libncurses5-dev package (with apt-get) & re-run.  Aborting..."
 ### "main" here
 
 unalias cp 2>/dev/null
+
+TESTMODE=0
+[ ${TESTMODE} -eq 1 ] && {
+  config_setup
+  #mysudo "desc of mysudo ..." "/bin/cp build.config /"
+  exit 0
+}
+
 check_installed_pkg
 
 ###
@@ -586,17 +654,17 @@ check_folder_createIA ${IMAGES_FOLDER}
 check_folder_createIA ${IMAGES_BKP_FOLDER}
 check_folder_createIA ${CONFIGS_FOLDER}
 
-report_config
+config_setup
 
 ### Which of the functions below run depends on the
 # config specified in the Build Config file!
 # So just set it there man ...
 ###
-[ ${BUILD_KERNEL} -eq 1 ] && build_kernel $@
-[ ${BUILD_ROOTFS} -eq 1 ] && build_rootfs $@
-[ ${GEN_EXT4_ROOTFS_IMAGE} -eq 1 ] && generate_rootfs_img_ext4
-[ ${SAVE_BACKUP_IMG_CONFIGS} -eq 1 ] && save_images_configs
-[ ${RUN_QEMU} -eq 1 ] && run_qemu_SEALS
+[ "${BUILD_KERNEL}" = "TRUE" ] && build_kernel $@
+[ "${BUILD_ROOTFS}" = "TRUE" ] && build_rootfs $@
+[ "${GEN_EXT4_ROOTFS_IMAGE}" = "TRUE" ] && generate_rootfs_img_ext4
+[ "${SAVE_BACKUP_IMG_CONFIGS}" = "TRUE" ] && save_images_configs
+[ "${RUN_QEMU}" = "TRUE" ] && run_qemu_SEALS
 
 echo "${MSG_EXITING}"
 exit 0
