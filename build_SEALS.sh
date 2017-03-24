@@ -22,13 +22,13 @@
 #
 # License: GPL v2
 
-name=$(basename $0)
+export name=$(basename $0)
 
 #############################
 # ${BUILD_CONFIG_FILE} : a configuration script that asks the user for and sets up
 # folder locations, toolchain PATH, any other configs as required.
 #############################
-BUILD_CONFIG_FILE=./build.config
+export BUILD_CONFIG_FILE=./build.config
 source ${BUILD_CONFIG_FILE} || {
 	echo "$name: source failed! ${BUILD_CONFIG_FILE} missing or invalid?"
 	exit 1
@@ -39,11 +39,11 @@ source ./common.sh || {
 }
 
 ### "Globals"
-PRJ_TITLE="SEALS: Simple Embedded ARM Linux System"
+export PRJ_TITLE="SEALS: Simple Embedded ARM Linux System"
 
 # Message strings
-MSG_GIVE_PSWD_IF_REQD="If asked, please enter password"
-MSG_EXITING="
+export MSG_GIVE_PSWD_IF_REQD="If asked, please enter password"
+export MSG_EXITING="
 ${name}: all done, exiting.
 Thank you for using SEALS! We hope you like it.
 There is much scope for improvement of course; would love to hear your feedback,
@@ -52,9 +52,15 @@ Please visit :
 https://github.com/kaiwan/seals ."
 
 STEPS=5
-CPU_CORES=$(getconf -a|grep _NPROCESSORS_ONLN|awk '{print $2}')
-[ -z ${CPU_CORES} ] && CPU_CORES=2
+export CPU_CORES=$(getconf -a|grep _NPROCESSORS_ONLN|awk '{print $2}')
+[ -z "${CPU_CORES}" ] && CPU_CORES=2
 
+# Device Tree Blob (DTB)
+export DTB_BLOB=vexpress-v2p-ca9.dtb
+export DTB_BLOB_LOC=${KERNEL_FOLDER}/arch/arm/boot/dts/${DTB_BLOB} # gen within kernel src tree
+
+# Signals
+trap 'echo "User Abort. ${MSG_EXITING}' INT QUIT
 
 ##-------------------- Functions Start --------------------------------
 
@@ -62,7 +68,7 @@ CPU_CORES=$(getconf -a|grep _NPROCESSORS_ONLN|awk '{print $2}')
 build_kernel()
 {
 cd ${KERNEL_FOLDER} || exit 1
-ShowTitle "Building kernel ver ${KERNELVER} now ..."
+ShowTitle "KERNEL: Configure and Build [kernel ver ${KERNELVER}] now ..."
 
 if [ "${WIPE_KERNEL_CONFIG}" = "TRUE" ]; then
 	ShowTitle "Setting default kernel config for ARM ${ARM_PLATFORM_STR} platform:"
@@ -74,7 +80,7 @@ fi
 echo "[Optional] Kernel Manual Configuration:
 Edit the kernel config if required, Save & Exit...
  Tip: you can browse notes on this here: doc/kernel_config.txt"
-Prompt " "
+Prompt " " #${MSG_EXITING}
 
 USE_QT=n   # make 'y' to use a GUI Qt configure environment
            #  if 'y', you'll require the Qt runtime installed..
@@ -113,7 +119,7 @@ build_copy_busybox()
 {
 cd ${BB_FOLDER} || exit 1
 
-ShowTitle "Building Busybox now ... [$(basename ${BB_FOLDER})]"
+ShowTitle "BUSYBOX: Configure and Build Busybox now ... [$(basename ${BB_FOLDER})]"
 echo " [sanity chk: ROOTFS=${ROOTFS}]"
 # safety check!
 if [ -z "${ROOTFS}" ]; then
@@ -126,7 +132,7 @@ if [ "${WIPE_BUSYBOX_CONFIG}" = "TRUE" ]; then
 fi
 
 echo "Edit the BusyBox config if required, Save & Exit..."
-Prompt " "
+Prompt " " ${MSG_EXITING}
 
 USE_QT=n   # make 'y' to use a GUI Qt configure environment
 if [ ${USE_QT} = "y" ]; then
@@ -345,7 +351,7 @@ generate_rootfs_img_ext4()
 {
 cd ${ROOTFS} || exit 1
 
-ShowTitle "SEALS Build: Generating ext4 image for root fs now:"
+ShowTitle "SEALS ROOT FS: Generating ext4 image for root fs now:"
 
 # RFS should be the final one ie the one in images/
 local RFS=${IMAGES_FOLDER}/rfs.img
@@ -412,11 +418,12 @@ cd ${TOPDIR}
 # fn to place final images in images/ and save imp config files as well...
 save_images_configs()
 {
-ShowTitle "Backing up kernel and busybox images and config files now (as necessary) ..."
+ShowTitle "BACKUP: kernel, busybox images and config files now (as necessary) ..."
 cd ${TOPDIR}
 unalias cp 2>/dev/null
 cp -afu ${IMAGES_FOLDER}/ ${IMAGES_BKP_FOLDER} # backup!
 cp -u ${KERNEL_FOLDER}/arch/arm/boot/zImage ${IMAGES_FOLDER}/
+[ -f ${DTB_BLOB_LOC} ] && cp -u ${DTB_BLOB_LOC} ${IMAGES_FOLDER}/
 cp ${KERNEL_FOLDER}/.config ${CONFIGS_FOLDER}/kernel_config
 cp ${BB_FOLDER}/.config ${CONFIGS_FOLDER}/busybox_config
 echo " ... and done."
@@ -440,10 +447,13 @@ if [ ${KGDB_MODE} -eq 0 ]; then
      SMP_EMU="-smp 2,sockets=2"
   fi
 
-	ShowTitle "Running qmeu-system-arm now ..."
-	echo "qemu-system-arm -m 256 -M ${ARM_PLATFORM_OPT} ${SMP_EMU} -kernel ${IMAGES_FOLDER}/zImage -drive file=${IMAGES_FOLDER}/rfs.img,if=sd,format=raw -append "console=ttyAMA0 root=/dev/mmcblk0 init=/sbin/init" -nographic"
+	ShowTitle "RUN: Running qemu-system-arm now ..."
+	local RUNCMD="qemu-system-arm -m 256 -M ${ARM_PLATFORM_OPT} ${SMP_EMU} -kernel ${IMAGES_FOLDER}/zImage -drive file=${IMAGES_FOLDER}/rfs.img,if=sd,format=raw -append \"console=ttyAMA0 root=/dev/mmcblk0 init=/sbin/init\" -nographic"
+	[ -f ${DTB_BLOB_LOC} ] && RUNCMD="${RUNCMD} -dtb ${DTB_BLOB_LOC}"
+	echo "${RUNCMD}"
 	echo
-	qemu-system-arm -m 256 -M ${ARM_PLATFORM_OPT} ${SMP_EMU} -kernel ${IMAGES_FOLDER}/zImage -drive file=${IMAGES_FOLDER}/rfs.img,if=sd,format=raw -append "console=ttyAMA0 root=/dev/mmcblk0 init=/sbin/init" -nographic
+	Prompt "Ok?"
+	eval ${RUNCMD}
 else
 	# KGDB/QEMU cmdline
 	#  -just add the '-S' option [freeze CPU at startup (use 'c' to start execution)] to qemu cmdline
@@ -465,6 +475,105 @@ echo "
 ... and done."
 } # end run_qemu_SEALS()
 
+# gui_display_config()
+# Parameters:
+#  $1 = 1 => kernel build ON, rootfs build ON; show All items
+#  $1 = 2 => kernel build OFF, rootfs build ON; don't show kernel items
+#  $1 = 3 => kernel build ON, rootfs build OFF; don't show rootfs/bb items
+#  $1 = 4 => kernel build OFF, rootfs build OFF; don't show kernel & rootfs/bb items
+gui_display_config()
+{
+[ $# -ne 1 ] && FatalError "gui_display_config: incorrect params"
+
+if [ $1 -eq 1 ] ; then
+ #  $1 = 1 => kernel build ON, rootfs build ON; show All items
+ local yad_dothis=$(yad --form \
+   --field="Build Kernel (ver ${KERNELVER})":CHK \
+   --field=" Wipe kernel config (Careful!*)":CHK \
+   --field="Build Root Filesystem":CHK \
+   --field=" Wipe busybox config (Careful!*)":CHK \
+   --field="Generate Root Filesystem EXT4 image file":CHK \
+   --field="Backup the kernel and root fs images and configs":CHK \
+   --field="Run QEMU":CHK \
+   ${disp_kernel} ${disp_kwipe} ${disp_rootfs} ${disp_bbwipe} \
+   ${disp_genrfsimg} ${disp_bkp} ${disp_run} \
+   --title="${PRJ_TITLE}" \
+   --center --on-top --no-escape --fixed \
+   --text="${MSG_CONFIG_VOLATILE}")
+
+ BUILD_KERNEL=$(echo "${yad_dothis}" |awk -F"|" '{print $1}')
+ WIPE_KERNEL_CONFIG=$(echo "${yad_dothis}" |awk -F"|" '{print $2}')
+ BUILD_ROOTFS=$(echo "${yad_dothis}" |awk -F"|" '{print $3}')
+ WIPE_BUSYBOX_CONFIG=$(echo "${yad_dothis}" |awk -F"|" '{print $4}')
+ GEN_EXT4_ROOTFS_IMAGE=$(echo "${yad_dothis}" |awk -F"|" '{print $5}')
+ SAVE_BACKUP_IMG_CONFIGS=$(echo "${yad_dothis}" |awk -F"|" '{print $6}')
+ RUN_QEMU=$(echo "${yad_dothis}" |awk -F"|" '{print $7}')
+elif [ $1 -eq 2 ] ; then
+ #  $1 = 2 => kernel build OFF, rootfs build ON; don't show kernel items
+ local yad_dothis=$(yad --form \
+   --field="Build Root Filesystem":CHK \
+   --field=" Wipe busybox config (Careful!)":CHK \
+   --field="Generate Root Filesystem EXT4 image file":CHK \
+   --field="Backup the kernel and root fs images and configs":CHK \
+   --field="Run QEMU":CHK \
+   ${disp_rootfs} ${disp_bbwipe} \
+   ${disp_genrfsimg} ${disp_bkp} ${disp_run} \
+   --title="${PRJ_TITLE}" \
+   --center --on-top --no-escape --fixed \
+   --text="${MSG_CONFIG_VOLATILE}")
+
+ BUILD_ROOTFS=$(echo "${yad_dothis}" |awk -F"|" '{print $1}')
+ WIPE_BUSYBOX_CONFIG=$(echo "${yad_dothis}" |awk -F"|" '{print $2}')
+ GEN_EXT4_ROOTFS_IMAGE=$(echo "${yad_dothis}" |awk -F"|" '{print $3}')
+ SAVE_BACKUP_IMG_CONFIGS=$(echo "${yad_dothis}" |awk -F"|" '{print $4}')
+elif [ $1 -eq 3 ] ; then
+ #  $1 = 3 => kernel build ON, rootfs build OFF; don't show rootfs/bb items
+ local yad_dothis=$(yad --form \
+   --field="Build Kernel (ver ${KERNELVER})":CHK \
+   --field=" Wipe kernel config (Careful!)":CHK \
+   --field="Generate Root Filesystem EXT4 image file":CHK \
+   --field="Backup the kernel and root fs images and configs":CHK \
+   --field="Run QEMU":CHK \
+   ${disp_kernel} ${disp_kwipe} \
+   ${disp_genrfsimg} ${disp_bkp} ${disp_run} \
+   --title="${PRJ_TITLE}" \
+   --center --on-top --no-escape --fixed \
+   --text="${MSG_CONFIG_VOLATILE}")
+
+ BUILD_KERNEL=$(echo "${yad_dothis}" |awk -F"|" '{print $1}')
+ WIPE_KERNEL_CONFIG=$(echo "${yad_dothis}" |awk -F"|" '{print $2}')
+ GEN_EXT4_ROOTFS_IMAGE=$(echo "${yad_dothis}" |awk -F"|" '{print $3}')
+ SAVE_BACKUP_IMG_CONFIGS=$(echo "${yad_dothis}" |awk -F"|" '{print $4}')
+ RUN_QEMU=$(echo "${yad_dothis}" |awk -F"|" '{print $5}')
+elif [ $1 -eq 4 ] ; then
+ #  $1 = 4 => kernel build OFF, rootfs build OFF; don't show kernel & rootfs/bb items
+ local yad_dothis=$(yad --form \
+   --field="Generate Root Filesystem EXT4 image file":CHK \
+   --field="Backup the kernel and root fs images and configs":CHK \
+   --field="Run QEMU":CHK \
+   ${disp_genrfsimg} ${disp_bkp} ${disp_run} \
+   --title="${PRJ_TITLE}" \
+   --center --on-top --no-escape --fixed \
+   --text="${MSG_CONFIG_VOLATILE}")
+
+ GEN_EXT4_ROOTFS_IMAGE=$(echo "${yad_dothis}" |awk -F"|" '{print $1}')
+ SAVE_BACKUP_IMG_CONFIGS=$(echo "${yad_dothis}" |awk -F"|" '{print $2}')
+ RUN_QEMU=$(echo "${yad_dothis}" |awk -F"|" '{print $3}')
+
+fi
+
+ [ 1 -eq 1 ] && echo "
+ ${BUILD_KERNEL}
+ ${WIPE_KERNEL_CONFIG}
+ ${BUILD_ROOTFS}
+ ${WIPE_BUSYBOX_CONFIG}
+ ${GEN_EXT4_ROOTFS_IMAGE}
+ ${SAVE_BACKUP_IMG_CONFIGS}
+ ${RUN_QEMU}
+ "
+
+}
+
 #---------- c o n f i g _ s e t u p -----------------------------------
 # config_setup
 # Based on values in the build.config file,
@@ -485,12 +594,9 @@ Config name : ${CONFIG_NAME_STR}
 
 Toolchain prefix : ${CXX}
 Toolchain version: ${gccver}
-
 Staging folder   : ${STG}
 
-ARM CPU arch : ${ARM_CPU_ARCH}
 ARM Platform : ${ARM_PLATFORM_STR}
-
 Linux kernel to use            : ${KERNELVER}
 Linux kernel codebase location : ${KERNEL_FOLDER}
 
@@ -556,13 +662,17 @@ ${s5}
  local MSG_CONFIG_VOLATILE="The settings you make now are volatile, i.e., they will take
 effect for ONLY this run. Once completed, the default (build.config) settings resume.
 To change settings permenantly, please edit the build.config file.
+
+* Wiping out the kernel / busybox config:
+- only has an effect when the corresponding build option is selected
+- if selected and wipe, implies that you will lose your existing config, of course.
 "
 
  local yad_dothis=$(yad --form \
    --field="Build Kernel (ver ${KERNELVER})":CHK \
-   --field=" Wipe kernel config (Careful!)":CHK \
+   --field=" Wipe kernel config (Careful!*)":CHK \
    --field="Build Root Filesystem":CHK \
-   --field=" Wipe busybox config (Careful!)":CHK \
+   --field=" Wipe busybox config (Careful!*)":CHK \
    --field="Generate Root Filesystem EXT4 image file":CHK \
    --field="Backup the kernel and root fs images and configs":CHK \
    --field="Run QEMU":CHK \
@@ -580,7 +690,20 @@ To change settings permenantly, please edit the build.config file.
  SAVE_BACKUP_IMG_CONFIGS=$(echo "${yad_dothis}" |awk -F"|" '{print $6}')
  RUN_QEMU=$(echo "${yad_dothis}" |awk -F"|" '{print $7}')
 
- [ 1 -eq 1 ] && echo "
+
+[ 0 -eq 1 ] && {
+ if [ "${disp_kernel}" = "TRUE" -a "${disp_rootfs}" = "TRUE" ]; then
+	gui_display_config 1
+ elif [ "${disp_kernel}" = "FALSE" -a "${disp_rootfs}" = "TRUE" ]; then
+	gui_display_config 2
+ elif [ "${disp_kernel}" = "TRUE" -a "${disp_rootfs}" = "FALSE" ]; then
+	gui_display_config 3
+ elif [ "${disp_kernel}" = "FALSE" -a "${disp_rootfs}" = "FALSE" ]; then
+	gui_display_config 4
+ fi
+}
+
+ [ 0 -eq 1 ] && echo "
  ${BUILD_KERNEL}
  ${WIPE_KERNEL_CONFIG}
  ${BUILD_ROOTFS}
@@ -593,6 +716,7 @@ To change settings permenantly, please edit the build.config file.
 } # end config_setup()
 
 #--------- c h e c k _ i n s t a l l e d _ p k g ----------------------
+# TODO - gather and install required packages
 check_installed_pkg()
 {
  which zenity > /dev/null 2>&1 || {
@@ -632,7 +756,6 @@ unalias cp 2>/dev/null
 TESTMODE=0
 [ ${TESTMODE} -eq 1 ] && {
   config_setup
-  #mysudo "desc of mysudo ..." "/bin/cp build.config /"
   exit 0
 }
 
@@ -646,9 +769,6 @@ check_installed_pkg
 # BB_FOLDER      : busybox source tree
 ###
 check_folder_AIA ${STG}
-[ ${BUILD_KERNEL} -eq 1 ] && check_folder_AIA ${KERNEL_FOLDER}
-[ ${BUILD_ROOTFS} -eq 1 ] && check_folder_AIA ${BB_FOLDER}
-
 check_folder_createIA ${ROOTFS}
 check_folder_createIA ${IMAGES_FOLDER}
 check_folder_createIA ${IMAGES_BKP_FOLDER}
@@ -660,8 +780,14 @@ config_setup
 # config specified in the Build Config file!
 # So just set it there man ...
 ###
-[ "${BUILD_KERNEL}" = "TRUE" ] && build_kernel $@
-[ "${BUILD_ROOTFS}" = "TRUE" ] && build_rootfs $@
+[ "${BUILD_KERNEL}" = "TRUE" ] && {
+  check_folder_AIA ${KERNEL_FOLDER}
+  build_kernel
+}
+[ "${BUILD_ROOTFS}" = "TRUE" ] && {
+  check_folder_AIA ${BB_FOLDER}
+  build_rootfs
+}
 [ "${GEN_EXT4_ROOTFS_IMAGE}" = "TRUE" ] && generate_rootfs_img_ext4
 [ "${SAVE_BACKUP_IMG_CONFIGS}" = "TRUE" ] && save_images_configs
 [ "${RUN_QEMU}" = "TRUE" ] && run_qemu_SEALS
