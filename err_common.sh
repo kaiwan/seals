@@ -80,15 +80,21 @@ FatalError()
 # abort by pressing Ctrl-C
 # Parameter(s):
 #  $1 : string to display (string)
+#  $2 : string to display on signal trap [optional]
 Prompt()
 {
-	[ $# -lt 1 ] && {
-	  echo "$0: Prompt function requires a string parameter!"
-	  return 1
-	}
+#	[ $# -lt 1 ] && {
+#	  echo "$0: Prompt function requires a string parameter!"
+#	  return 1
+#	}
+  trap 'echo "
+*** User Abort detected!  ***
+Message:
+"${@}""
+exit 2' INT QUIT
+
 	echo "${@}"
-	echo " Press ENTER to continue, Ctrl-C to abort now..."
+	echo "Press ENTER to continue, Ctrl-C to abort now..."
 	read
 }
-
 
