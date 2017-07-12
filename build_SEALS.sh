@@ -430,7 +430,6 @@ cp ${BB_FOLDER}/.config ${CONFIGS_FOLDER}/busybox_config
 echo " ... and done."
 } # end save_images_configs()
 
-
 #-------------- r u n _ q e m u _ S E A L S ---------------------------
 run_qemu_SEALS()
 {
@@ -448,13 +447,13 @@ if [ ${KGDB_MODE} -eq 0 ]; then
      SMP_EMU="-smp 2,sockets=2"
   fi
 
-	ShowTitle "RUN: Running qemu-system-arm now ..."
-	local RUNCMD="qemu-system-arm -m 256 -M ${ARM_PLATFORM_OPT} ${SMP_EMU} -kernel ${IMAGES_FOLDER}/zImage -drive file=${IMAGES_FOLDER}/rfs.img,if=sd,format=raw -append \"console=ttyAMA0 root=/dev/mmcblk0 init=/sbin/init\" -nographic"
-	[ -f ${DTB_BLOB_LOC} ] && RUNCMD="${RUNCMD} -dtb ${DTB_BLOB_LOC}"
-	echo "${RUNCMD}"
-	echo
-	Prompt "Ok?"
-	eval ${RUNCMD}
+  ShowTitle "RUN: Running qemu-system-arm now ..."
+  local RUNCMD="qemu-system-arm -m ${SEALS_RAM} -M ${ARM_PLATFORM_OPT} ${SMP_EMU} -kernel ${IMAGES_FOLDER}/zImage -drive file=${IMAGES_FOLDER}/rfs.img,if=sd,format=raw -append \"${SEALS_K_CMDLINE}\" -nographic"
+  [ -f ${DTB_BLOB_LOC} ] && RUNCMD="${RUNCMD} -dtb ${DTB_BLOB_LOC}"
+  echo "${RUNCMD}"
+  echo
+  Prompt "Ok?"
+  eval ${RUNCMD}
 else
 	# KGDB/QEMU cmdline
 	#  -just add the '-S' option [freeze CPU at startup (use 'c' to start execution)] to qemu cmdline
@@ -598,12 +597,21 @@ Toolchain version: ${gccver}
 Staging folder   : ${STG}
 
 ARM Platform : ${ARM_PLATFORM_STR}
+Platform RAM : ${SEALS_RAM} MB
+
 Linux kernel to use            : ${KERNELVER}
 Linux kernel codebase location : ${KERNEL_FOLDER}
+Kernel command-line            : \"${SEALS_K_CMDLINE}\"
 
 Busybox to use            : ${BB_VER}
 Busybox codebase location : ${BB_FOLDER}
+
+<<-------------------------------------------------
+To change any of these, pl edit the config file:
+  ${BUILD_CONFIG_FILE}
+------------------------------------------------->>
 "
+ clear
  echo "${msg1}"
  zenity --question --title="${PRJ_TITLE}" --text="${msg1}" \
         --ok-label="Confirm" --cancel-label="Abort" 2>/dev/null
