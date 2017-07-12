@@ -562,7 +562,7 @@ elif [ $1 -eq 4 ] ; then
 
 fi
 
- [ 1 -eq 1 ] && echo "
+ [ 0 -eq 1 ] && echo "
  ${BUILD_KERNEL}
  ${WIPE_KERNEL_CONFIG}
  ${BUILD_ROOTFS}
@@ -589,7 +589,9 @@ config_setup()
  local msg2=""
  local gccver=$(arm-none-linux-gnueabi-gcc --version |head -n1 |cut -f2- -d" ")
 
- msg1="Config file : ${BUILD_CONFIG_FILE}   [_modify to change any settings shown here_]
+ msg1="[[ SEALS Config :: Please Review Carefully ]]
+
+Config file : ${BUILD_CONFIG_FILE}   [edit it to change any settings shown here]
 Config name : ${CONFIG_NAME_STR}
 
 Toolchain prefix : ${CXX}
@@ -599,22 +601,24 @@ Staging folder   : ${STG}
 ARM Platform : ${ARM_PLATFORM_STR}
 Platform RAM : ${SEALS_RAM} MB
 
-Linux kernel to use            : ${KERNELVER}
+Linux kernel to use : ${KERNELVER}
 Linux kernel codebase location : ${KERNEL_FOLDER}
-Kernel command-line            : \"${SEALS_K_CMDLINE}\"
+Kernel command-line : \"${SEALS_K_CMDLINE}\"
 
 Busybox to use            : ${BB_VER}
 Busybox codebase location : ${BB_FOLDER}
 
-<<-------------------------------------------------
-To change any of these, pl edit the config file:
+--------------------------------------------------------------
+To change any of these, pl abort now and edit the config file:
   ${BUILD_CONFIG_FILE}
-------------------------------------------------->>
-"
+--------------------------------------------------------------
+Press 'Yes' to proceed, 'No' to abort"
  clear
  echo "${msg1}"
- zenity --question --title="${PRJ_TITLE}" --text="${msg1}" \
-        --ok-label="Confirm" --cancel-label="Abort" 2>/dev/null
+ yad --image "dialog-question" --title "${PRJ_TITLE}" --center \
+     --button=gtk-yes:0 --button=gtk-no:1 \
+	 --width=700 \
+	 --text "${msg1}"
  [ $? -ne 0 ] && {
    echo "Aborting. Edit the config file ${BUILD_CONFIG_FILE} as required and re-run."
    exit 1
