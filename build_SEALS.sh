@@ -20,7 +20,7 @@
 # (c) Kaiwan N Billimoria <kaiwan -at- kaiwantech -dot- com>
 # (c) kaiwanTECH
 #
-# License: GPL v2
+# License: MIT
 
 export name=$(basename $0)
 
@@ -100,6 +100,7 @@ ShowTitle "Kernel Build:"
 CPU_OPT=$((${CPU_CORES}*2))
 
 #Prompt
+# make all => zImage, modules, dtbs (device-tree-blobs), ... - all will be built!
 echo "Doing: make -j${CPU_OPT} ARCH=arm CROSS_COMPILE=${CXX} all"
 time make -j${CPU_OPT} ARCH=arm CROSS_COMPILE=${CXX} all || {
   FatalError "Kernel build failed! Aborting ..."
@@ -378,7 +379,7 @@ local FORCE_RECREATE_RFS=0
 
 sync
 mysudo "SEALS Build: root fs image generation: enable umount. ${MSG_GIVE_PSWD_IF_REQD}" \
-umount ${MNTPT} 2> /dev/null
+ umount ${MNTPT} 2> /dev/null
 mysudo "SEALS Build: root fs image generation: enable mount. ${MSG_GIVE_PSWD_IF_REQD}" \
  mount -o loop ${RFS} ${MNTPT} || {
   echo "### $name: !WARNING! Loop mounting rootfs image file Failed! ###"
@@ -589,7 +590,7 @@ config_setup()
  local msg2=""
  local gccver=$(arm-none-linux-gnueabi-gcc --version |head -n1 |cut -f2- -d" ")
 
- msg1="Config file : ${BUILD_CONFIG_FILE}
+ msg1="Config file : ${BUILD_CONFIG_FILE}   [_modify to change any settings shown here_]
 Config name : ${CONFIG_NAME_STR}
 
 Toolchain prefix : ${CXX}
@@ -654,7 +655,7 @@ ${s5}
  [ ${GEN_EXT4_ROOTFS_IMAGE} -eq 1 ] && disp_genrfsimg="TRUE"
 
  local disp_bkp="FALSE"
- [ ${SAVE_BACKUP_IMG_CONFIGS} -eq 1 ] && disp_bkp="TRUE"
+ [ "${SAVE_BACKUP_IMG_CONFIGS}" -eq 1 ] && disp_bkp="TRUE"
 
  local disp_run="FALSE"
  [ ${RUN_QEMU} -eq 1 ] && disp_run="TRUE"
