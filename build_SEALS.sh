@@ -357,16 +357,16 @@ ShowTitle "SEALS ROOT FS: Generating ext4 image for root fs now:"
 # RFS should be the final one ie the one in images/
 local RFS=${IMAGES_FOLDER}/rfs.img
 local MNTPT=/mnt/tmp
-local RFS_SZ_MB=256  #64
+# Size of the rootfs 'file' is in the build.config file
 local COUNT=$((${RFS_SZ_MB}*256))  # for given blocksize (bs) of 4096
 
 [ ! -d ${MNTPT} ] && {
   mysudo "SEALS Build: root fs image generation: enable mount dir creation. ${MSG_GIVE_PSWD_IF_REQD}" \
    mkdir -p ${MNTPT}
 }
-# If RFS does not exist, create from scratch.
-# If it does exist, just loop mount and update.
-if [ ! -f ${RFS} ]; then
+# If config option RFS_FORCE_REBUILD is set -OR- the RootFS file does not exist,
+# create from scratch. If it does exist, just loop mount and update.
+if [ ${RFS_FORCE_REBUILD} -eq 1 -o ! -f ${RFS} ]; then
   echo "SEALS Build: *** Re-creating raw RFS image file now *** [dd, mkfs.ext4]"
   dd if=/dev/zero of=${RFS} bs=4096 count=${COUNT}
   mysudo "SEALS Build: root fs image generation: enable mkfs. ${MSG_GIVE_PSWD_IF_REQD}" \
@@ -600,6 +600,9 @@ Staging folder   : ${STG}
 
 ARM Platform : ${ARM_PLATFORM_STR}
 Platform RAM : ${SEALS_RAM} MB
+
+RootFS force rebuild : ${RFS_FORCE_REBUILD}
+RootFS size  : ${RFS_SZ_MB} MB
 
 Linux kernel to use : ${KERNELVER}
 Linux kernel codebase location : ${KERNEL_FOLDER}
