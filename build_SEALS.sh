@@ -435,42 +435,46 @@ run_qemu_SEALS()
 {
 cd ${TOPDIR} || exit 1
 
+KGDB_MODE=1
 echo
 
-# Run it!
-if [ ${KGDB_MODE} -eq 0 ]; then
-
-  SMP_EMU=""
-  if [ ${SMP_EMU_MODE} -eq 1 ]; then
+SMP_EMU=""
+if [ ${SMP_EMU_MODE} -eq 1 ]; then
     # Using the "-smp n,sockets=n" QEMU options lets us emulate n processors!
     # (can do this with n=2 for the ARM Cortex-A9)
      SMP_EMU="-smp 2,sockets=2"
-  fi
+fi
 
-  ShowTitle "RUN: Running qemu-system-arm now ..."
-  local RUNCMD="qemu-system-arm -m ${SEALS_RAM} -M ${ARM_PLATFORM_OPT} ${SMP_EMU} -kernel ${IMAGES_FOLDER}/zImage -drive file=${IMAGES_FOLDER}/rfs.img,if=sd,format=raw -append \"${SEALS_K_CMDLINE}\" -nographic -no-reboot"
-  [ -f ${DTB_BLOB_LOC} ] && RUNCMD="${RUNCMD} -dtb ${DTB_BLOB_LOC}"
-  echo "${RUNCMD}"
-  echo
-  Prompt "Ok?"
-  eval ${RUNCMD}
-else
+ShowTitle "RUN: Running qemu-system-arm now ..."
+local RUNCMD="qemu-system-arm -m ${SEALS_RAM} -M ${ARM_PLATFORM_OPT} ${SMP_EMU} -kernel ${IMAGES_FOLDER}/zImage -drive file=${IMAGES_FOLDER}/rfs.img,if=sd,format=raw -append \"${SEALS_K_CMDLINE}\" -nographic -no-reboot"
+[ -f ${DTB_BLOB_LOC} ] && RUNCMD="${RUNCMD} -dtb ${DTB_BLOB_LOC}"
+
+# Run it!
+if [ ${KGDB_MODE} -eq 1 ]; then
 	# KGDB/QEMU cmdline
-	#  -just add the '-S' option [freeze CPU at startup (use 'c' to start execution)] to qemu cmdline
 	ShowTitle "Running qemu-system-arm in KGDB mode now ..."
-	echo "REMEMBER this kernel is run w/ the -s : it *waits* for a gdb client to connect to it..."
-	echo
-	echo "You are expected to run (in another terminal window):
+	RUNCMD="${RUNCMD} -s -S"
+	# qemu-system-xxx(1) :
+	#  -S  Do not start CPU at startup (you must type 'c' in the monitor).
+	#  -s  Shorthand for -gdb tcp::1234, i.e. open a gdbserver on TCP port 1234.
+	echo "
+@@@@@@@@@@@@ NOTE NOTE NOTE @@@@@@@@@@@@
+REMEMBER this qemu instance is run w/ the -S : it *waits* for a gdb client to connect to it...
+
+You are expected to run (in another terminal window):
 $ arm-none-linux-gnueabi-gdb <path-to-ARM-built-kernel-src-tree>/vmlinux  <-- built w/ -g
 ...
 and then have gdb connect to the target kernel using
 (gdb) target remote :1234
 ...
-"
-	echo
-
-	qemu-system-arm -M ${ARM_PLATFORM_OPT} -kernel ${IMAGES_FOLDER}/zImage -initrd ${IMAGES_FOLDER}/rootfs.img.gz -append "console=ttyAMA0 rdinit=/sbin/init" -nographic -gdb tcp::1234 -s -S -no-reboot
+@@@@@@@@@@@@ NOTE NOTE NOTE @@@@@@@@@@@@"
 fi
+
+echo "${RUNCMD}"
+echo
+Prompt "Ok?"
+eval ${RUNCMD}
+
 echo "
 ... and done."
 } # end run_qemu_SEALS()
