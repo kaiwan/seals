@@ -177,16 +177,25 @@ cat > etc/inittab << @MYMARKER@
 
 # rcS master script
 cat > etc/init.d/rcS << @MYMARKER@
-echo "/etc/init.d/rcS running now ..."
-
+echo "SEALS: /etc/init.d/rcS running now ..."
 /bin/mount -a
-/bin/mount -o remount,rw /    # remount / as rw
+# remount / as rw; requires CONFIG_LBDAF !
+/bin/mount -o remount,rw /
 
 # networking
 ifconfig eth0 192.168.2.100 netmask 255.255.255.0 up
-# misc
-# guarantee all printk's appear on console device
-echo "8 4 1 7" > /proc/sys/kernel/printk
+
+# Misc
+if [ $(id -u) -eq 0 ]; then
+   # guarantee all printk's appear on console device
+   echo "7 4 1 7" > /proc/sys/kernel/printk
+   # better core-file pathname
+   echo "core_%h_%E_%p_%s_%u" > /proc/sys/kernel/core_pattern
+   # Kexec (for kdump/crashkernel facility)
+   if [ -x /kx.sh ]; then
+       /kx.sh
+   fi
+fi
 @MYMARKER@
 
 chmod +x etc/init.d/rcS
