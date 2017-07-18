@@ -21,7 +21,6 @@
 # (c) kaiwanTECH
 #
 # License: MIT
-
 export name=$(basename $0)
 
 #############################
@@ -435,16 +434,13 @@ run_qemu_SEALS()
 {
 cd ${TOPDIR} || exit 1
 
-KGDB_MODE=1
-echo
-
-SMP_EMU=""
 if [ ${SMP_EMU_MODE} -eq 1 ]; then
     # Using the "-smp n,sockets=n" QEMU options lets us emulate n processors!
     # (can do this with n=2 for the ARM Cortex-A9)
      SMP_EMU="-smp 2,sockets=2"
 fi
 
+echo
 ShowTitle "RUN: Running qemu-system-arm now ..."
 local RUNCMD="qemu-system-arm -m ${SEALS_RAM} -M ${ARM_PLATFORM_OPT} ${SMP_EMU} -kernel ${IMAGES_FOLDER}/zImage -drive file=${IMAGES_FOLDER}/rfs.img,if=sd,format=raw -append \"${SEALS_K_CMDLINE}\" -nographic -no-reboot"
 [ -f ${DTB_BLOB_LOC} ] && RUNCMD="${RUNCMD} -dtb ${DTB_BLOB_LOC}"
@@ -616,6 +612,8 @@ Kernel command-line : \"${SEALS_K_CMDLINE}\"
 Busybox to use            : ${BB_VER}
 Busybox codebase location : ${BB_FOLDER}
 
+Qemu : KGDB mode          : ${KGDB_MODE}
+Qemu : SMP mode           : ${SMP_EMU_MODE}
 --------------------------------------------------------------
 To change any of these, pl abort now and edit the config file:
   ${BUILD_CONFIG_FILE}
