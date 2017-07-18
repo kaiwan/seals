@@ -448,7 +448,7 @@ if [ ${KGDB_MODE} -eq 0 ]; then
   fi
 
   ShowTitle "RUN: Running qemu-system-arm now ..."
-  local RUNCMD="qemu-system-arm -m ${SEALS_RAM} -M ${ARM_PLATFORM_OPT} ${SMP_EMU} -kernel ${IMAGES_FOLDER}/zImage -drive file=${IMAGES_FOLDER}/rfs.img,if=sd,format=raw -append \"${SEALS_K_CMDLINE}\" -nographic"
+  local RUNCMD="qemu-system-arm -m ${SEALS_RAM} -M ${ARM_PLATFORM_OPT} ${SMP_EMU} -kernel ${IMAGES_FOLDER}/zImage -drive file=${IMAGES_FOLDER}/rfs.img,if=sd,format=raw -append \"${SEALS_K_CMDLINE}\" -nographic -no-reboot"
   [ -f ${DTB_BLOB_LOC} ] && RUNCMD="${RUNCMD} -dtb ${DTB_BLOB_LOC}"
   echo "${RUNCMD}"
   echo
@@ -469,7 +469,7 @@ and then have gdb connect to the target kernel using
 "
 	echo
 
-	qemu-system-arm -M ${ARM_PLATFORM_OPT} -kernel ${IMAGES_FOLDER}/zImage -initrd ${IMAGES_FOLDER}/rootfs.img.gz -append "console=ttyAMA0 rdinit=/sbin/init" -nographic -gdb tcp::1234 -s -S
+	qemu-system-arm -M ${ARM_PLATFORM_OPT} -kernel ${IMAGES_FOLDER}/zImage -initrd ${IMAGES_FOLDER}/rootfs.img.gz -append "console=ttyAMA0 rdinit=/sbin/init" -nographic -gdb tcp::1234 -s -S -no-reboot
 fi
 echo "
 ... and done."
@@ -603,6 +603,7 @@ Platform RAM : ${SEALS_RAM} MB
 
 RootFS force rebuild : ${RFS_FORCE_REBUILD}
 RootFS size  : ${RFS_SZ_MB} MB
+  [note: new size applied only on 'RootFS force rebuild']
 
 Linux kernel to use : ${KERNELVER}
 Linux kernel codebase location : ${KERNEL_FOLDER}
