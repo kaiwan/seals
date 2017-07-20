@@ -76,8 +76,20 @@ color_reset()
 #--------------------- E c h o ----------------------------------------
 # The _base_ echo/logging function.
 # Parameters:
-# $1        : a tag that speicifies the text attribute
+# $1        : a tag that speicifies the logging level
 # $2 ... $n : message to echo (to stdout and logfile)
+#
+# Logging Levels (from low->high 'criticality') are:
+# --------     --------
+# LogLevel     Function
+# --------     --------
+#  DDEBUG      decho
+#  INFO        iecho
+#  ALERT       aecho  [bold]
+#  WARN        wecho
+#  CRIT        cecho
+#  TITL        techo <-- exception: this is NOT really a loglevel,
+#               it's a special display attribute
 # !WARNING! 
 # Ensure you don't call any of the x[Ee]cho functions from here, as they
 # call this func and it becomes infinitely recursive.
@@ -90,44 +102,74 @@ Echo()
  local tag="${1}"
  [ ${numparams} -gt 1 ] && shift  # get rid of the tag, so that we can access the txt msg
 
-# TODO - prefix the logging level : debug/info/warn/critical
+ # Prefix the logging level : debug/info/warn/critical
+ local loglevel
+  # maintaining 4-char strings for 'loglevel' alleviates the need for more
+  # code with printf etc
+ case "${tag}" in
+   DDEBUG) loglevel="dbug"
+         ;;
+   INFO)  loglevel="info"
+         ;;
+   ALERT)  loglevel="alrt"
+         ;;
+   WARN) loglevel="warn"
+         ;;
+   CRIT) loglevel="crit"
+         ;;
+   TITL) loglevel="titl"
+         ;;
+   *) loglevel="    "
+         ;;
+ esac
 
- local dt=$(date +%a_%d%b%Y_%T.%N)
- local msgpfx1="[${dt}]"
- #local msgpfx1="[${dt}]"
- local msgpfx2="${SEP}${name}${SEP}${FUNCNAME[ 1 ]}()${SEP}"
+ local dt_log="[$(date +%a_%d%b%Y_%T.%N)]"
+ local dt_disp
+ [ ${VERBOSE_MSG} -eq 1 ] && dt_disp=${dt}
+
+ local msgpfx1_log="[${loglevel}]${SEP}${dt_log}"
+ local msgpfx1_disp="${dt}"
+ [ ${VERBOSE_MSG} -eq 1 ] && msgpfx1_disp="${msgpfx1_log}"
+
+ local msgpfx2_log="${SEP}${name}:${FUNCNAME[ 1 ]}()${SEP}"
+ local msgpfx2_disp
+ [ ${VERBOSE_MSG} -eq 1 ] && msgpfx2_disp="${msgpfx2_log}"
+
  local msgtxt="$@"
- local msgfull_log="${msgpfx1}${msgpfx2}${msgtxt}"
+ local msgfull_log="${msgpfx1_log}${msgpfx2_log}${msgtxt}"
+ local msg_disp="${msgpfx1_disp}${SEP}${msgtxt}"
+ [ ${VERBOSE_MSG} -eq 1 ] && msg_disp="${msgfull_log}"
 
- echo "${msgfull_log}" >> ${LOGFILE_COMMON}  # lets log it first anyhow
+ echo "${msgfull_log}" >> ${LOGFILE_COMMON}  # lets log it first anyho
 
- if [ ${numparams} -eq 1 -o ${gCOLOR} -eq 0 ]; then   # no color/text attribute
-    [ ${DEBUG} -eq 1 ] && echo "${msgfull_log}" || echo "${msgpfx1}${SEP}${msgtxt}" 
+ if [ ${numparams} -eq 1 -o ${COLOR} -eq 0 ]; then   # no color/text attribute
+    [ ${DEBUG} -eq 1 ] && echo "${msgfull_log}" || echo "${msg_disp}"
     return 0
  fi
 
  #--- 'color' or text attrib present!
  fg_green
- echo -n "${msgpfx1}${SEP}"
- [ ${DEBUG} -eq 1 ] && {
+ echo -n "${msgpfx1_disp}${SEP}"
+ [ ${DEBUG} -eq 1 -o ${VERBOSE_MSG} -eq 1 ] && {
    fg_blue
-   echo -n "${msgpfx2}"
+   echo -n "${msgpfx2_disp}"
  }
  color_reset                      # Reset to normal.
  
  case "${tag}" in
-   REG)  #tput        # Deliberate: no special attribs for 'regular'
+   DDEBUG) tput dim ; fg_magenta
          ;;
-   WARN) fg_white ; bg_red ; tput bold
+   INFO)  #tput        # Deliberate: no special attribs for 'info'
          ;;
-   ABNORMAL) fg_white ; bg_blue ; tput bold
+   ALERT) tput bold
          ;;
-   BOLD)  tput bold
+   WARN) fg_red ; bg_yellow ; tput bold
          ;;
-   DDEBUG) tput dim ; fg_grey
+   CRIT) fg_white ; bg_red ; tput bold
+         ;;
+   TITL) fg_black ; bg_yellow ; tput bold
          ;;
  esac
-
  echo "${msgtxt}"
  color_reset                      # Reset to normal.
  return 0
@@ -138,38 +180,52 @@ Echo()
 # $1 : message to echo (to stdout and logfile)
 
 #--------------------- d e c h o --------------------------------------
-# Debug echo :-)
+# DEBUG-level echo :-)
 decho()
 {
- #[ $# -eq 0 ] && return 1
  [ ${DEBUG} -eq 1 ] && Echo DDEBUG "$1"
 }
-#--------------------- c e c h o ---------------------------------------
-# Regular Color-echo.
-cecho ()
+#--------------------- i e c h o ---------------------------------------
+# INFO-level / regular Color-echo.
+iecho ()
 {
- Echo REG "$1"
-}
-#--------------------- b e c h o ---------------------------------------
-# Bold Color-echo.
-becho ()
-{
- Echo BOLD "$1"
+ Echo INFO "$1"
 }
 #--------------------- a e c h o ---------------------------------------
-# "Abnormal" message Color-echo.
+# ALERT-level Color-echo.
 aecho ()
 {
- Echo ABNORMAL "$1"
+ Echo ALERT "$1"
 }
 #--------------------- w e c h o ---------------------------------------
-# Warning message Color-echo.
+# WARN-level Color-echo.
 wecho ()
 {
  Echo WARN "$1"
 }
+#--------------------- c e c h o ---------------------------------------
+# CRITical-level Color-echo.
+cecho ()
+{
+ Echo CRIT "$1"
+}
 
+#--------------------- t e c h o ---------------------------------------
+# Title Color-echo.
+techo ()
+{
+ Echo TITL "$1"
+}
 #---
+
+# ShowTitle
+# Display a string in "title" form
+# Parameter(s):
+#  $1 : String to display [required]
+ShowTitle()
+{
+	techo "$1"
+}
 
 
 test_256()
@@ -181,4 +237,3 @@ do
 done
 color_reset
 }
-

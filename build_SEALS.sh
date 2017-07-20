@@ -29,13 +29,14 @@ export name=$(basename $0)
 #############################
 export BUILD_CONFIG_FILE=./build.config
 source ${BUILD_CONFIG_FILE} || {
-	echo "$name: source failed! ${BUILD_CONFIG_FILE} missing or invalid?"
+	echo "${name}: source failed! ${BUILD_CONFIG_FILE} missing or invalid?"
 	exit 1
 }
 source ./common.sh || {
-	echo "$name: source failed! ./common.sh missing or invalid?"
+	echo "${name}: source failed! ./common.sh missing or invalid?"
 	exit 1
 }
+color_reset
 
 ### "Globals"
 export PRJ_TITLE="SEALS: Simple Embedded ARM Linux System"
@@ -59,7 +60,7 @@ export DTB_BLOB=vexpress-v2p-ca9.dtb
 export DTB_BLOB_LOC=${KERNEL_FOLDER}/arch/arm/boot/dts/${DTB_BLOB} # gen within kernel src tree
 
 # Signals
-trap 'echo "User Abort. ${MSG_EXITING}' INT QUIT
+trap 'wecho "User Abort. ${MSG_EXITING}" ; dumpstack ; [ ${COLOR} -eq 1 ] && color_reset ; exit 2' INT QUIT
 
 ##-------------------- Functions Start --------------------------------
 
@@ -76,10 +77,10 @@ if [ "${WIPE_KERNEL_CONFIG}" = "TRUE" ]; then
 	}
 fi
 
-echo "[Optional] Kernel Manual Configuration:
+aecho "[Optional] Kernel Manual Configuration:
 Edit the kernel config if required, Save & Exit...
  Tip: you can browse notes on this here: doc/kernel_config.txt"
-Prompt " " #${MSG_EXITING}
+Prompt ""
 
 USE_QT=n   # make 'y' to use a GUI Qt configure environment
            #  if 'y', you'll require the Qt runtime installed..
@@ -95,12 +96,12 @@ fi
 
 ShowTitle "Kernel Build:"
 
-#echo "--- # detected CPU cores is ${CPU_CORES}" ; read
+#iecho "--- # detected CPU cores is ${CPU_CORES}" ; read
 CPU_OPT=$((${CPU_CORES}*2))
 
 #Prompt
 # make all => zImage, modules, dtbs (device-tree-blobs), ... - all will be built!
-echo "Doing: make -j${CPU_OPT} ARCH=arm CROSS_COMPILE=${CXX} all"
+aecho "Doing: make -j${CPU_OPT} ARCH=arm CROSS_COMPILE=${CXX} all"
 time make -j${CPU_OPT} ARCH=arm CROSS_COMPILE=${CXX} all || {
   FatalError "Kernel build failed! Aborting ..."
 }
@@ -110,7 +111,7 @@ time make -j${CPU_OPT} ARCH=arm CROSS_COMPILE=${CXX} all || {
 }
 ls -lh arch/arm/boot/zImage
 cp -u ${KERNEL_FOLDER}/arch/arm/boot/zImage ${IMAGES_FOLDER}/
-echo "... and done."
+aecho "... and done."
 cd ${TOPDIR}
 } # end build_kernel()
 
@@ -120,7 +121,7 @@ build_copy_busybox()
 cd ${BB_FOLDER} || exit 1
 
 ShowTitle "BUSYBOX: Configure and Build Busybox now ... [$(basename ${BB_FOLDER})]"
-echo " [sanity chk: ROOTFS=${ROOTFS}]"
+iecho " [sanity chk: ROOTFS=${ROOTFS}]"
 # safety check!
 if [ -z "${ROOTFS}" ]; then
 	FatalError "SEALS: ROOTFS has dangerous value of null or '/'. Aborting..."
@@ -131,7 +132,7 @@ if [ "${WIPE_BUSYBOX_CONFIG}" = "TRUE" ]; then
 	make ARCH=arm CROSS_COMPILE=${CXX} defconfig
 fi
 
-echo "Edit the BusyBox config if required, Save & Exit..."
+aecho "Edit the BusyBox config if required, Save & Exit..."
 Prompt " " ${MSG_EXITING}
 
 USE_QT=n   # make 'y' to use a GUI Qt configure environment
@@ -149,13 +150,13 @@ mysudo "SEALS Build:Step 1 of ${STEPS}: Copying of required busybox files. ${MSG
   FatalError "Copying required folders from busybox _install/ failed! 
  [Tip: Ensure busybox has been successfully built]. Aborting..."
 }
-echo "SEALS Build: busybox files copied across successfully ..."
+aecho "SEALS Build: busybox files copied across successfully ..."
 } # end build_copy_busybox()
 
 #---------- s e t u p _ e t c _ i n _ r o o t f s ---------------------
 setup_etc_in_rootfs()
 {
-echo "SEALS Build: Manually generating required SEALS rootfs /etc files ..."
+aecho "SEALS Build: Manually generating required SEALS rootfs /etc files ..."
 cd ${ROOTFS}
 MYPRJ=myprj
 mkdir -p dev etc/init.d lib ${MYPRJ} proc sys tmp
@@ -213,7 +214,7 @@ none         /sys/kernel/debug debugfs
 #-------- s e t u p _ l i b _ i n _ r o o t f s -----------------------
 setup_lib_in_rootfs()
 {
-echo "SEALS Build: copying across shared objects, etc to SEALS /lib /sbin /usr ..."
+aecho "SEALS Build: copying across shared objects, etc to SEALS /lib /sbin /usr ..."
 
 ARMLIBS=${CXX_LOC}/arm-none-linux-gnueabi/libc
 if [ ! -d ${ARMLIBS} ]; then
@@ -242,6 +243,7 @@ mysudo "SEALS Build:Step 4 of ${STEPS}: [SEALS rootfs]:setup of /usr. ${MSG_GIVE
   # usr/include - not really required?
 
 # /lib/modules/`uname -r` required for rmmod to function
+# FIXME - when kernel ver has '-extra' it doesn't take it into account..
 local KDIR=$(echo ${KERNELVER} | cut -d'-' -f2)
 # for 'rmmod'
 mkdir -p ${ROOTFS}/lib/modules/${KDIR} || FatalError "rmmod setup failure!"
@@ -251,7 +253,7 @@ mkdir -p ${ROOTFS}/lib/modules/${KDIR} || FatalError "rmmod setup failure!"
 setup_dev_in_rootfs()
 {
 #---------- Device Nodes [static only]
-echo "SEALS Build: Manually generating required Device Nodes in /dev ..."
+aecho "SEALS Build: Manually generating required Device Nodes in /dev ..."
 cd ${ROOTFS}/dev
 
 cat > mkdevtmp.sh << @MYMARKER@
@@ -305,7 +307,7 @@ rootfs_xtras()
 # To be copied into the RFS..any special cases
 # strace, tcpdump, gdb[server], misc scripts (strace, gdb copied from buildroot build)
 if [ -d ${TOPDIR}/xtras ]; then
-	echo "SEALS Build: Copying 'xtras' (goodies!) into the root filesystem..."
+	aecho "SEALS Build: Copying 'xtras' (goodies!) into the root filesystem..."
 	cd ${TOPDIR}/xtras
 
 	[ -f strace ] && cp strace ${ROOTFS}/usr/bin
@@ -352,7 +354,7 @@ cd ${TOPDIR}/
 ShowTitle "Done!"
 ls -l ${ROOTFS}/
 local RFS_ACTUAL_SZ_MB=$(du -ms ${ROOTFS}/ |awk '{print $1}')
-echo "SEALS root fs: actual size = ${RFS_ACTUAL_SZ_MB} MB"
+aecho "SEALS root fs: actual size = ${RFS_ACTUAL_SZ_MB} MB"
 } # end build_rootfs()
 
 #------- g e n e r a t e _ r o o t f s _ i m g _ e x t 4 --------------
@@ -375,7 +377,7 @@ local COUNT=$((${RFS_SZ_MB}*256))  # for given blocksize (bs) of 4096
 # If config option RFS_FORCE_REBUILD is set -OR- the RootFS file does not exist,
 # create from scratch. If it does exist, just loop mount and update.
 if [ ${RFS_FORCE_REBUILD} -eq 1 -o ! -f ${RFS} ]; then
-  echo "SEALS Build: *** Re-creating raw RFS image file now *** [dd, mkfs.ext4]"
+  aecho "SEALS Build: *** Re-creating raw RFS image file now *** [dd, mkfs.ext4]"
   dd if=/dev/zero of=${RFS} bs=4096 count=${COUNT}
   mysudo "SEALS Build: root fs image generation: enable mkfs. ${MSG_GIVE_PSWD_IF_REQD}" \
    mkfs.ext4 -F -L qemu_rootfs_SEALS ${RFS} || FatalError "mkfs failed!"
@@ -390,16 +392,16 @@ mysudo "SEALS Build: root fs image generation: enable umount. ${MSG_GIVE_PSWD_IF
  umount ${MNTPT} 2> /dev/null
 mysudo "SEALS Build: root fs image generation: enable mount. ${MSG_GIVE_PSWD_IF_REQD}" \
  mount -o loop ${RFS} ${MNTPT} || {
-  echo "### $name: !WARNING! Loop mounting rootfs image file Failed! ###"
+  wecho "### $name: !WARNING! Loop mounting rootfs image file Failed! ###"
   if [ ${FORCE_RECREATE_RFS} -eq 0 ]; then
-    echo "-- Aborting this function! --"
-	echo "To *force* root filesystem creation by deleting current RFS, set"
-	echo "the FORCE_RECREATE_RFS in the script to 1."
+    aecho "-- Aborting this function! --"
+	aecho "To *force* root filesystem creation by deleting current RFS, set"
+	aecho "the FORCE_RECREATE_RFS in the script to 1."
 	return
   else
-    echo
-    echo "### $name: !WARNING! FORCE_RECREATE_RFS flag is non-zero! Now *deleting* current RFS image and re-creating it..."
-    echo
+    wecho "
+### $name: !WARNING! FORCE_RECREATE_RFS flag is non-zero! Now *deleting* current RFS image and re-creating it...
+"
     rm -f ${RFS} 2>/dev/null
     #dd if=/dev/zero of=${RFS} bs=4096 count=16384
     dd if=/dev/zero of=${RFS} bs=4096 count=${COUNT}
@@ -412,14 +414,14 @@ mysudo "SEALS Build: root fs image generation: enable mount. ${MSG_GIVE_PSWD_IF_
   fi
  }
 
-echo " Now copying across rootfs data to ${RFS} ..."
+aecho " Now copying across rootfs data to ${RFS} ..."
 mysudo "SEALS Build: root fs image generation: enable copying into SEALS root fs image. ${MSG_GIVE_PSWD_IF_REQD}" \
  cp -au ${ROOTFS}/* ${MNTPT}
 mysudo "SEALS Build: root fs image generation: enable unmount. ${MSG_GIVE_PSWD_IF_REQD}" \
  umount ${MNTPT}
 sync
 ls -lh ${RFS}
-echo "... and done."
+aecho "... and done."
 cd ${TOPDIR}
 } # end generate_rootfs_img_ext4()
 
@@ -435,7 +437,7 @@ cp -u ${KERNEL_FOLDER}/arch/arm/boot/zImage ${IMAGES_FOLDER}/
 [ -f ${DTB_BLOB_LOC} ] && cp -u ${DTB_BLOB_LOC} ${IMAGES_FOLDER}/
 cp ${KERNEL_FOLDER}/.config ${CONFIGS_FOLDER}/kernel_config
 cp ${BB_FOLDER}/.config ${CONFIGS_FOLDER}/busybox_config
-echo " ... and done."
+aecho " ... and done."
 } # end save_images_configs()
 
 #-------------- r u n _ q e m u _ S E A L S ---------------------------
@@ -449,8 +451,8 @@ if [ ${SMP_EMU_MODE} -eq 1 ]; then
      SMP_EMU="-smp 2,sockets=2"
 fi
 
-echo
-ShowTitle "RUN: Running qemu-system-arm now ..."
+ShowTitle "
+RUN: Running qemu-system-arm now ..."
 local RUNCMD="qemu-system-arm -m ${SEALS_RAM} -M ${ARM_PLATFORM_OPT} ${SMP_EMU} -kernel ${IMAGES_FOLDER}/zImage -drive file=${IMAGES_FOLDER}/rfs.img,if=sd,format=raw -append \"${SEALS_K_CMDLINE}\" -nographic -no-reboot"
 [ -f ${DTB_BLOB_LOC} ] && RUNCMD="${RUNCMD} -dtb ${DTB_BLOB_LOC}"
 
@@ -462,7 +464,7 @@ if [ ${KGDB_MODE} -eq 1 ]; then
 	# qemu-system-xxx(1) :
 	#  -S  Do not start CPU at startup (you must type 'c' in the monitor).
 	#  -s  Shorthand for -gdb tcp::1234, i.e. open a gdbserver on TCP port 1234.
-	echo "
+	aecho "
 @@@@@@@@@@@@ NOTE NOTE NOTE @@@@@@@@@@@@
 REMEMBER this qemu instance is run w/ the -S : it *waits* for a gdb client to connect to it...
 
@@ -475,12 +477,12 @@ and then have gdb connect to the target kernel using
 @@@@@@@@@@@@ NOTE NOTE NOTE @@@@@@@@@@@@"
 fi
 
-echo "${RUNCMD}"
-echo
+aecho "${RUNCMD}
+"
 Prompt "Ok?"
 eval ${RUNCMD}
 
-echo "
+aecho "
 ... and done."
 } # end run_qemu_SEALS()
 
@@ -571,7 +573,7 @@ elif [ $1 -eq 4 ] ; then
 
 fi
 
- [ 0 -eq 1 ] && echo "
+ decho "
  ${BUILD_KERNEL}
  ${WIPE_KERNEL_CONFIG}
  ${BUILD_ROOTFS}
@@ -595,12 +597,12 @@ fi
 config_setup()
 {
  local msg1=""
- local msg2=""
+# local msg2=""
  local gccver=$(arm-none-linux-gnueabi-gcc --version |head -n1 |cut -f2- -d" ")
 
  msg1="[[ SEALS Config :: Please Review Carefully ]]
 
-Config file : ${BUILD_CONFIG_FILE}   [edit it to change any settings shown here]
+Config file : ${BUILD_CONFIG_FILE}   [edit it to change any settings shown below]
 Config name : ${CONFIG_NAME_STR}
 
 Toolchain prefix : ${CXX}
@@ -611,31 +613,76 @@ ARM Platform : ${ARM_PLATFORM_STR}
 Platform RAM : ${SEALS_RAM} MB
 
 RootFS force rebuild : ${RFS_FORCE_REBUILD}
-RootFS size  : ${RFS_SZ_MB} MB
-  [note: new size applied only on 'RootFS force rebuild']
+RootFS size  : ${RFS_SZ_MB} MB [note: new size applied only on 'RootFS force rebuild']
 
 Linux kernel to use : ${KERNELVER}
 Linux kernel codebase location : ${KERNEL_FOLDER}
 Kernel command-line : \"${SEALS_K_CMDLINE}\"
 
-Busybox to use            : ${BB_VER}
-Busybox codebase location : ${BB_FOLDER}
+Busybox: Busybox to use: ${BB_VER} | Busybox location: ${BB_FOLDER}
 
-Qemu : KGDB mode          : ${KGDB_MODE}
-Qemu : SMP mode           : ${SMP_EMU_MODE}
+Qemu: KGDB mode: ${KGDB_MODE} | SMP mode: ${SMP_EMU_MODE}
+
+Diplay:
+ Terminal Colors mode: ${COLOR} | DEBUG mode: ${DEBUG} | VERBOSE mode: ${VERBOSE_MSG}
+Log file            : ${LOGFILE_COMMON}
 --------------------------------------------------------------
-To change any of these, pl abort now and edit the config file:
-  ${BUILD_CONFIG_FILE}
+To change any of these, pl abort now and edit the config file: ${BUILD_CONFIG_FILE}
 --------------------------------------------------------------
 Press 'Yes' to proceed, 'No' to abort"
+
  clear
- echo "${msg1}"
+ iecho "${msg1}"
+
+ # Same message text for the yad GUI display - font attributes are added on...
+ # !NOTE!   !Keep them - msg1 and msg1_yad - in SYNC!
+ local msg1_yad="<b><i><span foreground='Crimson'>\
+SEALS Config :: Please Review Carefully\
+</span></i></b>
+<span foreground='blue'>
+Config file : ${BUILD_CONFIG_FILE}\
+      <span foreground='red'><i>[edit it to change any settings shown below]</i></span>
+Config name : ${CONFIG_NAME_STR}\
+</span>
+Staging folder   : ${STG}
+<span foreground='blue'>\
+Toolchain prefix : ${CXX}
+Toolchain version: ${gccver}
+</span>\
+ARM Platform : ${ARM_PLATFORM_STR}
+Platform RAM : ${SEALS_RAM} MB
+<span foreground='blue'>\
+RootFS force rebuild : ${RFS_FORCE_REBUILD}
+RootFS size  : ${RFS_SZ_MB} MB     [note: new size applied only on 'RootFS force rebuild']
+</span>\
+Linux kernel to use : ${KERNELVER}
+Linux kernel codebase location : ${KERNEL_FOLDER}
+Kernel command-line : \"${SEALS_K_CMDLINE}\"
+<span foreground='blue'>\
+Busybox: Busybox to use: ${BB_VER} | Busybox location: ${BB_FOLDER}
+</span>\
+Qemu: KGDB mode: ${KGDB_MODE} | SMP mode: ${SMP_EMU_MODE}
+<span foreground='blue'>\
+Diplay:
+ Terminal Colors mode: ${COLOR} | DEBUG mode: ${DEBUG} | VERBOSE mode: ${VERBOSE_MSG}
+</span>\
+Log file            : ${LOGFILE_COMMON}
+<span foreground='red'><b>
+To change any of these, please abort now, edit the config file ${BUILD_CONFIG_FILE} \
+appropriately, and rerun.\
+</b></span>
+<span foreground='crimson'><i>\
+Press 'Yes' to proceed, 'No' to abort
+</i></span>"
+
+#wecho "CAL_WIDTH=$CAL_WIDTH"
+
  yad --image "dialog-question" --title "${PRJ_TITLE}" --center \
      --button=gtk-yes:0 --button=gtk-no:1 \
-	 --width=700 \
-	 --text "${msg1}"
+	 --width=${CAL_WIDTH} \
+	 --text "${msg1_yad}"
  [ $? -ne 0 ] && {
-   echo "Aborting. Edit the config file ${BUILD_CONFIG_FILE} as required and re-run."
+   aecho "Aborting. Edit the config file ${BUILD_CONFIG_FILE} as required and re-run."
    exit 1
  }
 
@@ -654,16 +701,16 @@ Press 'Yes' to proceed, 'No' to abort"
  local s5="Run QEMU ARM emulator?                           N"
  [ ${RUN_QEMU} -eq 1 ] && s5="Run QEMU ARM emulator?                         Y"
 
- msg2="--------------------- Preset Script Build Options ----------------------
-${s1}
-${s1_2}
-${s2}
-${s2_2}
-${s3}
-${s4}
-${s5}
-"
- echo "${msg2}"
+# msg2="--------------------- Preset Script Build Options ----------------------
+#${s1}
+#${s1_2}
+#${s2}
+#${s2_2}
+#${s3}
+#${s4}
+#${s5}
+#"
+# iecho "${msg2}"
 
  #--- YAD
  local disp_kernel="FALSE"
@@ -706,9 +753,9 @@ To change settings permenantly, please edit the build.config file.
    --field="Run QEMU":CHK \
    ${disp_kernel} ${disp_kwipe} ${disp_rootfs} ${disp_bbwipe} \
    ${disp_genrfsimg} ${disp_bkp} ${disp_run} \
-   --title="${PRJ_TITLE}" \
-   --center --on-top --no-escape --fixed \
-   --text="${MSG_CONFIG_VOLATILE}")
+   --title="${PRJ_TITLE} : Configure this Run" \
+   --center --width=${CAL_WIDTH} --on-top --no-escape \
+   --text="<span foreground='blue'><i>${MSG_CONFIG_VOLATILE}</i></span>")
 
  BUILD_KERNEL=$(echo "${yad_dothis}" |awk -F"|" '{print $1}')
  WIPE_KERNEL_CONFIG=$(echo "${yad_dothis}" |awk -F"|" '{print $2}')
@@ -731,7 +778,7 @@ To change settings permenantly, please edit the build.config file.
  fi
 }
 
- [ 0 -eq 1 ] && echo "
+ decho "
  ${BUILD_KERNEL}
  ${WIPE_KERNEL_CONFIG}
  ${BUILD_ROOTFS}
@@ -747,9 +794,6 @@ To change settings permenantly, please edit the build.config file.
 # TODO - gather and install required packages
 check_installed_pkg()
 {
- which zenity > /dev/null 2>&1 || {
-   FatalError "The zenity package does not seem to be installed! Aborting..."
- }
  which yad > /dev/null 2>&1 || {
    FatalError "The yad package does not seem to be installed! Aborting..."
  }
@@ -773,12 +817,39 @@ Aborting..."
 (Required for kernel config UI).
 Pl install the libncurses5-dev package (with apt-get) & re-run.  Aborting..."
  }
+
+ # Terminal 'color' support?
+ which tput > /dev/null 2>&1 || {
+   COLOR=0
+   wecho "tput does not seem to be installed, no color support..."
+ } && {
+   local numcolor=$(tput colors)
+   [ ${numcolor} -ge 8 ] && COLOR=1
+ }
 } # end check_installed_pkg()
 ##----------------------------- Functions End -------------------------
+
+testColor()
+{
+  ShowTitle "testing... KERNEL: Configure and Build [kernel ver ${KERNELVER}] now ..."
+  #FatalError
+  FatalError "Testing ; the libncurses5-dev dev library and headers does not seem to be installed."
+  Echo "Echo : a quick test ..."
+  decho "decho : a quick test ..."
+  iecho "cecho : a quick test ..."
+  aecho "aecho : a quick test ..."
+  wecho "wecho : a quick test ..."
+  fecho "wecho : a quick test ..."
+  color_reset
+}
 
 
 ### "main" here
 
+#testColor
+#exit 0
+
+color_reset
 unalias cp 2>/dev/null
 
 TESTMODE=0
@@ -820,5 +891,6 @@ config_setup
 [ "${SAVE_BACKUP_IMG_CONFIGS}" = "TRUE" ] && save_images_configs
 [ "${RUN_QEMU}" = "TRUE" ] && run_qemu_SEALS
 
-echo "${MSG_EXITING}"
+aecho "${MSG_EXITING}"
+color_reset
 exit 0

@@ -6,7 +6,7 @@
 # 
 # (c) Kaiwan N Billimoria
 # kaiwan -at- kaiwantech -dot- com
-# GPL v2
+# MIT / GPL v2
 #------------------------------------------------------------------
 # The SEALS Opensource Project
 # SEALS : Simple Embedded Arm Linux System
@@ -24,6 +24,18 @@ source ./err_common.sh || {
  echo "$name: could not source err_common.sh, aborting..."
  exit 1
 }
+source ./color.sh || {
+ echo "$name: could not source color.sh, aborting..."
+ exit 1
+}
+
+#--- Screen Resolution stuff
+res_w=$(xrandr --current | grep '*' | uniq | awk '{print $1}' | cut -d 'x' -f1)
+res_h=$(xrandr --current | grep '*' | uniq | awk '{print $1}' | cut -d 'x' -f2)
+centre_x=$((($res_w/3)+0))
+centre_y=$((($res_h/3)-100))
+CAL_WIDTH=$((($res_w/3)+200))
+CAL_HT=$(($res_h/3))
 
 
 # genLogFilename
@@ -42,36 +54,6 @@ genLogFilename()
  echo ${log_filename}
 }
 
-# Debug echo :-)
-decho()
-{
-  Prompt "$@"
-}
-
-verbose=1
-# Echo
-# Echo string (with timestamp prefixed) to stdout and to Log file 
-# if so specified.
-# Parameter(s):
-#  $1 : String to display to stdout [required]
-#  $2 : Log pathname to also append the $1 string to [optional]
-Echo()
-{
-#echo "# p = $#"
-	[ $# -eq 0 ] && return 1
-	[ ${verbose} -eq 1 ] && {
-	   echo -n "$(date) : "
-	   echo "$1"
-	   [ $# -ge 2 ] && {
-	      [ -f $2 -a -w $2 ] && {
-	         echo -n "$(date) : " >> $2
-	         echo "$1" >> $2
-	 	  }
-  	   }
-    }
-}
-
-
 # mysudo
 # Simple front end to gksudo/sudo
 # Parameter(s):
@@ -86,56 +68,9 @@ mysudo()
 local msg=$1
 shift
 local cmd="$@"
-echo "${LOGNAME}: ${msg}"
-#echo "mysudo: cmd: ${cmd}"
+aecho "${LOGNAME}: ${msg}"
 sudo --preserve-env sh -c "${cmd}"
 }
-
-
-# ShowTitle
-# Display a string in "title" form
-# Parameter(s):
-#  $1 : String to display [required]
-# Returns: 0 on success, 1 on failure
-ShowTitle()
-{
-	[ $# -ne 1 ] && return 1
-	SEP='-------------------------------------------------------------------------------'
-	echo $SEP
-	echo $1
-	echo $SEP
-}
-
-
-# zenmsg
-# Wizard-like display of an informational message, using 'zenity'.
-# The zenity popup stays persistent until the user clicks on the OK button.
-# $1 : title text string
-# $2 : message text string
-# $3 : OK label text string
-zenmsg()
-{
- [ $# -ne 3 ] && {
-  local TITLE="Pl pass a Title as 1st parameter!"
-  local MSG="Pl pass a message as 2nd parameter!"
-  local OK_LABEL="Pl pass an OK label as 3rd parameter!"
- } || {
-  local TITLE="${1}"
-  local MSG="${2}"
-  local OK_LABEL="${3}"
- }
-
- while [ true ] 
- do
-   zenity --info --title="${TITLE}" \
-    --text="${MSG}" \
-    --width 600 --height 300 \
-    --ok-label="${OK_LABEL}" \
-    --ellipsize --modal >/dev/null 2>&1
-   #echo "ret = $?"
-   [ ${?} -eq 0 ] && break
- done
-} # end zenmsg()
 
 # check_root_AIA
 # Check whether we are running as root user; if not, exit with failure!
@@ -215,11 +150,11 @@ GetIP()
 #  1  => user has answered 'N'
 get_yn_reply()
 {
-echo -n "Type Y or N please (followed by ENTER) : "
+aecho -n "Type Y or N please (followed by ENTER) : "
 str="${@}"
 while true
 do
-   echo ${str}
+   aecho ${str}
    read reply
 
    case "$reply" in
@@ -227,7 +162,7 @@ do
 			;;
    	n* | N* )		return 1
 			;;	
-   	*)	echo "What? Pl type Y / N" 
+   	*) aecho "What? Pl type Y / N"
    esac
 done
 }
@@ -243,82 +178,31 @@ done
 MountPartition()
 {
 [ $# -ne 2 ] && {
- echo "MountPartition: parameter(s) missing!"
+ aecho "MountPartition: parameter(s) missing!"
  return 1
 }
 
 DEVNODE=$1
 [ ! -b ${DEVNODE} ] && {
- echo "MountPartition: device node $1 does not exist?"
+ aecho "MountPartition: device node $1 does not exist?"
  return 1
 }
 
 MNTPT=$2
 [ ! -d ${MNTPT} ] && {
- echo "MountPartition: folder $2 does not exist?"
+ aecho "MountPartition: folder $2 does not exist?"
  return 1
 }
 
 mount |grep ${DEVNODE} >/dev/null || {
  #echo "The partition is not mounted, attempting to mount it now..."
  mount ${DEVNODE} -t auto ${MNTPT} || {
-  echo "Could not mount the '$2' partition!"
+  wecho "Could not mount the '$2' partition!"
   return 1
  }
 }
 return 0
 }
-
-
-#------------------- Colors!! Yay :-) -----------------------------------------
-# Ref: http://tldp.org/LDP/abs/html/colorizing.html
-black='\E[30;47m'
-red='\E[31;47m'
-green='\E[32;47m'
-yellow='\E[33;47m'
-blue='\E[34;47m'
-magenta='\E[35;47m'
-cyan='\E[36;47m'
-white='\E[37;47m'
- 
-#  Reset text attributes to normal without clearing screen.
-Reset()
-{ 
-   tput sgr0 
-} 
-
-# !!!
-# Turn this ON for COLOR !!!
-# !!!
-COLOR=${OFF}
-#COLOR=${ON}
-
-# Color-echo.
-#  Argument $1 = message
-#  Argument $2 = color
-# Usage eg.:
-# cecho "This message is in blue!" $blue
-cecho ()                     
-{
-local default_msg="No message passed."
-                             # Doesn't really need to be a local variable.
-[ ${COLOR} -eq 0 ] && {
-  echo $1
-  return
-}
-#echo "cecho: nump = $# : $@"
-
-message=${1:-$default_msg}   # Defaults to default message.
-color=${2:-$black}           # Defaults to black, if not specified.
-
-  echo -e "$color"
-  echo "$message"
-  Reset                      # Reset to normal.
-
-  return
-}  
-#----------------------------------------------------------------------
-
 
 ## is_kernel_thread
 # Param: PID
@@ -327,14 +211,14 @@ color=${2:-$black}           # Defaults to black, if not specified.
 is_kernel_thread()
 {
 [ $# -ne 1 ] && {
- echo "is_kernel_thread: parameter missing!" 1>&2
+ aecho "is_kernel_thread: parameter missing!" 1>&2
  return 127
 }
 
 prcs_name=$(ps aux |awk -v pid=$1 '$2 == pid {print $11}')
 #echo "prcs_name = ${prcs_name}"
 [ -z ${prcs_name} ] && {
- echo "is_kernel_thread: could not obtain process name!" 1>&2
+ wecho "is_kernel_thread: could not obtain process name!" 1>&2
  return 127
 }
 

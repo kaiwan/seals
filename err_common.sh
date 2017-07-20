@@ -5,8 +5,8 @@
 # Common error handling routines.
 # 
 # (c) Kaiwan N Billimoria
-# kaiwan -at- designergraphix -dot- com
-# GPL v2
+# kaiwan -at- kaiwantech -dot- com
+# MIT / GPL v2
 #------------------------------------------------------------------
 # The SEALS Opensource Project
 # SEALS : Simple Embedded Arm Linux System
@@ -15,65 +15,112 @@
 # Project URL:
 # https://github.com/kaiwan/seals
 
-GUI_MODE=1
 export TOPDIR=$(pwd)
-ON=1
-OFF=0
+SEALS_REPORT_ERROR_URL=https://github.com/kaiwan/seals/issues
 
-# "Returns" (actually echoes) 
-#   1 => zenity present
-#   0 => zenity absent
-verify_zenity()
-{
- which zenity >/dev/null 2>&1 && echo -n 1 || echo -n 0
-}
+#--- Icons
+# src: /usr/share/icons/Humanity/actions/
+ICON_NEXT=go-next
+ICON_BACK=go-previous
+ICON_YES=add  #go-next
+ICON_NO=remove   #gtk-remove
+ICON_ADD=add  #gtk-add
+ICON_REGISTER=player_record
+ICON_SIGNIN=format-text-direction-ltr
+ICON_EXIT=stock_mark   #system-log-out
+
 
 # QP
 # QuickPrint ;-)
 # Print timestamp, script name, line#. Useful for debugging.
+# [RELOOK / FIXME : not really useful as it doen't work as a true macro;
+#  just prints _this_ script name, line#.]
 QP()
 {
 	_ERR_HDR_FMT="%.23s %s[%s]: "
 	_ERR_MSG_FMT="${_ERR_HDR_FMT}%s\n"
-	printf "$_ERR_MSG_FMT" $(date +%F.%T.%N) ${BASH_SOURCE[1]##*/} ${BASH_LINENO[0]} 1>&2  #"${@}"
+    [ ${COLOR} -eq 1 ] && fg_blue
+	printf " QP: $_ERR_MSG_FMT" $(date +%F.%T.%N) " ${BASH_SOURCE[1]##*/}:${FUNCNAME[2]}" |tee -a ${LOGFILE_COMMON}
+	dumpstack
+	#printf " QP: $_ERR_MSG_FMT" $(date +%F.%T.%N) " ${BASH_SOURCE[1]##*/}:${BASH_LINENO[0]}" |tee -a ${LOGFILE_COMMON}
+    [ ${COLOR} -eq 1 ] && color_reset
 	unset _ERR_HDR_FMT
 	unset _ERR_MSG_FMT
 }
 
+STACK_MAXDEPTH=32  # arbit?
+dumpstack()
+{
+#for frame in $(seq 1 $1)
+local frame=1
+local funcname
 
+ShowTitle " Stack Call-trace:"
+[ ${COLOR} -eq 1 ] && fg_blue
+while [ true ]
+do
+  funcname=${FUNCNAME[${frame}]}
+  printf "   [frame #${frame}] ${BASH_SOURCE[${frame}]}:${funcname}:${BASH_LINENO[${frame}]}"
+  #printf "   [frame #${frame}] ${funcname}"
+  [ ${frame} -ne 1 ] && printf "\n" || {
+    [ ${COLOR} -eq 1 ] && fg_magenta
+    printf "        <-- top of stack\n"
+    [ ${COLOR} -eq 1 ] && fg_blue
+  }
+  [ "${funcname}" = "main" ] && break  # stop, reached 'main'
+  [ ${frame} -ge ${STACK_MAXDEPTH} ] && break  # just in case ...
+  let frame=frame+1
+done |tee -a ${LOGFILE_COMMON}
+[ ${COLOR} -eq 1 ] && color_reset
+}
+
+# params: the error message
 cli_handle_error()
 {
-  echo -n "FatalError :: " 1>&2
-  QP
-  [ $# -lt 1 ] && exit -1
-  echo "${@}" 1>&2
-  exit -1
+  #QP
+  if [ $# -lt 1 ] ; then
+	cecho "FatalError :: <no errmsg>"
+  else
+	cecho "FatalError :: $@"
+  fi
+  dumpstack
+  [ ${COLOR} -eq 1 ] && color_reset
+  exit 1
 }
 
-# FatalError
-# Display the error message string and exit -1.
-# Parameter(s):
-#  $1 : Error string to display [required]
-# Returns: -1 (255)
+#--------------------- F a t a l E r r o r ----------------------------
+# Exits with exit status 1 !
+# Parameters:
+# $1 : error message [optional]
 FatalError()
 {
-	[ ${GUI_MODE} -eq 0 ] && {
-	  cli_handle_error $@
-	} || {   # want GUI mode
-	  #n=$(verify_zenity)
-	  #echo "n=$n"
-	  #return
-	  [ $(verify_zenity) -eq 0 ] && {
-	    echo "In FatalError() :: !WARNING! zenity not installed?? "
-		# fallback to non-gui err handling
-	    cli_handle_error $@
-	  }
-	}
-	# gui err handling, zenity there; whew
-	zenity --error --title="${name}: Error" --text="Fatal Error :: $@" 2>/dev/null
-    cli_handle_error $@
-	exit -1
-}
+ local msgpre="<b><span foreground='Crimson'>Sorry, SEALS has encountered a fatal error.</span></b>\n\n"
+ local errmsg="<i>Details:</i>\n$(date):${name}:${FUNCNAME[ 1 ]}()"
+ local msgpost="\n<span foreground='Crimson'>\
+If you feel this is a bug / issue, kindly report it here:</span>
+${SEALS_REPORT_ERROR_URL}\n
+Many thanks.
+"
+
+ [ $# -ne 1 ] && {
+  local msg="${msgpre}<span foreground='NavyBlue'>${errmsg}</span>\n${msgpost}"
+ } || {
+  local msg="${msgpre}<span foreground='NavyBlue'>${errmsg}\n ${1}</span>\n${msgpost}"
+ }
+ #cecho "Fatal Error! Details: ${errmsg} ${1}"
+
+ local LN=$(echo "${MSG}" |wc -l)
+ local calht=$(($LN*10))
+
+ local title="SEALS: FATAL ERROR!"
+ yad --title="${title}" --image=dialog-warning --text="${msg}" \
+	--button="Close!${ICON_NO}:0" \
+	--wrap --text-align=center --button-layout=center --center \
+	--selectable-labels --no-escape --dialog-sep --sticky --on-top --skip-taskbar 2>/dev/null
+
+ cli_handle_error "$@"
+ exit 1
+} # end FatalError()
 
 # Prompt
 # Interactive: prompt the user to continue by pressing ENTER or
@@ -83,18 +130,12 @@ FatalError()
 #  $2 : string to display on signal trap [optional]
 Prompt()
 {
-#	[ $# -lt 1 ] && {
-#	  echo "$0: Prompt function requires a string parameter!"
-#	  return 1
-#	}
-  trap 'echo "
-*** User Abort detected!  ***
-Message:
-"${@}""
-exit 2' INT QUIT
+  local msg="*** User Abort detected!  ***"
 
-	echo "${@}"
-	echo "Press ENTER to continue, Ctrl-C to abort now..."
-	read
-}
+ trap 'wecho "${msg}" ; dumpstack ; color_reset ; exit 3' INT QUIT
 
+ [ ${COLOR} -eq 1 ] && fg_magenta
+ echo "Press ENTER to continue, or Ctrl-C to abort now..."
+ read
+ [ ${COLOR} -eq 1 ] && color_reset
+} # end Prompt()
