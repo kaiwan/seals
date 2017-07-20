@@ -29,13 +29,27 @@ source ./color.sh || {
  exit 1
 }
 
-#--- Screen Resolution stuff
-res_w=$(xrandr --current | grep '*' | uniq | awk '{print $1}' | cut -d 'x' -f1)
-res_h=$(xrandr --current | grep '*' | uniq | awk '{print $1}' | cut -d 'x' -f2)
-centre_x=$((($res_w/3)+0))
-centre_y=$((($res_h/3)-100))
-CAL_WIDTH=$((($res_w/3)+200))
-CAL_HT=$(($res_h/3))
+# If we're not in a GUI (X Windows) display, abort (reqd for yad)
+check_gui()
+{
+ which xdpyinfo > /dev/null 2>&1 || {
+   FatalError "xdpyinfo (package x11-utils) does not seem to be installed. Aborting..."
+ }
+ xdpyinfo >/dev/null 2>&1 || {
+   FatalError "Sorry, we're not running in a GUI display environment. Aborting..."
+ }
+ which xrandr > /dev/null 2>&1 || {
+   FatalError "xrandr (package x11-server-utils) does not seem to be installed. Aborting..."
+ }
+
+ #--- Screen Resolution stuff
+ res_w=$(xrandr --current | grep '*' | uniq | awk '{print $1}' | cut -d 'x' -f1)
+ res_h=$(xrandr --current | grep '*' | uniq | awk '{print $1}' | cut -d 'x' -f2)
+ centre_x=$((($res_w/3)+0))
+ centre_y=$((($res_h/3)-100))
+ CAL_WIDTH=$((($res_w/3)+200))
+ CAL_HT=$(($res_h/3))
+}
 
 
 # genLogFilename

@@ -861,14 +861,7 @@ TESTMODE=0
   exit 0
 }
 
-# If we're not in a GUI (X Windows) display, abort (reqd for yad)
-which xdpyinfo > /dev/null 2>&1 || {
-   FatalError "xdpyinfo (package x11-utils) does not seem to be installed. Aborting..."
- }
-xdpyinfo >/dev/null 2>&1 || {
-   FatalError "Sorry, we're not running in a GUI display environment. Aborting..."
- }
-
+check_gui
 check_installed_pkg
 
 ###
