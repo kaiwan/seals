@@ -631,7 +631,7 @@ To change any of these, pl abort now and edit the config file: ${BUILD_CONFIG_FI
 --------------------------------------------------------------
 Press 'Yes' to proceed, 'No' to abort"
 
- clear
+ #clear
  iecho "${msg1}"
 
  # Same message text for the yad GUI display - font attributes are added on...
@@ -797,6 +797,9 @@ check_installed_pkg()
  which yad > /dev/null 2>&1 || {
    FatalError "The yad package does not seem to be installed! Aborting..."
  }
+ which xrandr > /dev/null 2>&1 || {
+   FatalError "The xrandr utility (x11-xserver-utils package) does not seem to be installed! Aborting..."
+ }
  which make > /dev/null 2>&1 || {
    FatalError "The GNU 'make' package does not seem to be installed! Aborting..."
  }
@@ -849,7 +852,7 @@ testColor()
 #testColor
 #exit 0
 
-color_reset
+which tput >/dev/null 2>&1 && color_reset
 unalias cp 2>/dev/null
 
 TESTMODE=0
@@ -857,6 +860,14 @@ TESTMODE=0
   config_setup
   exit 0
 }
+
+# If we're not in a GUI (X Windows) display, abort (reqd for yad)
+which xdpyinfo > /dev/null 2>&1 || {
+   FatalError "xdpyinfo (package x11-utils) does not seem to be installed. Aborting..."
+ }
+xdpyinfo >/dev/null 2>&1 || {
+   FatalError "Sorry, we're not running in a GUI display environment. Aborting..."
+ }
 
 check_installed_pkg
 
