@@ -21,12 +21,13 @@ Very useful for developers / testers to try things out in a custom ARM/Linux gue
 
 GETTING STARTED with SEALS
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
-** Please first read the 'SEALs HOWTO' page <https://github.com/kaiwan/seals/wiki/SEALs-HOWTO>
-in the Wiki section to better understand how to build and use this project. **
-
+** Please FIRST READ the 'SEALs HOWTO' page [1] in the Wiki section to better
+understand how to build and use this project. **
 
 Do write in your comments, suggestions, whatever.
 Contributing would be awesome !
 
 Thanks!
 Kaiwan.
+
+[1] https://github.com/kaiwan/seals/wiki/SEALs-HOWTO
