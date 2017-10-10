@@ -43,12 +43,19 @@ check_gui()
  }
 
  #--- Screen Resolution stuff
- res_w=$(xrandr --current | grep '*' | uniq | awk '{print $1}' | cut -d 'x' -f1)
- res_h=$(xrandr --current | grep '*' | uniq | awk '{print $1}' | cut -d 'x' -f2)
- centre_x=$((($res_w/3)+0))
- centre_y=$((($res_h/3)-100))
- CAL_WIDTH=$((($res_w/3)+200))
- CAL_HT=$(($res_h/3))
+ res_w=$(xrandr --current | grep '*' | uniq | awk '{print $1}' | cut -d 'x' -f1 | head -n1)
+ res_h=$(xrandr --current | grep '*' | uniq | awk '{print $1}' | cut -d 'x' -f2 | tail -n1)
+ let centre_x=${res_w}/3
+ #centre_x=$((${res_w}/3))
+ let centre_y=$res_h/3
+ let centre_y=$centre_y-100
+ #centre_y=$(($res_h/3-100))
+
+ CAL_WIDTH=$((${res_w}/3))
+ let CAL_WIDTH=$CAL_WIDTH+200
+ [ -z ${CAL_WIDTH} ] && CAL_WIDTH=600
+ let CAL_HT=$res_h/3
+ #echo "res_w=${res_w} CAL_WIDTH=${CAL_WIDTH}"
 }
 
 

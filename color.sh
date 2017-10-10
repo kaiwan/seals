@@ -140,7 +140,7 @@ Echo()
  local msg_disp="${msgpfx1_disp}${SEP}${msgtxt}"
  [ ${VERBOSE_MSG} -eq 1 ] && msg_disp="${msgfull_log}"
 
- echo "${msgfull_log}" >> ${LOGFILE_COMMON}  # lets log it first anyho
+ echo "${msgfull_log}" >> ${LOGFILE_COMMON}  # lets log it first anyhow
 
  if [ ${numparams} -eq 1 -o ${COLOR} -eq 0 ]; then   # no color/text attribute
     [ ${DEBUG} -eq 1 ] && echo "${msgfull_log}" || echo "${msg_disp}"

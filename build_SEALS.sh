@@ -815,7 +815,7 @@ Aborting..."
  which mkfs.ext4 > /dev/null 2>&1 || {
    FatalError "mkfs.ext4 does not seem to be installed. Aborting..."
  }
- dpkg -l |grep libncurses5-dev > /dev/null 2>&1 || {
+ dpkg -l |grep -q libncurses5-dev 2>/dev/null || {
    FatalError "The libncurses5-dev dev library and headers does not seem to be installed.
 (Required for kernel config UI).
 Pl install the libncurses5-dev package (with apt-get) & re-run.  Aborting..."
@@ -862,6 +862,7 @@ TESTMODE=0
 }
 
 check_gui
+#exit 0
 check_installed_pkg
 
 ###

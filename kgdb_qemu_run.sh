@@ -39,6 +39,9 @@ qemu-system-arm -m 256 -M ${ARMPLAT} -kernel $1 \
 	-drive file=${STG}/images/rfs.img,if=sd,format=raw \
 	-append "console=ttyAMA0 root=/dev/mmcblk0 init=/sbin/init" -nographic \
 	-gdb tcp::${PORT} -S
+ 	 # qemu help:
+	 #  -gdb dev   wait for gdb connection on 'dev'
+	 #  -S         freeze CPU at startup (use 'c' to start execution)
 
 #
 # If you get this error::

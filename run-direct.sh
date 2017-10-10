@@ -11,7 +11,7 @@ ROOTFS=${STG_IMG}/rfs.img
 DTB=${STG_IMG}/vexpress-v2p-ca9.dtb
 
 K_CMDLINE_BASE="console=ttyAMA0 rootfstype=ext4 root=/dev/mmcblk0 init=/sbin/init"
-K_CMDLINE_XTRA="initcall_debug ignore_loglevel debug crashkernel=16M"
+#K_CMDLINE_XTRA="initcall_debug ignore_loglevel debug crashkernel=16M"
 K_CMDLINE="${K_CMDLINE_BASE} ${K_CMDLINE_XTRA}"
 
 RAM=512
