@@ -29,9 +29,25 @@ source ./color.sh || {
  exit 1
 }
 
+is_gui_supported()
+{
+ local GUI_MODE=0
+ xdpyinfo >/dev/null 2>&1 && GUI_MODE=1
+ # On Fedora (26), xdpyinfo fails when run as root; so lets do another check as well
+ ps -e|egrep -w "X|Xorg|Xwayland" >/dev/null 2>&1 && GUI_MODE=1 || GUI_MODE=0
+ #echo "GUI_MODE $GUI_MODE"
+ return ${GUI_MODE}
+}
+
 # If we're not in a GUI (X Windows) display, abort (reqd for yad)
 check_gui()
 {
+ export CLI_MODE=0
+ # if user insists, force CLI mode
+ [ $# -eq 1 ] && {
+   [ $1 -eq 0 ] && CLI_MODE=1
+ }
+
  which xdpyinfo > /dev/null 2>&1 || {
    FatalError "xdpyinfo (package x11-utils) does not seem to be installed. Aborting..."
  }

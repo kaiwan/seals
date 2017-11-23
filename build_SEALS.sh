@@ -868,8 +868,11 @@ testColor()
 
 ### "main" here
 
+is_gui_supported
+[ $? -eq 1 ] && echo "gui yes" || echo "gui nope"
+
 #testColor
-#exit 0
+exit 0
 
 which tput >/dev/null 2>&1 && color_reset
 unalias cp 2>/dev/null
