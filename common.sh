@@ -54,8 +54,9 @@ check_gui()
  CAL_WIDTH=$((${res_w}/3))
  let CAL_WIDTH=$CAL_WIDTH+200
  [ -z ${CAL_WIDTH} ] && CAL_WIDTH=600
- let CAL_HT=$res_h/3
- #echo "res_w=${res_w} CAL_WIDTH=${CAL_WIDTH}"
+ let CAL_HT=$res_h/2
+ [ -z ${CAL_HT} -o ${CAL_HT} -lt 300 ] && CAL_HT=300
+ #echo "res_w=${res_w} res_h=${res_h} CAL_WIDTH=${CAL_WIDTH} CAL_HT=${CAL_HT}"
 }
 
 

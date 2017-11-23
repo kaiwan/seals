@@ -672,14 +672,14 @@ To change any of these, please abort now, edit the config file ${BUILD_CONFIG_FI
 appropriately, and rerun.\
 </b></span>
 <span foreground='crimson'><i>\
-Press 'Yes' to proceed, 'No' to abort
+Press 'Yes' (or Enter) to proceed, 'No' (or Esc) to abort
 </i></span>"
 
-#wecho "CAL_WIDTH=$CAL_WIDTH"
+#wecho "WIDTHxHT=$CAL_WIDTH x ${CAL_HT} "
 
  yad --image "dialog-question" --title "${PRJ_TITLE}" --center \
      --button=gtk-yes:0 --button=gtk-no:1 \
-	 --width=${CAL_WIDTH} \
+	 --width=${CAL_WIDTH} --height=${CAL_HT} \
 	 --text "${msg1_yad}"
  [ $? -ne 0 ] && {
    aecho "Aborting. Edit the config file ${BUILD_CONFIG_FILE} as required and re-run."
@@ -791,7 +791,10 @@ To change settings permenantly, please edit the build.config file.
 } # end config_setup()
 
 #--------- c h e c k _ i n s t a l l e d _ p k g ----------------------
-# TODO - gather and install required packages
+# TODO
+#  - use superior checking func (fr CQuATS code)
+#  - gather and install required packages
+#  -
 check_installed_pkg()
 {
  which yad > /dev/null 2>&1 || {
@@ -808,18 +811,34 @@ check_installed_pkg()
  }
  which ${CXX}gcc > /dev/null 2>&1 || {
    FatalError "Cross toolchain does not seem to be valid! PATH issue? 
-Tip: This error can be thrown when you run the script with sudo (the 
+Tip: Install the cross toolchain first, update the build.config to reflect it and rerun.
+Tip: (Less likely) This error can be thrown when you run the script with sudo (the
 env vars are not setup. So run from a root shell where the PATH is correctly setup).
 Aborting..."
  }
  which mkfs.ext4 > /dev/null 2>&1 || {
    FatalError "mkfs.ext4 does not seem to be installed. Aborting..."
  }
- dpkg -l |grep -q libncurses5-dev 2>/dev/null || {
-   FatalError "The libncurses5-dev dev library and headers does not seem to be installed.
+
+ # Have to take into account whether running on Ubuntu/Deb or Fedora/RHEL/CentOS
+ which dpkg > /dev/null 2>&1
+ if [ $? -eq 0 ] ; then
+  # Ubuntu/Debian
+   dpkg -l |grep -q libncurses5-dev 2>/dev/null || {
+     FatalError "The 'libncurses5-dev' package does not seem to be installed.
 (Required for kernel config UI).
-Pl install the libncurses5-dev package (with apt-get) & re-run.  Aborting..."
- }
+Pl install the package (with apt-get) & re-run.  Aborting..."
+   }
+ else
+  if [ -f /etc/fedora-release ] || [ -f /etc/fedora ] ; then
+  # Fedora/RHEL/CentOS - probably :)
+  rpm -qa |grep -q ncurses-devel 2>/dev/null || {
+     FatalError "The 'ncurses-devel' package does not seem to be installed.
+(Required for kernel config UI).
+Pl install the package (with dnf/yum/rpm) & re-run.  Aborting..."
+   }
+  fi
+ fi
 
  # Terminal 'color' support?
  which tput > /dev/null 2>&1 || {
