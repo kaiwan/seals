@@ -851,8 +851,6 @@ fi
 [ ${GUI_MODE} -eq 1 ] && echo "[+] Running in GUI mode.." || echo "[+] Running in console mode.."
 echo "[+] ${name}: initializing, pl wait ..."
 
-FatalError "blah :-) "
-
 #testColor
 #exit 0
 
