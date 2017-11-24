@@ -11,6 +11,10 @@
 # A helper script designed to build:
 # a custom kernel + root filesystem for an "embedded" QEMU/ARM Linux system.
 #
+# Cmdline:
+# ./build_seals.sh [-c]
+#   -c : run in console mode only (no gui) [optional]
+#
 # Very good References (by 'Balau'): 
 #  Kernel: 
 #    http://balau82.wordpress.com/2012/03/31/compile-linux-kernel-3-2-for-arm-and-emulate-with-qemu/
@@ -60,7 +64,7 @@ export DTB_BLOB=vexpress-v2p-ca9.dtb
 export DTB_BLOB_LOC=${KERNEL_FOLDER}/arch/arm/boot/dts/${DTB_BLOB} # gen within kernel src tree
 
 # Signals
-trap 'wecho "User Abort. ${MSG_EXITING}" ; dumpstack ; [ ${COLOR} -eq 1 ] && color_reset ; exit 2' INT QUIT
+trap 'wecho "User Abort. ${MSG_EXITING}" ; dumpstack ; [ ${COLOR} -eq 1 ] && color_reset ; exit 2' HUP INT QUIT
 
 ##-------------------- Functions Start --------------------------------
 
@@ -70,7 +74,7 @@ build_kernel()
 cd ${KERNEL_FOLDER} || exit 1
 ShowTitle "KERNEL: Configure and Build [kernel ver ${KERNELVER}] now ..."
 
-if [ "${WIPE_KERNEL_CONFIG}" = "TRUE" ]; then
+if [ ${WIPE_KERNEL_CONFIG} -eq 1 ]; then
 	ShowTitle "Setting default kernel config for ARM ${ARM_PLATFORM_STR} platform:"
 	make ARCH=arm ${ARM_PLATFORM}_defconfig || {
 	   FatalError "Kernel config for ARM ${ARM_PLATFORM_STR} platform failed.."
@@ -127,7 +131,7 @@ if [ -z "${ROOTFS}" ]; then
 	FatalError "SEALS: ROOTFS has dangerous value of null or '/'. Aborting..."
 fi
 
-if [ "${WIPE_BUSYBOX_CONFIG}" = "TRUE" ]; then
+if [ ${WIPE_BUSYBOX_CONFIG} -eq 1 ]; then
 	ShowTitle "BusyBox default config:"
 	make ARCH=arm CROSS_COMPILE=${CXX} defconfig
 fi
@@ -486,103 +490,73 @@ aecho "
 ... and done."
 } # end run_qemu_SEALS()
 
-# gui_display_config()
-# Parameters:
-#  $1 = 1 => kernel build ON, rootfs build ON; show All items
-#  $1 = 2 => kernel build OFF, rootfs build ON; don't show kernel items
-#  $1 = 3 => kernel build ON, rootfs build OFF; don't show rootfs/bb items
-#  $1 = 4 => kernel build OFF, rootfs build OFF; don't show kernel & rootfs/bb items
-gui_display_config()
+#------ s e a l s _ m e n u _ c o n s o l e m o d e -------------------
+seals_menu_consolemode()
 {
-[ $# -ne 1 ] && FatalError "gui_display_config: incorrect params"
+becho "SEALS :: Console Menu
+"
 
-if [ $1 -eq 1 ] ; then
- #  $1 = 1 => kernel build ON, rootfs build ON; show All items
- local yad_dothis=$(yad --form \
-   --field="Build Kernel (ver ${KERNELVER})":CHK \
-   --field=" Wipe kernel config (Careful!*)":CHK \
-   --field="Build Root Filesystem":CHK \
-   --field=" Wipe busybox config (Careful!*)":CHK \
-   --field="Generate Root Filesystem EXT4 image file":CHK \
-   --field="Backup the kernel and root fs images and configs":CHK \
-   --field="Run QEMU":CHK \
-   ${disp_kernel} ${disp_kwipe} ${disp_rootfs} ${disp_bbwipe} \
-   ${disp_genrfsimg} ${disp_bkp} ${disp_run} \
-   --title="${PRJ_TITLE}" \
-   --center --on-top --no-escape --fixed \
-   --text="${MSG_CONFIG_VOLATILE}")
+get_yn_reply "1. Build Linux kernel? : " y
+[ $? -eq 0 ] && BUILD_KERNEL=1
+get_yn_reply " a) Wipe Linux kernel current configuration clean? : " n
+[ $? -eq 0 ] && WIPE_KERNEL_CONFIG=1
+get_yn_reply "2. Build Root Filesystem? : " y
+[ $? -eq 0 ] && BUILD_ROOTFS=1
+get_yn_reply " a) Wipe Busybox current configuration clean? [y/n] : " n
+[ $? -eq 0 ] && WIPE_BUSYBOX_CONFIG=1
+get_yn_reply " b) Generate Root Filesystem ext4 image? [y/n] : " y
+[ $? -eq 0 ] && GEN_EXT4_ROOTFS_IMAGE=1
+get_yn_reply "3. Backup kernel & busybox images & configs? [y/n] : " y
+[ $? -eq 0 ] && SAVE_BACKUP_IMG_CONFIGS=1
+get_yn_reply "4. Run emulated system with Qemu? [y/n] : " y
+[ $? -eq 0 ] && RUN_QEMU=1
 
- BUILD_KERNEL=$(echo "${yad_dothis}" |awk -F"|" '{print $1}')
- WIPE_KERNEL_CONFIG=$(echo "${yad_dothis}" |awk -F"|" '{print $2}')
- BUILD_ROOTFS=$(echo "${yad_dothis}" |awk -F"|" '{print $3}')
- WIPE_BUSYBOX_CONFIG=$(echo "${yad_dothis}" |awk -F"|" '{print $4}')
- GEN_EXT4_ROOTFS_IMAGE=$(echo "${yad_dothis}" |awk -F"|" '{print $5}')
- SAVE_BACKUP_IMG_CONFIGS=$(echo "${yad_dothis}" |awk -F"|" '{print $6}')
- RUN_QEMU=$(echo "${yad_dothis}" |awk -F"|" '{print $7}')
-elif [ $1 -eq 2 ] ; then
- #  $1 = 2 => kernel build OFF, rootfs build ON; don't show kernel items
- local yad_dothis=$(yad --form \
-   --field="Build Root Filesystem":CHK \
-   --field=" Wipe busybox config (Careful!)":CHK \
-   --field="Generate Root Filesystem EXT4 image file":CHK \
-   --field="Backup the kernel and root fs images and configs":CHK \
-   --field="Run QEMU":CHK \
-   ${disp_rootfs} ${disp_bbwipe} \
-   ${disp_genrfsimg} ${disp_bkp} ${disp_run} \
-   --title="${PRJ_TITLE}" \
-   --center --on-top --no-escape --fixed \
-   --text="${MSG_CONFIG_VOLATILE}")
+} # end seals_menu_consolemode()
 
- BUILD_ROOTFS=$(echo "${yad_dothis}" |awk -F"|" '{print $1}')
- WIPE_BUSYBOX_CONFIG=$(echo "${yad_dothis}" |awk -F"|" '{print $2}')
- GEN_EXT4_ROOTFS_IMAGE=$(echo "${yad_dothis}" |awk -F"|" '{print $3}')
- SAVE_BACKUP_IMG_CONFIGS=$(echo "${yad_dothis}" |awk -F"|" '{print $4}')
-elif [ $1 -eq 3 ] ; then
- #  $1 = 3 => kernel build ON, rootfs build OFF; don't show rootfs/bb items
- local yad_dothis=$(yad --form \
-   --field="Build Kernel (ver ${KERNELVER})":CHK \
-   --field=" Wipe kernel config (Careful!)":CHK \
-   --field="Generate Root Filesystem EXT4 image file":CHK \
-   --field="Backup the kernel and root fs images and configs":CHK \
-   --field="Run QEMU":CHK \
-   ${disp_kernel} ${disp_kwipe} \
-   ${disp_genrfsimg} ${disp_bkp} ${disp_run} \
-   --title="${PRJ_TITLE}" \
-   --center --on-top --no-escape --fixed \
-   --text="${MSG_CONFIG_VOLATILE}")
-
- BUILD_KERNEL=$(echo "${yad_dothis}" |awk -F"|" '{print $1}')
- WIPE_KERNEL_CONFIG=$(echo "${yad_dothis}" |awk -F"|" '{print $2}')
- GEN_EXT4_ROOTFS_IMAGE=$(echo "${yad_dothis}" |awk -F"|" '{print $3}')
- SAVE_BACKUP_IMG_CONFIGS=$(echo "${yad_dothis}" |awk -F"|" '{print $4}')
- RUN_QEMU=$(echo "${yad_dothis}" |awk -F"|" '{print $5}')
-elif [ $1 -eq 4 ] ; then
- #  $1 = 4 => kernel build OFF, rootfs build OFF; don't show kernel & rootfs/bb items
- local yad_dothis=$(yad --form \
-   --field="Generate Root Filesystem EXT4 image file":CHK \
-   --field="Backup the kernel and root fs images and configs":CHK \
-   --field="Run QEMU":CHK \
-   ${disp_genrfsimg} ${disp_bkp} ${disp_run} \
-   --title="${PRJ_TITLE}" \
-   --center --on-top --no-escape --fixed \
-   --text="${MSG_CONFIG_VOLATILE}")
-
- GEN_EXT4_ROOTFS_IMAGE=$(echo "${yad_dothis}" |awk -F"|" '{print $1}')
- SAVE_BACKUP_IMG_CONFIGS=$(echo "${yad_dothis}" |awk -F"|" '{print $2}')
- RUN_QEMU=$(echo "${yad_dothis}" |awk -F"|" '{print $3}')
-
-fi
-
- decho "
- ${BUILD_KERNEL}
- ${WIPE_KERNEL_CONFIG}
- ${BUILD_ROOTFS}
- ${WIPE_BUSYBOX_CONFIG}
- ${GEN_EXT4_ROOTFS_IMAGE}
- ${SAVE_BACKUP_IMG_CONFIGS}
- ${RUN_QEMU}
- "
-
+display_current_config()
+{
+  echo -n " Build kernel                          :: "
+  [ ${BUILD_KERNEL} -eq 1 ] && {
+	fg_green ; echo "Yes" ; color_reset
+  } || {
+	fg_red ; echo " No" ; color_reset
+  }
+  echo -n "  Wipe kernel config clean             :: "
+  [ ${WIPE_KERNEL_CONFIG} -eq 1 ] && {
+	fg_green ; echo "Yes" ; color_reset
+  } || {
+	fg_red ; echo " No" ; color_reset
+  }
+  echo -n " Build Root Filesystem                 :: "
+  [ ${BUILD_ROOTFS} -eq 1 ] && {
+	fg_green ; echo "Yes" ; color_reset
+  } || {
+	fg_red ; echo " No" ; color_reset
+  }
+  echo -n "  Wipe busybox config clean            :: "
+  [ ${WIPE_BUSYBOX_CONFIG} -eq 1 ] && {
+	fg_green ; echo "Yes" ; color_reset
+  } || {
+	fg_red ; echo " No" ; color_reset
+  }
+  echo -n " Generate rootfs ext4 image            :: "
+  [ ${GEN_EXT4_ROOTFS_IMAGE} -eq 1 ] && {
+	fg_green ; echo "Yes" ; color_reset
+  } || {
+	fg_red ; echo " No" ; color_reset
+  }
+  echo -n " Backup kernel & rootfs images/configs :: "
+  [ ${SAVE_BACKUP_IMG_CONFIGS} -eq 1 ] && {
+	fg_green ; echo "Yes" ; color_reset
+  } || {
+	fg_red ; echo " No" ; color_reset
+  }
+  echo -n " Run the Qemu emulator                 :: "
+  [ ${RUN_QEMU} -eq 1 ] && {
+	fg_green ; echo "Yes" ; color_reset
+  } || {
+	fg_red ; echo " No" ; color_reset
+  }
 }
 
 #---------- c o n f i g _ s e t u p -----------------------------------
@@ -597,11 +571,9 @@ fi
 config_setup()
 {
  local msg1=""
-# local msg2=""
  local gccver=$(arm-none-linux-gnueabi-gcc --version |head -n1 |cut -f2- -d" ")
 
- msg1="[[ SEALS Config :: Please Review Carefully ]]
-
+ msg1="
 Config file : ${BUILD_CONFIG_FILE}   [edit it to change any settings shown below]
 Config name : ${CONFIG_NAME_STR}
 
@@ -625,14 +597,13 @@ Qemu: KGDB mode: ${KGDB_MODE} | SMP mode: ${SMP_EMU_MODE}
 
 Diplay:
  Terminal Colors mode: ${COLOR} | DEBUG mode: ${DEBUG} | VERBOSE mode: ${VERBOSE_MSG}
-Log file            : ${LOGFILE_COMMON}
---------------------------------------------------------------
-To change any of these, pl abort now and edit the config file: ${BUILD_CONFIG_FILE}
---------------------------------------------------------------
-Press 'Yes' to proceed, 'No' to abort"
+Log file            : ${LOGFILE_COMMON}"
 
- #clear
- iecho "${msg1}"
+local msg1_2="
+-------------------------------------------------------------
+To change any of the above configs, abort now and edit the
+config file: ${BUILD_CONFIG_FILE}
+-------------------------------------------------------------- "
 
  # Same message text for the yad GUI display - font attributes are added on...
  # !NOTE!   !Keep them - msg1 and msg1_yad - in SYNC!
@@ -675,25 +646,33 @@ appropriately, and rerun.\
 Press 'Yes' (or Enter) to proceed, 'No' (or Esc) to abort
 </i></span>"
 
-#wecho "WIDTHxHT=$CAL_WIDTH x ${CAL_HT} "
 
- yad --image "dialog-question" --title "${PRJ_TITLE}" --center \
-     --button=gtk-yes:0 --button=gtk-no:1 \
+ [ ${GUI_MODE} -eq 0 ] && {
+        becho "
+[[ SEALS Config :: Please Review Carefully ]]"
+	iecho "${msg1}"
+	aecho "${msg1_2}"
+	Prompt ""
+ } || {
+   #wecho "WIDTHxHT=$CAL_WIDTH x ${CAL_HT} "
+   yad --image "dialog-question" --title "${PRJ_TITLE}" --center \
+         --button=gtk-yes:0 --button=gtk-no:1 \
 	 --width=${CAL_WIDTH} --height=${CAL_HT} \
 	 --text "${msg1_yad}"
- [ $? -ne 0 ] && {
-   aecho "Aborting. Edit the config file ${BUILD_CONFIG_FILE} as required and re-run."
-   exit 1
+   [ $? -ne 0 ] && {
+     aecho "Aborting. Edit the config file ${BUILD_CONFIG_FILE} as required and re-run."
+     exit 1
+   }
  }
 
  local s1="Build kernel?                                    N"
  [ ${BUILD_KERNEL} -eq 1 ] && s1="Build kernel?                                    Y"
  local s1_2=" Wipe kernel config?                             N"
- [ "${WIPE_KERNEL_CONFIG}" = "y" ] && s1_2=" Wipe kernel config?                     Y"
+ [ ${WIPE_KERNEL_CONFIG} -eq 1 ] && s1_2=" Wipe kernel config?                     Y"
  local s2="Build root filesystem?                           N"
  [ ${BUILD_ROOTFS} -eq 1 ] && s2="Build root filesystem?                           Y"
  local s2_2=" Wipe busybox config?                            N"
- [ "${WIPE_BUSYBOX_CONFIG}" = "y" ] && s2_2=" Wipe busybox config?                   Y"
+ [ ${WIPE_BUSYBOX_CONFIG} -eq 1 ] && s2_2=" Wipe busybox config?                   Y"
  local s3="Generate ext4 rootfs image?                      N"
  [ ${GEN_EXT4_ROOTFS_IMAGE} -eq 1 ] && s3="Generate ext4 rootfs image?             Y"
  local s4="Backup kernel/busybox images and config files?   N"
@@ -712,18 +691,19 @@ Press 'Yes' (or Enter) to proceed, 'No' (or Esc) to abort
 #"
 # iecho "${msg2}"
 
+[ ${GUI_MODE} -eq 1 ] && {
  #--- YAD
  local disp_kernel="FALSE"
  [ ${BUILD_KERNEL} -eq 1 ] && disp_kernel="TRUE"
 
  local disp_kwipe="FALSE"
- [ "${WIPE_KERNEL_CONFIG}" = "y" ] && disp_kwipe="TRUE"
+ [ ${WIPE_KERNEL_CONFIG} -eq 1 ] && disp_kwipe="TRUE"
 
  local disp_rootfs="FALSE"
  [ ${BUILD_ROOTFS} -eq 1 ] && disp_rootfs="TRUE"
 
  local disp_bbwipe="FALSE"
- [ "${WIPE_BUSYBOX_CONFIG}" = "y" ] && disp_bbwipe="TRUE"
+ [ ${WIPE_BUSYBOX_CONFIG} -eq 1 ] && disp_bbwipe="TRUE"
 
  local disp_genrfsimg="FALSE"
  [ ${GEN_EXT4_ROOTFS_IMAGE} -eq 1 ] && disp_genrfsimg="TRUE"
@@ -758,6 +738,7 @@ To change settings permenantly, please edit the build.config file.
    --text="<span foreground='blue'><i>${MSG_CONFIG_VOLATILE}</i></span>")
 
  BUILD_KERNEL=$(echo "${yad_dothis}" |awk -F"|" '{print $1}')
+ #echo "gui :: BUILD_KERNEL = ${BUILD_KERNEL}"
  WIPE_KERNEL_CONFIG=$(echo "${yad_dothis}" |awk -F"|" '{print $2}')
  BUILD_ROOTFS=$(echo "${yad_dothis}" |awk -F"|" '{print $3}')
  WIPE_BUSYBOX_CONFIG=$(echo "${yad_dothis}" |awk -F"|" '{print $4}')
@@ -765,50 +746,42 @@ To change settings permenantly, please edit the build.config file.
  SAVE_BACKUP_IMG_CONFIGS=$(echo "${yad_dothis}" |awk -F"|" '{print $6}')
  RUN_QEMU=$(echo "${yad_dothis}" |awk -F"|" '{print $7}')
 
+ # yad has the (rather unpleasant) side-effect of changing our build
+ # variables to the strings "TRUE" or "FALSE"; we'd like it to be integer
+ # values 1 or 0.
+ # Rationalize the 'build variables' to integer values
+ [ "${BUILD_KERNEL}" = "TRUE" ] && BUILD_KERNEL=1 || BUILD_KERNEL=0
+ [ "${WIPE_KERNEL_CONFIG}" = "TRUE" ] && WIPE_KERNEL_CONFIG=1 || WIPE_KERNEL_CONFIG=0
+ [ "${BUILD_ROOTFS}" = "TRUE" ] && BUILD_ROOTFS=1 || BUILD_ROOTFS=0
+ [ "${WIPE_BUSYBOX_CONFIG}" = "TRUE" ] && WIPE_BUSYBOX_CONFIG=1 || WIPE_BUSYBOX_CONFIG=0
+ [ "${GEN_EXT4_ROOTFS_IMAGE}" = "TRUE" ] && GEN_EXT4_ROOTFS_IMAGE=1 || GEN_EXT4_ROOTFS_IMAGE=0
+ [ "${SAVE_BACKUP_IMG_CONFIGS}" = "TRUE" ] && SAVE_BACKUP_IMG_CONFIGS=1 || SAVE_BACKUP_IMG_CONFIGS=0
+ [ "${RUN_QEMU}" = "TRUE" ] && RUN_QEMU=1 || RUN_QEMU=0
 
-[ 0 -eq 1 ] && {
- if [ "${disp_kernel}" = "TRUE" -a "${disp_rootfs}" = "TRUE" ]; then
-	gui_display_config 1
- elif [ "${disp_kernel}" = "FALSE" -a "${disp_rootfs}" = "TRUE" ]; then
-	gui_display_config 2
- elif [ "${disp_kernel}" = "TRUE" -a "${disp_rootfs}" = "FALSE" ]; then
-	gui_display_config 3
- elif [ "${disp_kernel}" = "FALSE" -a "${disp_rootfs}" = "FALSE" ]; then
-	gui_display_config 4
- fi
+ display_current_config
+
+} || {
+
+  seals_menu_consolemode
+  becho "
+  Confirm your choices pl ::
+"
+  display_current_config
+
+  echo
+  get_yn_reply "Proceed? (if you say No, you can reenter choices)" y
+  [ $? -eq 1 ] && seals_menu_consolemode
 }
-
- decho "
- ${BUILD_KERNEL}
- ${WIPE_KERNEL_CONFIG}
- ${BUILD_ROOTFS}
- ${WIPE_BUSYBOX_CONFIG}
- ${GEN_EXT4_ROOTFS_IMAGE}
- ${SAVE_BACKUP_IMG_CONFIGS}
- ${RUN_QEMU}
- "
 
 } # end config_setup()
 
 #--------- c h e c k _ i n s t a l l e d _ p k g ----------------------
 # TODO
-#  - use superior checking func (fr CQuATS code)
+#  + use superior checking func (fr CQuATS code)
 #  - gather and install required packages
 #  -
 check_installed_pkg()
 {
- which yad > /dev/null 2>&1 || {
-   FatalError "The yad package does not seem to be installed! Aborting..."
- }
- which xrandr > /dev/null 2>&1 || {
-   FatalError "The xrandr utility (x11-xserver-utils package) does not seem to be installed! Aborting..."
- }
- which make > /dev/null 2>&1 || {
-   FatalError "The GNU 'make' package does not seem to be installed! Aborting..."
- }
- which qemu-system-arm > /dev/null 2>&1 || {
-   FatalError "QEMU packages do net seem to be installed! Pl Install qemu-system-arm and qemu-kvm and re-run .."
- }
  which ${CXX}gcc > /dev/null 2>&1 || {
    FatalError "Cross toolchain does not seem to be valid! PATH issue? 
 Tip: Install the cross toolchain first, update the build.config to reflect it and rerun.
@@ -816,11 +789,12 @@ Tip: (Less likely) This error can be thrown when you run the script with sudo (t
 env vars are not setup. So run from a root shell where the PATH is correctly setup).
 Aborting..."
  }
- which mkfs.ext4 > /dev/null 2>&1 || {
-   FatalError "mkfs.ext4 does not seem to be installed. Aborting..."
- }
 
- # Have to take into account whether running on Ubuntu/Deb or Fedora/RHEL/CentOS
+ check_deps_fatal "make qemu-system-arm mkfs.ext4"
+ [ ${GUI_MODE} -eq 1 ] && check_deps_fatal "yad xrandr"
+
+ # For libncurses lib: have to take into account whether running on Ubuntu/Deb
+ # or Fedora/RHEL/CentOS
  which dpkg > /dev/null 2>&1
  if [ $? -eq 0 ] ; then
   # Ubuntu/Debian
@@ -869,10 +843,18 @@ testColor()
 ### "main" here
 
 is_gui_supported
-[ $? -eq 1 ] && echo "gui yes" || echo "gui nope"
+[ $? -eq 1 ] && GUI_MODE=1 || GUI_MODE=0
+# testing... if we pass '-c' on cmdline, force console mode
+if [ $# -ge 1 -a "$1" = "-c" ] ; then
+	GUI_MODE=0
+fi
+[ ${GUI_MODE} -eq 1 ] && echo "[+] Running in GUI mode.." || echo "[+] Running in console mode.."
+echo "[+] ${name}: initializing, pl wait ..."
+
+FatalError "blah :-) "
 
 #testColor
-exit 0
+#exit 0
 
 which tput >/dev/null 2>&1 && color_reset
 unalias cp 2>/dev/null
@@ -883,9 +865,9 @@ TESTMODE=0
   exit 0
 }
 
-check_gui
-#exit 0
 check_installed_pkg
+[ ${GUI_MODE} -eq 1 ] && gui_init
+#exit 0
 
 ###
 # !NOTE!
@@ -906,17 +888,17 @@ config_setup
 # config specified in the Build Config file!
 # So just set it there man ...
 ###
-[ "${BUILD_KERNEL}" = "TRUE" ] && {
+[ ${BUILD_KERNEL} -eq 1 ] && {
   check_folder_AIA ${KERNEL_FOLDER}
   build_kernel
 }
-[ "${BUILD_ROOTFS}" = "TRUE" ] && {
+[ ${BUILD_ROOTFS} -eq 1 ] && {
   check_folder_AIA ${BB_FOLDER}
   build_rootfs
 }
-[ "${GEN_EXT4_ROOTFS_IMAGE}" = "TRUE" ] && generate_rootfs_img_ext4
-[ "${SAVE_BACKUP_IMG_CONFIGS}" = "TRUE" ] && save_images_configs
-[ "${RUN_QEMU}" = "TRUE" ] && run_qemu_SEALS
+[ ${GEN_EXT4_ROOTFS_IMAGE} -eq 1 ] && generate_rootfs_img_ext4
+[ ${SAVE_BACKUP_IMG_CONFIGS} -eq 1 ] && save_images_configs
+[ ${RUN_QEMU} -eq 1 ] && run_qemu_SEALS
 
 aecho "${MSG_EXITING}"
 color_reset

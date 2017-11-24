@@ -92,6 +92,12 @@ cli_handle_error()
 # Exits with exit status 1 !
 # Parameters:
 # $1 : error message [optional]
+#
+# !NOTE! Do NOT use metacharacter (like /\<> etc) in the message body;
+#  yad fails to interpret them..
+#
+# TODO / BUG ::
+#  the entire background is filled with a blue-ish color; why?? yad bug? us?
 FatalError()
 {
  local msgpre="<b><span foreground='Crimson'>Sorry, SEALS has encountered a fatal error.</span></b>\n\n"
@@ -101,24 +107,31 @@ If you feel this is a bug / issue, kindly report it here:</span>
 ${SEALS_REPORT_ERROR_URL}\n
 Many thanks.
 "
+ local msg
 
  [ $# -ne 1 ] && {
-  local msg="${msgpre}<span foreground='NavyBlue'>${errmsg}</span>\n${msgpost}"
+  msg="${msgpre}<span foreground='NavyBlue'>${errmsg}</span>\n${msgpost}"
  } || {
-  local msg="${msgpre}<span foreground='NavyBlue'>${errmsg}\n ${1}</span>\n${msgpost}"
+  msg="${msgpre}<span foreground='NavyBlue'>${errmsg}\n ${1}</span>\n${msgpost}"
  }
  #cecho "Fatal Error! Details: ${errmsg} ${1}"
 
- local LN=$(echo "${MSG}" |wc -l)
- local calht=$(($LN*10))
+ [ ${GUI_MODE} -eq 1 ] && {
+   #local LN=$(echo "${msg}" |wc -l)
+   #local calht=$(($LN*10))
 
- local title="SEALS: FATAL ERROR!"
- yad --title="${title}" --image=dialog-warning --text="${msg}" \
+echo "${msg}"
+
+   local title="SEALS: FATAL ERROR!"
+   yad --title="${title}" --image=dialog-warning --text="${msg}" \
 	--button="Close!${ICON_NO}:0" \
 	--wrap --text-align=center --button-layout=center --center \
 	--selectable-labels --no-escape --dialog-sep --sticky --on-top --skip-taskbar 2>/dev/null
-
- cli_handle_error "$@"
+   # also show on the console
+   cli_handle_error "$@"
+ } || {
+   cli_handle_error "$@"
+ }
  exit 1
 } # end FatalError()
 
@@ -132,10 +145,11 @@ Prompt()
 {
   local msg="*** User Abort detected!  ***"
 
- trap 'wecho "${msg}" ; dumpstack ; color_reset ; exit 3' INT QUIT
+ trap 'wecho "${msg}" ; dumpstack ; color_reset ; exit 3' HUP INT QUIT
 
  [ ${COLOR} -eq 1 ] && fg_magenta
- echo "Press ENTER to continue, or Ctrl-C to abort now..."
+ echo "$1
+ [Press ENTER to continue, or Ctrl-C to abort now...]"
  read
  [ ${COLOR} -eq 1 ] && color_reset
 } # end Prompt()

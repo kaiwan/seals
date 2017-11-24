@@ -40,19 +40,15 @@ is_gui_supported()
 }
 
 # If we're not in a GUI (X Windows) display, abort (reqd for yad)
-check_gui()
+gui_init()
 {
- export CLI_MODE=0
- # if user insists, force CLI mode
- [ $# -eq 1 ] && {
-   [ $1 -eq 0 ] && CLI_MODE=1
- }
-
  which xdpyinfo > /dev/null 2>&1 || {
-   FatalError "xdpyinfo (package x11-utils) does not seem to be installed. Aborting..."
+   FatalError "xdpyinfo (package x11-utils) does not seem to be installed. Aborting...
+ [Tip: try running as a regular user, not root]"
  }
  xdpyinfo >/dev/null 2>&1 || {
-   FatalError "Sorry, we're not running in a GUI display environment. Aborting..."
+   FatalError "Sorry, we're not running in a GUI display environment. Aborting...
+ [Tip: try running as a regular user, not root]"
  }
  which xrandr > /dev/null 2>&1 || {
    FatalError "xrandr (package x11-server-utils) does not seem to be installed. Aborting..."
@@ -62,10 +58,8 @@ check_gui()
  res_w=$(xrandr --current | grep '*' | uniq | awk '{print $1}' | cut -d 'x' -f1 | head -n1)
  res_h=$(xrandr --current | grep '*' | uniq | awk '{print $1}' | cut -d 'x' -f2 | tail -n1)
  let centre_x=${res_w}/3
- #centre_x=$((${res_w}/3))
  let centre_y=$res_h/3
  let centre_y=$centre_y-100
- #centre_y=$(($res_h/3-100))
 
  CAL_WIDTH=$((${res_w}/3))
  let CAL_WIDTH=$CAL_WIDTH+200
@@ -183,24 +177,48 @@ GetIP()
 
 # get_yn_reply
 # User's reply should be Y or N.
+# Parameters ::
+# $1       : prompt string to display
+# $2 = 'y' : default is 'y', meaning, if user presses '[Enter]' key
+# $2 = 'n' : default is 'n', meaning, if user presses '[Enter]' key
 # Returns:
 #  0  => user has answered 'Y'
 #  1  => user has answered 'N'
+# Lookup the value via $? in the caller.
 get_yn_reply()
 {
-aecho -n "Type Y or N please (followed by ENTER) : "
-str="${@}"
+str="${1}"
 while true
 do
-   aecho ${str}
-   read reply
+   echo -n "${str}"
+   if [ "$2" = "y" ] ; then
+	   echo " [y]"
+   elif [ "$2" = "n" ] ; then
+	   echo " [n]"
+   fi
+   [ $# -eq 1 ] && echo
+
+   read -s -n1 reply    # -s: don't echo ; -n1 : read only 1 char
 
    case "$reply" in
-   	y | yes | Y | YES ) 	return 0
-			;;
-   	n* | N* )		return 1
-			;;	
-   	*) aecho "What? Pl type Y / N"
+   	y | yes | Y | YES ) 
+		echo "<y>"
+		return 0
+		;;
+   	n | N )	
+		echo "<n>"
+		return 1
+		;;
+	"" )    
+		[ $# -eq 1 ] && {
+		  echo "<no default, pl reenter your choice>"
+		  continue
+		}
+		echo "<$2>"
+		[ "$2" = "y" ] && return 0
+		[ "$2" = "n" ] && return 1
+		;;
+   	*) aecho "*** Pl type 'Y' or 'N' ***"
    esac
 done
 }
@@ -267,4 +285,54 @@ let len=len-1
 lastchar=$(echo "${prcs_name:${len}:1}")
 #echo "lastchar = ${lastchar}"
 [ ${firstchar} = "[" -a ${lastchar} = "]" ] && return 1 || return 0
+}
+
+#---------- c h e c k _ d e p s ---------------------------------------
+# Checks passed packages - are they installed? (just using 'which';
+# using the pkg management utils (apt/dnf/etc) would be too time consuming)
+# Parameters:
+#  $1 : 1 => fatal error, exit
+#       0 => warn only
+# [.. $@ ..] : space-sep string of all packages to check
+# Eg.        check_deps "make perf spatch xterm"
+check_deps()
+{
+local util needinstall=0
+#report_progress
+
+local severity=$1
+shift
+
+for util in $@
+do
+ which ${util} > /dev/null 2>&1 || {
+   [ ${needinstall} -eq 0 ] && wecho "The following utilit[y|ies] or package(s) do NOT seem to be installed:"
+   iecho "[!]  ${util}"
+   needinstall=1
+   continue
+ }
+done
+[ ${needinstall} -eq 1 ] && {
+   [ ${severity} -eq 1 ] && {
+      FatalError "Kindly first install the required package(s) shown above \
+(check console and log output too) and then retry, thanks. Aborting now..."
+   } || {
+      wecho "WARNING! The package(s) shown above are not present"
+   }
+}
+} # end check_deps()
+
+# Simple wrappers over check_deps();
+# Recall, the fundamental theorem of software engineering FTSE:
+#  "We can solve any problem by introducing an extra level of indirection."
+#    -D Wheeler
+# ;-)
+check_deps_fatal()
+{
+check_deps 1 "$@"
+}
+
+check_deps_warn()
+{
+check_deps 0 "$@"
 }

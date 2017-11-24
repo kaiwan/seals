@@ -157,7 +157,7 @@ Echo()
  color_reset                      # Reset to normal.
  
  case "${tag}" in
-   DDEBUG) tput dim ; fg_magenta
+   DDEBUG) tput dim #; fg_magenta
          ;;
    INFO)  #tput        # Deliberate: no special attribs for 'info'
          ;;
@@ -194,6 +194,12 @@ iecho ()
 #--------------------- a e c h o ---------------------------------------
 # ALERT-level Color-echo.
 aecho ()
+{
+ Echo ALERT "$1"
+}
+#--------------------- b e c h o ---------------------------------------
+# BOLD Color-echo.
+becho ()
 {
  Echo ALERT "$1"
 }
