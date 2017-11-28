@@ -59,8 +59,7 @@ STEPS=5
 export CPU_CORES=$(getconf -a|grep _NPROCESSORS_ONLN|awk '{print $2}')
 [ -z "${CPU_CORES}" ] && CPU_CORES=2
 
-# Device Tree Blob (DTB)
-export DTB_BLOB=vexpress-v2p-ca9.dtb
+# Device Tree Blob (DTB) location
 export DTB_BLOB_LOC=${KERNEL_FOLDER}/arch/arm/boot/dts/${DTB_BLOB} # gen within kernel src tree
 
 # Signals
@@ -71,6 +70,7 @@ trap 'wecho "User Abort. ${MSG_EXITING}" ; dumpstack ; [ ${COLOR} -eq 1 ] && col
 #------------------ b u i l d _ k e r n e l ---------------------------
 build_kernel()
 {
+ report_progress
 cd ${KERNEL_FOLDER} || exit 1
 ShowTitle "KERNEL: Configure and Build [kernel ver ${KERNELVER}] now ..."
 
@@ -122,6 +122,7 @@ cd ${TOPDIR}
 #--------------- b u i l d _ c o p y _ b u s y b o x ------------------
 build_copy_busybox()
 {
+ report_progress
 cd ${BB_FOLDER} || exit 1
 
 ShowTitle "BUSYBOX: Configure and Build Busybox now ... [$(basename ${BB_FOLDER})]"
@@ -160,6 +161,7 @@ aecho "SEALS Build: busybox files copied across successfully ..."
 #---------- s e t u p _ e t c _ i n _ r o o t f s ---------------------
 setup_etc_in_rootfs()
 {
+ report_progress
 aecho "SEALS Build: Manually generating required SEALS rootfs /etc files ..."
 cd ${ROOTFS}
 MYPRJ=myprj
@@ -218,6 +220,7 @@ none         /sys/kernel/debug debugfs
 #-------- s e t u p _ l i b _ i n _ r o o t f s -----------------------
 setup_lib_in_rootfs()
 {
+ report_progress
 aecho "SEALS Build: copying across shared objects, etc to SEALS /lib /sbin /usr ..."
 
 ARMLIBS=${CXX_LOC}/arm-none-linux-gnueabi/libc
@@ -256,6 +259,7 @@ mkdir -p ${ROOTFS}/lib/modules/${KDIR} || FatalError "rmmod setup failure!"
 #------ s e t u p _ d e v _ i n _ r o o t f s -------------------------
 setup_dev_in_rootfs()
 {
+ report_progress
 #---------- Device Nodes [static only]
 aecho "SEALS Build: Manually generating required Device Nodes in /dev ..."
 cd ${ROOTFS}/dev
@@ -308,6 +312,7 @@ rm -f mkdevtmp.sh
 #---------- r o o t f s _ x t r a s -----------------------------------
 rootfs_xtras()
 {
+ report_progress
 # To be copied into the RFS..any special cases
 # strace, tcpdump, gdb[server], misc scripts (strace, gdb copied from buildroot build)
 if [ -d ${TOPDIR}/xtras ]; then
@@ -338,6 +343,7 @@ fi
 #
 build_rootfs()
 {
+ report_progress
 # First reset the 'rootfs' staging area so that regular user can update
 mysudo "SEALS Build: reset SEALS root fs. ${MSG_GIVE_PSWD_IF_REQD}" \
  chown -R ${LOGNAME}:${LOGNAME} ${ROOTFS}/*
@@ -364,6 +370,7 @@ aecho "SEALS root fs: actual size = ${RFS_ACTUAL_SZ_MB} MB"
 #------- g e n e r a t e _ r o o t f s _ i m g _ e x t 4 --------------
 generate_rootfs_img_ext4()
 {
+ report_progress
 cd ${ROOTFS} || exit 1
 
 ShowTitle "SEALS ROOT FS: Generating ext4 image for root fs now:"
@@ -433,6 +440,7 @@ cd ${TOPDIR}
 # fn to place final images in images/ and save imp config files as well...
 save_images_configs()
 {
+ report_progress
 ShowTitle "BACKUP: kernel, busybox images and config files now (as necessary) ..."
 cd ${TOPDIR}
 unalias cp 2>/dev/null
@@ -447,6 +455,7 @@ aecho " ... and done."
 #-------------- r u n _ q e m u _ S E A L S ---------------------------
 run_qemu_SEALS()
 {
+ report_progress
 cd ${TOPDIR} || exit 1
 
 if [ ${SMP_EMU_MODE} -eq 1 ]; then
@@ -493,6 +502,7 @@ aecho "
 #------ s e a l s _ m e n u _ c o n s o l e m o d e -------------------
 seals_menu_consolemode()
 {
+ report_progress
 becho "SEALS :: Console Menu
 "
 
@@ -515,6 +525,7 @@ get_yn_reply "4. Run emulated system with Qemu? [y/n] : " y
 
 display_current_config()
 {
+ report_progress
   echo -n " Build kernel                          :: "
   [ ${BUILD_KERNEL} -eq 1 ] && {
 	fg_green ; echo "Yes" ; color_reset
@@ -572,6 +583,8 @@ config_setup()
 {
  local msg1=""
  local gccver=$(arm-none-linux-gnueabi-gcc --version |head -n1 |cut -f2- -d" ")
+
+ report_progress
 
  msg1="
 Config file : ${BUILD_CONFIG_FILE}   [edit it to change any settings shown below]
@@ -782,6 +795,8 @@ To change settings permenantly, please edit the build.config file.
 #  -
 check_installed_pkg()
 {
+ report_progress
+
  which ${CXX}gcc > /dev/null 2>&1 || {
    FatalError "Cross toolchain does not seem to be valid! PATH issue? 
 Tip: Install the cross toolchain first, update the build.config to reflect it and rerun.
@@ -792,6 +807,9 @@ Aborting..."
 
  check_deps_fatal "make qemu-system-arm mkfs.ext4"
  [ ${GUI_MODE} -eq 1 ] && check_deps_fatal "yad xrandr"
+
+## TODO : the dpkg & rpm -qa are very time consuming!
+## so do this only on 'first-time'.
 
  # For libncurses lib: have to take into account whether running on Ubuntu/Deb
  # or Fedora/RHEL/CentOS
@@ -848,7 +866,7 @@ is_gui_supported
 if [ $# -ge 1 -a "$1" = "-c" ] ; then
 	GUI_MODE=0
 fi
-[ ${GUI_MODE} -eq 1 ] && echo "[+] Running in GUI mode.." || echo "[+] Running in console mode.."
+[ ${GUI_MODE} -eq 1 ] && echo "[+] Running in GUI mode.. (use '-c' option switch to run in console-only mode)" || echo "[+] Running in console mode.."
 echo "[+] ${name}: initializing, pl wait ..."
 
 #testColor
@@ -874,6 +892,8 @@ check_installed_pkg
 # KERNEL_FOLDER  : kernel source tree
 # BB_FOLDER      : busybox source tree
 ###
+report_progress
+
 check_folder_AIA ${STG}
 check_folder_createIA ${ROOTFS}
 check_folder_createIA ${IMAGES_FOLDER}

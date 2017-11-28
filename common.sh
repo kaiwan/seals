@@ -336,3 +336,10 @@ check_deps_warn()
 {
 check_deps 0 "$@"
 }
+
+#----------------------------------------------------------------------
+report_progress()
+{
+local frame=1
+printf "$(date +%F.%H%M%S):${BASH_SOURCE[${frame}]}:${FUNCNAME[${frame}]}:${BASH_LINENO[0]}\n"
+}
