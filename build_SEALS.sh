@@ -5,12 +5,25 @@
 # Author and Maintainer : Kaiwan N Billimoria
 # kaiwan -at- kaiwantech -dot- com
 # kaiwan -dot- billimoria -at- gmail -dot- com
+#
 # Project URL:
 # https://github.com/kaiwan/seals
 #
+#----------------------------------------------------------------------
+# Important:
+# To get started, pl read:
+#  https://github.com/kaiwan/seals/wiki
+# (and follow the links on the right panel of the Wiki page).
+#----------------------------------------------------------------------
 # A helper script designed to build:
 # a custom kernel + root filesystem for an "embedded" QEMU/ARM Linux system.
-#
+# By default, this helper script uses the 'default config' found in the file
+# 'build.config'.
+# build.config, again by default, holds the configuration for building:
+#  - a Linux kernel (+DTB) and root filesystem for:
+#    - the ARM Versatile Express (Cortex-A9) platform (supported by Qemu).
+# By tweaking build.config , you can use the SEALS project to build something else..
+#----------------------------------------------------------------------
 # Cmdline:
 # ./build_seals.sh [-c]
 #   -c : run in console mode only (no gui) [optional]
