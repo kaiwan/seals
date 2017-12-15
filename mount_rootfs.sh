@@ -12,14 +12,19 @@
 # Pl ENSURE that the VM is Not running when you use this script!!
 #  -the image will/might get corrupted!
 #
-IMG=/mnt/big/scratchpad/SEALS_staging/images/rfs.img  # @@@@@ Update as required
 MNTPT=/mnt/tmp
-
 name=$(basename $0)
-[ ! -f ${IMG} ] && {
- echo "${name}: root filesystem image file \"${IMG}\" unavailable, pl fix & rerun."
+
+[ $# -ne 1 ] && {
+ echo "Usage: ${name} <rootfs-image-file>"
  exit 1
 }
+[ ! -f $1 ] && {
+ echo "${name}: root filesystem image file \"${1}\" unavailable, aborting..."
+ exit 1
+}
+IMG=$1
+
 echo "${name}: Rootfs image file: ${IMG}"
 echo "${name}: Please wait... checking if rootfs image file above is currently in use ..."
 sudo lsof 2>/dev/null |grep ${IMG} && {
@@ -28,6 +33,7 @@ sudo lsof 2>/dev/null |grep ${IMG} && {
   exit 1
 }
 
+sudo mkdir -p ${MNTPT} 2>/dev/null
 echo "${name}: Okay, loop mounting rootfs image file now ..."
 sudo mount |grep -iq ${MNTPT} && {
   sync
