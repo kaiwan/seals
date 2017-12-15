@@ -890,7 +890,8 @@ unalias cp 2>/dev/null
 
 TESTMODE=0
 [ ${TESTMODE} -eq 1 ] && {
-  config_setup
+  FatalError "some issue blah ..."
+  #config_setup
   exit 0
 }
 

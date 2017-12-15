@@ -16,7 +16,8 @@
 # https://github.com/kaiwan/seals
 
 export TOPDIR=$(pwd)
-SEALS_REPORT_ERROR_URL=https://github.com/kaiwan/seals/issues
+SEALS_REPORT_ERROR_EMAIL=kaiwan.billimoria@gmail.com
+#SEALS_REPORT_ERROR_URL=https://github.com/kaiwan/seals/issues
 
 #--- Icons
 # src: /usr/share/icons/Humanity/actions/
@@ -100,37 +101,50 @@ cli_handle_error()
 #  the entire background is filled with a blue-ish color; why?? yad bug? us?
 FatalError()
 {
- local msgpre="<b><span foreground='Crimson'>Sorry, SEALS has encountered a fatal error.</span></b>\n\n"
- local errmsg="<i>Details:</i>\n$(date):${name}:${FUNCNAME[ 1 ]}()"
- local msgpost="\n<span foreground='Crimson'>\
-If you feel this is a bug / issue, kindly report it here:</span>
-${SEALS_REPORT_ERROR_URL}\n
+ local msgpre_gui="<b><span foreground='Crimson'>Sorry, SEALS has encountered a fatal error.</span></b>\n\n"
+ local msgpre_con="Sorry, SEALS has encountered a fatal error." # con: console-mode
+
+ local errmsg_gui="<i>Details:</i>\n$(date):${name}:${FUNCNAME[ 1 ]}()"
+ local errmsg_con="Details: $(date):${name}:${FUNCNAME[ 1 ]}()"
+
+ local msgpost_gui="\n<span foreground='Crimson'>\
+If you feel this is a bug / issue, kindly copy the full output and email it here:</span>
+${SEALS_REPORT_ERROR_EMAIL}\n
 Many thanks.
 "
- local msg
+ local msgpost_con="If you feel this is a bug or issue, kindly copy the full output and email it here:
+ ${SEALS_REPORT_ERROR_EMAIL}
+Many thanks.
+"
+ local msg_gui msg_con
 
  [ $# -ne 1 ] && {
-  msg="${msgpre}<span foreground='NavyBlue'>${errmsg}</span>\n${msgpost}"
+  msg_gui="${msgpre_gui}<span foreground='NavyBlue'>${errmsg_gui}</span>\n${msgpost_gui}"
+  msg_con="${msgpre_con}
+${errmsg_con}
+${msgpost_con}"
  } || {
-  msg="${msgpre}<span foreground='NavyBlue'>${errmsg}\n ${1}</span>\n${msgpost}"
+  msg_gui="${msgpre_gui}<span foreground='NavyBlue'>${errmsg_gui}\n \"${1}\"</span>\n${msgpost_gui}"
+  msg_con="${msgpre_con}
+${errmsg_con}
+\"${1}\"
+${msgpost_con}"
  }
  #cecho "Fatal Error! Details: ${errmsg} ${1}"
 
  [ ${GUI_MODE} -eq 1 ] && {
-   #local LN=$(echo "${msg}" |wc -l)
-   #local calht=$(($LN*10))
 
-echo "${msg}"
+   #echo "${msg_con}"
 
    local title="SEALS: FATAL ERROR!"
-   yad --title="${title}" --image=dialog-warning --text="${msg}" \
+   yad --title="${title}" --image=dialog-warning --text="${msg_gui}" \
 	--button="Close!${ICON_NO}:0" \
 	--wrap --text-align=center --button-layout=center --center \
 	--selectable-labels --no-escape --dialog-sep --sticky --on-top --skip-taskbar 2>/dev/null
    # also show on the console
-   cli_handle_error "$@"
+   cli_handle_error "${msg_con}"  #"$@"
  } || {
-   cli_handle_error "$@"
+   cli_handle_error "${msg_con}"  #"$@"
  }
  exit 1
 } # end FatalError()
