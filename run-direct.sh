@@ -1,7 +1,7 @@
 #!/bin/sh
 # Part of the SEALs project
 # (c) kaiwanTECH
-STG_IMG=~/scratchpad/SEALS_staging/images
+STG_IMG=~/scratchpad/SEALS_staging/SEALS_staging_vexpress/images #~/scratchpad/SEALS_staging/images
    # ! UPDATE the STG_IMG var for your system !
 
 KERN=${STG_IMG}/zImage
