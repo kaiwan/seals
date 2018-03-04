@@ -30,15 +30,27 @@ echo
 
 #####
 ## UPDATE for your box
-STG=~/scratchpad/SEALS_staging/ #$(pwd)/staging
+#   Freescale I.MX6
+#STG=~/scratchpad/SEALS_staging/IMX6_SEALS_staging #$(pwd)/staging
+#   Vexpress CA-9
+STG=~/scratchpad/SEALS_staging/SEALS_staging_vexpress #$(pwd)/staging
 #####
 
 ARMPLAT=vexpress-a9  ## make sure it's right! ##
+# It's IMPORTANT to pass along the Device Tree Blob !
+DTB=${STG}/images/vexpress-v2p-ca9.dtb
 PORT=1235
+
+[ ! -f ${DTB} ] && {
+	echo "${name}: FATAL: DTB file \"${DTB}\" not present?"
+	exit 1
+}
+
 qemu-system-arm -m 256 -M ${ARMPLAT} -kernel $1 \
 	-drive file=${STG}/images/rfs.img,if=sd,format=raw \
 	-append "console=ttyAMA0 root=/dev/mmcblk0 init=/sbin/init" -nographic \
-	-gdb tcp::${PORT} -S
+	-gdb tcp::${PORT} -S \
+	-dtb ${DTB}
  	 # qemu help:
 	 #  -gdb dev   wait for gdb connection on 'dev'
 	 #  -S         freeze CPU at startup (use 'c' to start execution)
