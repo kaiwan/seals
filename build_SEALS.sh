@@ -502,7 +502,7 @@ if [ ${KGDB_MODE} -eq 1 ]; then
 REMEMBER this qemu instance is run w/ the -S : it *waits* for a gdb client to connect to it...
 
 You are expected to run (in another terminal window):
-$ arm-none-linux-gnueabi-gdb <path-to-ARM-built-kernel-src-tree>/vmlinux  <-- built w/ -g
+$ ${CXX}gdb <path-to-ARM-built-kernel-src-tree>/vmlinux  <-- built w/ -g
 ...
 and then have gdb connect to the target kernel using
 (gdb) target remote :1234
@@ -602,7 +602,7 @@ display_current_config()
 config_setup()
 {
  local msg1=""
- local gccver=$(arm-none-linux-gnueabi-gcc --version |head -n1 |cut -f2- -d" ")
+ local gccver=$(${CXX}gcc --version |head -n1 |cut -f2- -d" ")
 
  report_progress
 
