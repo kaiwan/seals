@@ -161,7 +161,9 @@ else
 fi
 
 ShowTitle "BusyBox Build:"
-make -j${CPU_CORES} ARCH=arm CROSS_COMPILE=${CXX} install
+make -j${CPU_CORES} ARCH=arm CROSS_COMPILE=${CXX} install || {
+  FatalError "Building and/or Installing busybox failed!"
+}
 
 mysudo "SEALS Build:Step 1 of ${STEPS}: Copying of required busybox files. ${MSG_GIVE_PSWD_IF_REQD}" \
  cp -af ${BB_FOLDER}/_install/* ${ROOTFS}/ || {
