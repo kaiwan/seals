@@ -7,6 +7,21 @@
 # https://github.com/kaiwan/seals
 # (c) kaiwanTECH
 name=$(basename $0)
+#############################
+# ${BUILD_CONFIG_FILE} : a configuration script that asks the user for and sets up
+# folder locations, toolchain PATH, any other configs as required.
+#############################
+export BUILD_CONFIG_FILE=./build.config
+source ${BUILD_CONFIG_FILE} || {
+	echo "${name}: source failed! ${BUILD_CONFIG_FILE} missing or invalid?"
+	exit 1
+}
+source ./common.sh || {
+	echo "${name}: source failed! ./common.sh missing or invalid?"
+	exit 1
+}
+color_reset
+
 if [ $# -ne 1 ]; then
 	echo "Usage: $name kernel-[b]zImage (compiled with -g)"
 	exit 1
@@ -20,7 +35,7 @@ echo
 echo "REMEMBER this kernel is run w/ the -S QEMU switch: it *waits* for a gdb client to connect to it..."
 echo
 echo "You are expected to run (in another terminal window):
-$ arm-none-linux-gnueabi-gdb <path-to-ARM-built-kernel-src-tree>/vmlinux  # <-- built w/ -g
+$ ${CXX}gdb <path-to-ARM-built-kernel-src-tree>/vmlinux  # <-- built w/ -g
 ...
 # and then have gdb connect to the target kernel using
 (gdb) target remote :1235
