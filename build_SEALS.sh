@@ -238,8 +238,13 @@ setup_lib_in_rootfs()
  report_progress
 aecho "SEALS Build: copying across shared objects, etc to SEALS /lib /sbin /usr ..."
 
-ARMLIBS=${CXX_LOC}/arm-none-linux-gnueabi/libc
-if [ ! -d ${ARMLIBS} ]; then
+# TODO / FIXME !! lib loc ??
+#  - /usr/arm-none-eabi/lib/ i.e. /usr/${CXX}/lib ?
+# old:
+# ARMLIBS=${CXX_LOC}/arm-none-linux-gnueabi/libc
+GCC_SYSROOT=$(${CXX}gcc --print-sysroot)
+SYSROOT=${GCC_SYSROOT}/  #lib/
+if [ ! -d ${SYSROOT} ]; then
 	cd ${TOPDIR}
 	FatalError "Toolchain shared library locations invalid? Aborting..."
 fi
@@ -247,15 +252,15 @@ fi
 # Quick solution: just copy _all_ the shared libraries, etc from the toolchain
 # into the rfs/lib.
 mysudo "SEALS Build:Step 2 of ${STEPS}: [SEALS rootfs]:setup of library objects. ${MSG_GIVE_PSWD_IF_REQD}" \
-  cp -a ${ARMLIBS}/lib/* ${ROOTFS}/lib || {
+  cp -a ${SYSROOT}/lib/* ${ROOTFS}/lib || {
    FatalError "Copying required libs [/lib] from toolchain failed!"
 }
 mysudo "SEALS Build:Step 3 of ${STEPS}: [SEALS rootfs]:setup of /sbin. ${MSG_GIVE_PSWD_IF_REQD}" \
-  cp -a ${ARMLIBS}/sbin/* ${ROOTFS}/sbin || {
+  cp -a ${SYSROOT}/sbin/* ${ROOTFS}/sbin || {
    FatalError "Copying required libs [/sbin] from toolchain failed!"
 }
 mysudo "SEALS Build:Step 4 of ${STEPS}: [SEALS rootfs]:setup of /usr. ${MSG_GIVE_PSWD_IF_REQD}" \
-  cp -a ${ARMLIBS}/usr/* ${ROOTFS}/usr || {
+  cp -a ${SYSROOT}/usr/* ${ROOTFS}/usr || {
    FatalError "Copying required libs [/sbin] from toolchain failed!"
 }
   # RELOOK: 
