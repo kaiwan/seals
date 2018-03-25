@@ -408,7 +408,8 @@ local COUNT=$((${RFS_SZ_MB}*256))  # for given blocksize (bs) of 4096
 # If config option RFS_FORCE_REBUILD is set -OR- the RootFS file does not exist,
 # create from scratch. If it does exist, just loop mount and update.
 if [ ${RFS_FORCE_REBUILD} -eq 1 -o ! -f ${RFS} ]; then
-  aecho "SEALS Build: *** Re-creating raw RFS image file now *** [dd, mkfs.ext4]"
+  aecho "SEALS Build: *** Deleting and re-creating raw RFS image file now *** [dd, mkfs.ext4]"
+  rm -f ${RFS}
   dd if=/dev/zero of=${RFS} bs=4096 count=${COUNT}
   mysudo "SEALS Build: root fs image generation: enable mkfs. ${MSG_GIVE_PSWD_IF_REQD}" \
    mkfs.ext4 -F -L qemu_rootfs_SEALS ${RFS} || FatalError "mkfs failed!"
