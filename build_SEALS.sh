@@ -238,12 +238,9 @@ setup_lib_in_rootfs()
  report_progress
 aecho "SEALS Build: copying across shared objects, etc to SEALS /lib /sbin /usr ..."
 
-# TODO / FIXME !! lib loc ??
-#  - /usr/arm-none-eabi/lib/ i.e. /usr/${CXX}/lib ?
-# old:
-# ARMLIBS=${CXX_LOC}/arm-none-linux-gnueabi/libc
+# First, get the 'sysroot' from the compiler itself
 GCC_SYSROOT=$(${CXX}gcc --print-sysroot)
-SYSROOT=${GCC_SYSROOT}/  #lib/
+SYSROOT=${GCC_SYSROOT}/
 if [ ! -d ${SYSROOT} ]; then
 	cd ${TOPDIR}
 	FatalError "Toolchain shared library locations invalid? Aborting..."
