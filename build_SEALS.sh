@@ -816,9 +816,16 @@ check_installed_pkg()
  report_progress
 
  which ${CXX}gcc > /dev/null 2>&1 || {
-   FatalError "Cross toolchain does not seem to be valid! PATH issue? 
-Tip: Install the cross toolchain first, update the build.config to reflect it and rerun.
-Tip: (Less likely) This error can be thrown when you run the script with sudo (the
+   FatalError "Cross toolchain does not seem to be valid! PATH issue?
+
+Tip 1: If new to SEALS, we urge you, Please read the documentation here and then proceed:
+ https://github.com/kaiwan/seals/wiki
+ https://github.com/kaiwan/seals/wiki/HOWTO-Install-required-packages-on-the-Host-for-SEALS
+ https://github.com/kaiwan/seals/wiki/SEALs-HOWTO
+
+Tip 2: Install the cross toolchain first, update the build.config to reflect it and rerun.
+
+Tip 3: (Less likely) This error can be thrown when you run the script with sudo (the
 env vars are not setup. So run from a root shell where the PATH is correctly setup).
 Aborting..."
  }
