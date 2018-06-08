@@ -46,9 +46,9 @@ echo
 #####
 ## UPDATE for your box
 #   Freescale I.MX6
-#STG=~/scratchpad/SEALS_staging/IMX6_SEALS_staging #$(pwd)/staging
+#STG=~/scratchpad/SEALS_staging/IMX6_SEALS_staging
 #   Vexpress CA-9
-STG=~/scratchpad/SEALS_staging/SEALS_staging_vexpress #$(pwd)/staging
+STG=~/scratchpad/SEALS_staging/SEALS_staging_vexpress
 #####
 
 ARMPLAT=vexpress-a9  ## make sure it's right! ##
