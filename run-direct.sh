@@ -18,7 +18,7 @@ RAM=512
 RUNCMD="qemu-system-arm -m ${RAM} -M vexpress-a9 -kernel ${KERN} \
 	-drive file=${ROOTFS},if=sd,format=raw \
 	-append \"${K_CMDLINE}\" \
-	-nographic"
+	-nographic -no-reboot"
 [ -f ${DTB} ] && RUNCMD="${RUNCMD} -dtb ${DTB}"
 echo
 echo "${RUNCMD}"
