@@ -83,13 +83,14 @@ trap 'wecho "User Abort. ${MSG_EXITING}" ; dumpstack ; [ ${COLOR} -eq 1 ] && col
 #------------------ b u i l d _ k e r n e l ---------------------------
 build_kernel()
 {
+
  report_progress
 cd ${KERNEL_FOLDER} || exit 1
 ShowTitle "KERNEL: Configure and Build [kernel ver ${KERNELVER}] now ..."
 
 if [ ${WIPE_KERNEL_CONFIG} -eq 1 ]; then
 	ShowTitle "Setting default kernel config for ARM ${ARM_PLATFORM_STR} platform:"
-	make ARCH=arm ${ARM_PLATFORM}_defconfig || {
+	make V=${VERBOSE_BUILD} ARCH=arm ${ARM_PLATFORM}_defconfig || {
 	   FatalError "Kernel config for ARM ${ARM_PLATFORM_STR} platform failed.."
 	}
 fi
@@ -102,11 +103,11 @@ Prompt ""
 USE_QT=n   # make 'y' to use a GUI Qt configure environment
            #  if 'y', you'll require the Qt runtime installed..
 if [ ${USE_QT} = "y" ]; then
-	make ARCH=arm xconfig || {
+	make V=${VERBOSE_BUILD} ARCH=arm xconfig || {
 	  FatalError "make xconfig failed.."
 	}
 else
-	make ARCH=arm menuconfig || {
+	make V=${VERBOSE_BUILD} ARCH=arm menuconfig || {
 	  FatalError "make menuconfig failed.."
 	}
 fi
@@ -118,8 +119,8 @@ CPU_OPT=$((${CPU_CORES}*2))
 
 #Prompt
 # make all => zImage, modules, dtbs (device-tree-blobs), ... - all will be built!
-aecho "Doing: make -j${CPU_OPT} ARCH=arm CROSS_COMPILE=${CXX} all"
-time make -j${CPU_OPT} ARCH=arm CROSS_COMPILE=${CXX} all || {
+aecho "Doing: make V=${VERBOSE_BUILD} -j${CPU_OPT} ARCH=arm CROSS_COMPILE=${CXX} all"
+time make V=${VERBOSE_BUILD} -j${CPU_OPT} ARCH=arm CROSS_COMPILE=${CXX} all || {
   FatalError "Kernel build failed! Aborting ..."
 }
 
@@ -147,7 +148,7 @@ fi
 
 if [ ${WIPE_BUSYBOX_CONFIG} -eq 1 ]; then
 	ShowTitle "BusyBox default config:"
-	make ARCH=arm CROSS_COMPILE=${CXX} defconfig
+	make V=${VERBOSE_BUILD} ARCH=arm CROSS_COMPILE=${CXX} defconfig
 fi
 
 aecho "Edit the BusyBox config if required, Save & Exit..."
@@ -155,13 +156,13 @@ Prompt " " ${MSG_EXITING}
 
 USE_QT=n   # make 'y' to use a GUI Qt configure environment
 if [ ${USE_QT} = "y" ]; then
-	make ARCH=arm CROSS_COMPILE=${CXX} xconfig
+	make V=${VERBOSE_BUILD} ARCH=arm CROSS_COMPILE=${CXX} xconfig
 else
-	make ARCH=arm CROSS_COMPILE=${CXX} menuconfig
+	make V=${VERBOSE_BUILD} ARCH=arm CROSS_COMPILE=${CXX} menuconfig
 fi
 
 ShowTitle "BusyBox Build:"
-make -j${CPU_CORES} ARCH=arm CROSS_COMPILE=${CXX} install || {
+make V=${VERBOSE_BUILD} -j${CPU_CORES} ARCH=arm CROSS_COMPILE=${CXX} install || {
   FatalError "Building and/or Installing busybox failed!"
 }
 
@@ -622,6 +623,8 @@ Linux kernel to use : ${KERNELVER}
 Linux kernel codebase location : ${KERNEL_FOLDER}
 Kernel command-line : \"${SEALS_K_CMDLINE}\"
 
+Verbose Build : ${VERBOSE_BUILD}
+
 Busybox: Busybox to use: ${BB_VER} | Busybox location: ${BB_FOLDER}
 
 Qemu: KGDB mode: ${KGDB_MODE} | SMP mode: ${SMP_EMU_MODE}
@@ -660,6 +663,7 @@ RootFS size  : ${RFS_SZ_MB} MB     [note: new size applied only on 'RootFS force
 Linux kernel to use : ${KERNELVER}
 Linux kernel codebase location : ${KERNEL_FOLDER}
 Kernel command-line : \"${SEALS_K_CMDLINE}\"
+Verbose Build : ${VERBOSE_BUILD}
 <span foreground='blue'>\
 Busybox: Busybox to use: ${BB_VER} | Busybox location: ${BB_FOLDER}
 </span>\
@@ -686,6 +690,8 @@ Press 'Yes' (or Enter) to proceed, 'No' (or Esc) to abort
 	Prompt ""
  } || {
    #wecho "WIDTHxHT=$CAL_WIDTH x ${CAL_HT} "
+   iecho "${msg1}"   # also show it on the terminal window..
+   echo
    yad --image "dialog-question" --title "${PRJ_TITLE}" --center \
          --button=gtk-yes:0 --button=gtk-no:1 \
 	 --width=${CAL_WIDTH} --height=${CAL_HT} \
@@ -807,10 +813,11 @@ To change settings permenantly, please edit the build.config file.
 } # end config_setup()
 
 #--------- c h e c k _ i n s t a l l e d _ p k g ----------------------
-# TODO
 #  + use superior checking func (fr CQuATS code)
+# TODO
 #  - gather and install required packages
-#  -
+#  - check for and install openssl-* (trouble is, the exact pkg name depends
+#    on the distro [??])
 check_installed_pkg()
 {
  report_progress
