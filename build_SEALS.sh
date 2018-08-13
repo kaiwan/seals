@@ -927,7 +927,25 @@ check_installed_pkg
 ###
 report_progress
 
-check_folder_AIA ${STG}
+[ ! -d ${STG} ] && {
+	FatalError "
+We expect that certain folders in the project 'staging area' are
+pre-populated with appropriate content, i.e., the source code for
+their resp projects:
+
+STG            : the project staging folder
+KERNEL_FOLDER  : kernel source tree
+BB_FOLDER      : busybox source tree
+
+You must fix this by creating and populating these folders with the said
+source code; and if required, update them in the config file here:
+\"${BUILD_CONFIG_FILE}\"
+
+TIP: the plcae to update these folders is within the above-mentioned
+config file.
+"
+}
+
 check_folder_createIA ${ROOTFS}
 check_folder_createIA ${IMAGES_FOLDER}
 check_folder_createIA ${IMAGES_BKP_FOLDER}

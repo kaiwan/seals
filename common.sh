@@ -158,7 +158,7 @@ check_folder_createIA()
 	[ $# -ne 1 ] && return 1
 	[ ! -d $1 ] && {
 		Echo "Folder \"$1\" does not exist. Creating it..."
-		mkdir -p $1	&& return 0 || return 1
+		mkdir -p $1 && return 0 || return 1
 	}
 }
 
