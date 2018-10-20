@@ -14,6 +14,7 @@
 #
 MNTPT=/mnt/tmp
 name=$(basename $0)
+LSOF_CHECK=0
 
 [ $# -ne 1 ] && {
  echo "Usage: ${name} <rootfs-image-file>"
@@ -26,11 +27,14 @@ name=$(basename $0)
 IMG=$1
 
 echo "${name}: Rootfs image file: ${IMG}"
-echo "${name}: Please wait... checking if rootfs image file above is currently in use ..."
-sudo lsof 2>/dev/null |grep ${IMG} && {
+
+[ ${LSOF_CHECK} -eq 1 ] && {
+ echo "${name}: Please wait... checking if rootfs image file above is currently in use ..."
+ sudo lsof 2>/dev/null |grep ${IMG} && {
   echo "${name}: Rootfs image file \"${IMG}\" currently in use, aborting..." 
   echo " Is it being used by a QEMU instance perhaps? If so, shut it down and retry this."
   exit 1
+ }
 }
 
 sudo mkdir -p ${MNTPT} 2>/dev/null
