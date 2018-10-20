@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 # The SEALS Opensource Project
 # SEALS : Simple Embedded Arm Linux System
 # Maintainer : Kaiwan N Billimoria
