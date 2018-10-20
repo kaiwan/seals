@@ -4,6 +4,11 @@
 STG_IMG=~/scratchpad/SEALS_staging/SEALS_staging_vexpress/images #~/scratchpad/SEALS_staging/images
    # ! UPDATE the STG_IMG var for your system !
 
+[ ! -d ${STG_IMG} ] && {
+  echo "${name}: SEALS staging folder \"${STG_IMG}\" invalid, pl correct and retry..."
+  exit 1
+}
+
 KERN=${STG_IMG}/zImage
 ROOTFS=${STG_IMG}/rfs.img
 #ROOTFS=~/scratchpad/buildroot-2017.02.3/output/images/rootfs.ext4
