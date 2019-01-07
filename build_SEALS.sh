@@ -240,11 +240,10 @@ setup_lib_in_rootfs()
 aecho "SEALS Build: copying across shared objects, etc to SEALS /lib /sbin /usr ..."
 
 # First, get the 'sysroot' from the compiler itself
-GCC_SYSROOT=$(${CXX}gcc --print-sysroot)
 SYSROOT=${GCC_SYSROOT}/
-if [ ! -d ${SYSROOT} ]; then
+if [ ! -d ${SYSROOT} -o "${SYSROOT}" = "/" ]; then
 	cd ${TOPDIR}
-	FatalError "Toolchain shared library locations invalid? Aborting..."
+	FatalError "Toolchain shared library locations invalid (NULL or '/')? Aborting..."
 fi
 
 # Quick solution: just copy _all_ the shared libraries, etc from the toolchain
@@ -821,6 +820,22 @@ To change settings permenantly, please edit the build.config file.
 check_installed_pkg()
 {
  report_progress
+
+ GCC_SYSROOT=$(${CXX}gcc --print-sysroot)
+ if [ -z "${GCC_SYSROOT}" -o "${GCC_SYSROOT}" = "/" ]; then
+   FatalError "There is an issue with the provided toolchain.
+
+It appears to not have the toolchain 'sysroot' libraries, sbin and usr
+components within it. This could (and usually does) happen if it was installed
+via a simple package manager cmd like 'sudo apt install arm-linux-gnueabi'.
+
+We insist you install a complete proper toolchain; to do so, pl follow the
+detailed instructions provided here:
+https://github.com/kaiwan/seals/wiki/HOWTO-Install-required-packages-on-the-Host-for-SEALS
+
+Thanks.
+"
+ fi
 
  which ${CXX}gcc > /dev/null 2>&1 || {
    FatalError "Cross toolchain does not seem to be valid! PATH issue?
