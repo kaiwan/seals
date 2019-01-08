@@ -108,7 +108,9 @@ FatalError()
  local errmsg_con="Details: $(date):${name}:${FUNCNAME[ 1 ]}()"
 
  local msgpost_gui="\n<span foreground='Crimson'>\
-If you feel this is a bug / issue, kindly copy the full output and email it here:</span>
+If you feel this is a bug or issue, kindly file a bug report here:
+ https://github.com/kaiwan/seals/issues
+(Or simply copy the full output above and email it here:</span>
 ${SEALS_REPORT_ERROR_EMAIL}\n
 Many thanks.
 "
