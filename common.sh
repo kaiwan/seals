@@ -101,7 +101,8 @@ local msg=$1
 shift
 local cmd="$@"
 aecho "${LOGNAME}: ${msg}"
-sudo --preserve-env sh -c "${cmd}"
+[ ${DEBUG} -eq 1 ] && echo "mysudo():cmd: \"${cmd}\""
+sudo --preserve-env bash -c "${cmd}"
 }
 
 # check_root_AIA
