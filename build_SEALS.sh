@@ -841,7 +841,7 @@ Thanks.
 "
  fi
 
- which ${CXX}gcc > /dev/null 2>&1 || {
+ which ${CXX}gcc > /dev/null || {
    FatalError "Cross toolchain does not seem to be valid! PATH issue?
 
 Tip 1: If new to SEALS, we urge you, Please read the documentation here and then proceed:
@@ -865,10 +865,10 @@ Aborting..."
 
  # For libncurses lib: have to take into account whether running on Ubuntu/Deb
  # or Fedora/RHEL/CentOS
- which dpkg > /dev/null 2>&1
+ which dpkg > /dev/null
  if [ $? -eq 0 ] ; then
   # Ubuntu/Debian
-   dpkg -l |grep -q libncurses5-dev 2>/dev/null || {
+   dpkg -l |grep -q libncurses5-dev || {
      FatalError "The 'libncurses5-dev' package does not seem to be installed.
 (Required for kernel config UI).
 Pl install the package (with apt-get) & re-run.  Aborting..."
@@ -876,7 +876,7 @@ Pl install the package (with apt-get) & re-run.  Aborting..."
  else
   if [ -f /etc/fedora-release ] || [ -f /etc/fedora ] ; then
   # Fedora/RHEL/CentOS - probably :)
-  rpm -qa |grep -q ncurses-devel 2>/dev/null || {
+  rpm -qa |grep -q ncurses-devel || {
      FatalError "The 'ncurses-devel' package does not seem to be installed.
 (Required for kernel config UI).
 Pl install the package (with dnf/yum/rpm) & re-run.  Aborting..."
@@ -885,7 +885,7 @@ Pl install the package (with dnf/yum/rpm) & re-run.  Aborting..."
  fi
 
  # Terminal 'color' support?
- which tput > /dev/null 2>&1 || {
+ which tput > /dev/null || {
    COLOR=0
    wecho "tput does not seem to be installed, no color support..."
  } && {
