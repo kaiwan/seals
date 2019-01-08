@@ -241,7 +241,8 @@ aecho "SEALS Build: copying across shared objects, etc to SEALS /lib /sbin /usr 
 
 # First, get the 'sysroot' from the compiler itself
 SYSROOT=${GCC_SYSROOT}/
-if [ ! -d ${SYSROOT} -o "${SYSROOT}" = "/" ]; then
+echo "[sanity check: SYSROOT = ${SYSROOT} ]"
+if [ -z "${SYSROOT}" -o ! -d ${SYSROOT} -o "${SYSROOT}" = "/" ]; then
 	cd ${TOPDIR}
 	FatalError "Toolchain shared library locations invalid (NULL or '/')? Aborting..."
 fi
@@ -445,7 +446,10 @@ mysudo "SEALS Build: root fs image generation: enable mount. ${MSG_GIVE_PSWD_IF_
 
 aecho " Now copying across rootfs data to ${RFS} ..."
 mysudo "SEALS Build: root fs image generation: enable copying into SEALS root fs image. ${MSG_GIVE_PSWD_IF_REQD}" \
- cp -au ${ROOTFS}/* ${MNTPT}
+ cp -au ${ROOTFS}/* ${MNTPT}/
+ [ ${DEBUG} -eq 1 ] && {
+    echo; mount |grep "${MNTPT}" ; echo; df -h |grep "${MNTPT}" ; echo
+ } |tee -a ${LOGFILE}
 mysudo "SEALS Build: root fs image generation: enable unmount. ${MSG_GIVE_PSWD_IF_REQD}" \
  umount ${MNTPT}
 sync
