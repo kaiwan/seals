@@ -76,7 +76,8 @@ export CPU_CORES=$(getconf -a|grep _NPROCESSORS_ONLN|awk '{print $2}')
 export DTB_BLOB_LOC=${KERNEL_FOLDER}/arch/arm/boot/dts/${DTB_BLOB} # gen within kernel src tree
 
 # Signals
-trap 'wecho "User Abort. ${MSG_EXITING}" ; dumpstack ; [ ${COLOR} -eq 1 ] && color_reset ; exit 2' HUP INT QUIT
+trap 'wecho "User Abort. ${MSG_EXITING}" ; dumpstack ; [ ${COLOR} -eq 1 ] && color_reset ; exit 2' \
+ HUP INT QUIT
 
 ##-------------------- Functions Start --------------------------------
 
@@ -449,7 +450,7 @@ mysudo "SEALS Build: root fs image generation: enable copying into SEALS root fs
  cp -au ${ROOTFS}/* ${MNTPT}/
  [ ${DEBUG} -eq 1 ] && {
     echo; mount |grep "${MNTPT}" ; echo; df -h |grep "${MNTPT}" ; echo
- } |tee -a ${LOGFILE}
+ } |tee -a ${LOGFILE_COMMON}
 mysudo "SEALS Build: root fs image generation: enable unmount. ${MSG_GIVE_PSWD_IF_REQD}" \
  umount ${MNTPT}
 sync
@@ -870,6 +871,11 @@ Aborting..."
   # Ubuntu/Debian
    dpkg -l |grep -q libncurses5-dev || {
      FatalError "The 'libncurses5-dev' package does not seem to be installed.
+(Required for kernel config UI).
+Pl install the package (with apt-get) & re-run.  Aborting..."
+   }
+   dpkg -l |grep -q libssl-dev || {
+     FatalError "The 'libssl-dev' package does not seem to be installed.
 (Required for kernel config UI).
 Pl install the package (with apt-get) & re-run.  Aborting..."
    }
