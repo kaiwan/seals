@@ -1,23 +1,28 @@
-#!/bin/sh
+#!/bin/bash
 # Part of the SEALs project
+# https://github.com/kaiwan/seals
 # (c) kaiwanTECH
-STG_IMG=~/scratchpad/SEALS_staging/SEALS_staging_vexpress/images #~/scratchpad/SEALS_staging/images
-   # ! UPDATE the STG_IMG var for your system !
+name=$(basename $0)
+# Fetch the SEALs env
+source ./build.config || {
+	echo "${name}: source failed! ./build.config file missing or invalid?"
+	exit 1
+}
 
-[ ! -d ${STG_IMG} ] && {
-  echo "${name}: SEALS staging folder \"${STG_IMG}\" invalid, pl correct and retry..."
+[ -z "${STG}" -o ! -d "${STG}" ] && {
+  echo "${name}: SEALS staging folder \"${STG}\" invalid, pl correct and retry..."
+  echo "Tip: edit the build.config file"
   exit 1
 }
 
-KERN=${STG_IMG}/zImage
-ROOTFS=${STG_IMG}/rfs.img
-#ROOTFS=~/scratchpad/buildroot-2017.02.3/output/images/rootfs.ext4
+KERN=${STG}/images/zImage
+ROOTFS=${STG}/images/rfs.img
 [ $# -eq 1 ] && KERN=$1
-DTB=${STG_IMG}/vexpress-v2p-ca9.dtb
+DTB=${STG}/images/vexpress-v2p-ca9.dtb
 
 K_CMDLINE_BASE="console=ttyAMA0 rootfstype=ext4 root=/dev/mmcblk0 init=/sbin/init"
-#K_CMDLINE_XTRA="initcall_debug ignore_loglevel debug crashkernel=16M"
-K_CMDLINE="${K_CMDLINE_BASE} ${K_CMDLINE_XTRA}"
+#K_CMDLINE_DBG="initcall_debug ignore_loglevel debug crashkernel=16M"
+K_CMDLINE="${K_CMDLINE_BASE} ${K_CMDLINE_DBG}"
 
 RAM=512
 RUNCMD="qemu-system-arm -m ${RAM} -M vexpress-a9 -kernel ${KERN} \
