@@ -43,15 +43,7 @@ $ ${CXX}gdb <path-to-ARM-built-kernel-src-tree>/vmlinux  # <-- built w/ -g
 "
 echo
 
-#####
-## UPDATE for your box
-#   Freescale I.MX6
-#STG=~/scratchpad/SEALS_staging/IMX6_SEALS_staging
-#   Vexpress CA-9
-STG=~/scratchpad/SEALS_staging/SEALS_staging_vexpress
-#####
-
-ARMPLAT=vexpress-a9  ## make sure it's right! ##
+#ARMPLAT=vexpress-a9  ## make sure it's right! ##
 # It's IMPORTANT to pass along the Device Tree Blob !
 DTB=${STG}/images/vexpress-v2p-ca9.dtb
 PORT=1235
@@ -61,15 +53,16 @@ PORT=1235
 	exit 1
 }
 
-qemu-system-arm -m 256 -M ${ARMPLAT} -kernel $1 \
+cmd="qemu-system-arm -m 256 -M ${ARM_PLATFORM_OPT} -kernel $1 \
 	-drive file=${STG}/images/rfs.img,if=sd,format=raw \
-	-append "console=ttyAMA0 root=/dev/mmcblk0 init=/sbin/init" -nographic \
+	-append \"console=ttyAMA0 root=/dev/mmcblk0 init=/sbin/init\" -nographic \
 	-gdb tcp::${PORT} -S \
-	-dtb ${DTB}
+	-dtb ${DTB}"
  	 # qemu help:
 	 #  -gdb dev   wait for gdb connection on 'dev'
 	 #  -S         freeze CPU at startup (use 'c' to start execution)
-
+echo "Running: ${cmd}"
+eval "${cmd}"
 #
 # If you get this error::
 #
