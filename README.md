@@ -24,6 +24,8 @@ GETTING STARTED with SEALS
 ** Please FIRST READ the 'SEALs HOWTO' page [1] in the Wiki section to better
 understand how to build and use this project. **
 
+For the impatient: run the run_and_log wrapper script.
+
 Do write in your comments, suggestions, whatever.
 Contributing would be awesome !
 
