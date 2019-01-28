@@ -32,10 +32,13 @@ color_reset
 export PRJ_TITLE="SEALS: Simple Embedded ARM Linux System"
 
 techo "${PRJ_TITLE}"
-gccver=$(${CXX}gcc --version |head -n1 |cut -f2- -d" ")
+
+show_curr_build_config()
+{
+local gccver=$(${CXX}gcc --version |head -n1 |cut -f2- -d" ")
 
 aecho " ---------------- Current Configuration -----------------"
- msg1="
+local msg1="
 Config file : ${BUILD_CONFIG_FILE}   [edit it to change any settings shown below]
 Config name : ${CONFIG_NAME_STR}
 
@@ -64,4 +67,18 @@ Diplay:
 Log file              : ${LOGFILE_COMMON}"
 
 echo "${msg1}"
+echo "----------------------------------------------------------"
+}
+
+show_stg()
+{
+becho "Staging area ::"
+ls ${STG}/
+echo
+becho "Latest images ::"
+ls -lth ${STG}/images
+}
+
+show_curr_build_config
+show_stg
 exit 0

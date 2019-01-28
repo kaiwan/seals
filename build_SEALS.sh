@@ -98,7 +98,7 @@ fi
 
 aecho "[Optional] Kernel Manual Configuration:
 Edit the kernel config if required, Save & Exit...
- Tip: you can browse notes on this here: doc/kernel_config.txt"
+ Tip: a sample knwon working kernel config is provided here: doc/kconfig_4.14.52"
 Prompt ""
 
 USE_QT=n   # make 'y' to use a GUI Qt configure environment
