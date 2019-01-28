@@ -243,3 +243,21 @@ do
 done
 color_reset
 }
+
+test_color_echos()
+{
+techo "Sample of the 'techo()' - title echo - color output"
+echo
+cecho "Sample of the 'cecho()' - color echo - color output"
+echo
+wecho "Sample of the 'wecho()' - warn echo - color output"
+echo
+becho "Sample of the 'becho()' - bold echo - color output"
+echo
+aecho "Sample of the 'aecho()' - alert echo - color output"
+echo
+iecho "Sample of the 'iecho()' - info echo - color output"
+echo
+decho "Sample of the 'decho()' - debug echo - color output"
+echo
+}
