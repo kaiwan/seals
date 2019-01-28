@@ -721,17 +721,6 @@ Press 'Yes' (or Enter) to proceed, 'No' (or Esc) to abort
  local s5="Run QEMU ARM emulator?                           N"
  [ ${RUN_QEMU} -eq 1 ] && s5="Run QEMU ARM emulator?                         Y"
 
-# msg2="--------------------- Preset Script Build Options ----------------------
-#${s1}
-#${s1_2}
-#${s2}
-#${s2_2}
-#${s3}
-#${s4}
-#${s5}
-#"
-# iecho "${msg2}"
-
 [ ${GUI_MODE} -eq 1 ] && {
  #--- YAD
  local disp_kernel="FALSE"
@@ -959,9 +948,9 @@ We expect that certain folders in the project 'staging area' are
 pre-populated with appropriate content, i.e., the source code for
 their resp projects:
 
-STG            : the project staging folder
-KERNEL_FOLDER  : kernel source tree
-BB_FOLDER      : busybox source tree
+STG              : the project staging folder
+  KERNEL_FOLDER  : kernel source tree
+  BB_FOLDER      : busybox source tree
 
 You must fix this by creating and populating these folders with the said
 source code; and if required, update them in the config file here:
