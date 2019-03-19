@@ -13,6 +13,7 @@ sed -i "s/\x1b.....//g" ${1}    # get rid of the ^[(B^[[m characters !
 }
 
 LOG=log_seals.txt
-./build_SEALS.sh 2>&1 |tee -a ${LOG}
+# stderr to tee is causing issues with 'menuconfig' target
+./build_SEALS.sh | tee -a ${LOG}
 logfile_post_process ${LOG}
 ls -lh ${LOG}
