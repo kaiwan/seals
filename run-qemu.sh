@@ -31,6 +31,11 @@ RUNCMD="qemu-system-arm -m ${RAM} -M vexpress-a9 -kernel ${KERN} \
 	-nographic -no-reboot"
 [ -f ${DTB} ] && RUNCMD="${RUNCMD} -dtb ${DTB}"
 echo
+
+echo "Tip: after the emulated Qemu system runs and you 'halt' it, type Ctrl-a+x to exit from Qemu
+Press [Enter] to continue, ^C to abort ..."
+read x
+
 echo "${RUNCMD}"
 echo
 eval ${RUNCMD}
