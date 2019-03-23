@@ -14,6 +14,7 @@ sed -i "s/\x1b.....//g" ${1}    # get rid of the ^[(B^[[m characters !
 
 LOG=log_seals.txt
 # stderr to tee is causing issues with 'menuconfig' target
+#  but now no stderr logging??
 ./build_SEALS.sh | tee -a ${LOG}
 logfile_post_process ${LOG}
 ls -lh ${LOG}
