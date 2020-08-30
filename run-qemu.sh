@@ -5,13 +5,13 @@
 name=$(basename $0)
 # Fetch the SEALs env
 source ./build.config || {
-	echo "${name}: source failed! ./build.config file missing or invalid?"
+	echo "${name}: ./build.config file missing or invalid? aborting..."
 	exit 1
 }
 
 [ -z "${STG}" -o ! -d "${STG}" ] && {
   echo "${name}: SEALS staging folder \"${STG}\" invalid, pl correct and retry..."
-  echo "Tip: edit the build.config file"
+  echo "Tip: check/edit the build.config file"
   exit 1
 }
 
@@ -21,6 +21,7 @@ ROOTFS=${STG}/images/rfs.img
 DTB=${STG}/images/vexpress-v2p-ca9.dtb
 
 K_CMDLINE_BASE="console=ttyAMA0 rootfstype=ext4 root=/dev/mmcblk0 init=/sbin/init"
+# uncomment the below line for 'debug'
 #K_CMDLINE_DBG="initcall_debug ignore_loglevel debug crashkernel=16M"
 K_CMDLINE="${K_CMDLINE_BASE} ${K_CMDLINE_DBG}"
 
@@ -32,8 +33,8 @@ RUNCMD="qemu-system-arm -m ${RAM} -M vexpress-a9 -kernel ${KERN} \
 [ -f ${DTB} ] && RUNCMD="${RUNCMD} -dtb ${DTB}"
 echo
 
-echo "Tip: after the emulated Qemu system runs and you 'halt' it, type Ctrl-a+x to exit from Qemu
-Press [Enter] to continue, ^C to abort ..."
+echo "Tip: after the emulated Qemu system runs and you 'halt' it (you should see the message 'reboot: System halted'), type Ctrl-a+x to exit from Qemu
+Now press [Enter] to continue or ^C to abort ..."
 read x
 
 echo "${RUNCMD}"

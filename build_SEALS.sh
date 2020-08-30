@@ -28,7 +28,7 @@
 # ./build_seals.sh [-c]
 #   -c : run in console mode only (no gui) [optional]
 #
-# Very good References (by 'Balau'): 
+# (old but still) very good References (by 'Balau'):
 #  Kernel: 
 #    http://balau82.wordpress.com/2012/03/31/compile-linux-kernel-3-2-for-arm-and-emulate-with-qemu/
 # [OLDer LINK]: http://balau82.wordpress.com/2010/03/22/compiling-linux-kernel-for-qemu-arm-emulator/
@@ -62,11 +62,9 @@ export PRJ_TITLE="SEALS: Simple Embedded ARM Linux System"
 export MSG_GIVE_PSWD_IF_REQD="If asked, please enter password"
 export MSG_EXITING="
 ${name}: all done, exiting.
-Thank you for using SEALS! We hope you like it.
-There is much scope for improvement of course; would love to hear your feedback,
-ideas, and contribution!
-Please visit :
-https://github.com/kaiwan/seals ."
+Thanks for using SEALS, hope you like it.
+Please do consider contributing your feedback, ideas, and code!
+https://github.com/kaiwan/seals"
 
 STEPS=5
 export CPU_CORES=$(getconf -a|grep _NPROCESSORS_ONLN|awk '{print $2}')
