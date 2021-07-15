@@ -1,6 +1,6 @@
 SEALS
 =====
-SEALS stand for _Simple Embedded ARM Linux System_. 
+SEALS is an abbreviation for _Simple Embedded ARM Linux System_. 
 
 The SEALS project consists of scripts that will enable one to build a simple
 yet complete skeletal ARM/Linux system, emulated using the powerful [QEMU][2]
@@ -32,6 +32,3 @@ Any contributions would be awesome !
 
 [1]: https://github.com/kaiwan/seals/wiki/SEALs-HOWTO "SEALS HOWTO Page"
 [2]: https://www.qemu.org/ "QEMU Homepage"
-
-Thanks!
-Kaiwan
