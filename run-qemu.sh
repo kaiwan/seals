@@ -41,7 +41,7 @@ echo
 echo "Tips:
 1. Qemu won't run properly if any other hypervisor is already running ! (like VirtualBox)!
 
-2. after the emulated Qemu system runs and you 'halt' it (you should see the message 'reboot: System halted'), type Ctrl-a+x to exit from Qemu
+2. To shutdown the emulated Qemu system, run the 'poweroff' command
 
 Now press [Enter] to continue or ^C to abort ..."
 read x
