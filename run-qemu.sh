@@ -5,10 +5,14 @@
 name=$(basename $0)
 # Fetch the SEALs env
 source ./build.config || {
-	echo "${name}: ./build.config file missing or invalid? aborting..."
-	exit 1
+	echo "${name}: ./build.config file missing or invalid? using defaults if they exist..."
+	if [ -d ./images ]; then
+		STG=./
+	else
+		echo "No ./images/ dir, aborting..."
+		exit 1
+	fi
 }
-
 [ -z "${STG}" -o ! -d "${STG}" ] && {
   echo "${name}: SEALS staging folder \"${STG}\" invalid, pl correct and retry..."
   echo "Tip: check/edit the build.config file"
@@ -29,11 +33,16 @@ RAM=512
 RUNCMD="qemu-system-arm -m ${RAM} -M vexpress-a9 -kernel ${KERN} \
 	-drive file=${ROOTFS},if=sd,format=raw \
 	-append \"${K_CMDLINE}\" \
-	-nographic -no-reboot"
+	-nographic -no-reboot \
+	-audiodev id=none,driver=none"
 [ -f ${DTB} ] && RUNCMD="${RUNCMD} -dtb ${DTB}"
 echo
 
-echo "Tip: after the emulated Qemu system runs and you 'halt' it (you should see the message 'reboot: System halted'), type Ctrl-a+x to exit from Qemu
+echo "Tips:
+1. Qemu won't run properly if any other hypervisor is already running ! (like VirtualBox)!
+
+2. after the emulated Qemu system runs and you 'halt' it (you should see the message 'reboot: System halted'), type Ctrl-a+x to exit from Qemu
+
 Now press [Enter] to continue or ^C to abort ..."
 read x
 
