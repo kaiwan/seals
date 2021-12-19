@@ -96,7 +96,7 @@ fi
 
 aecho "[Optional] Kernel Manual Configuration:
 Edit the kernel config if required, Save & Exit...
- Tip: a sample knwon working kernel config is provided here: doc/kconfig_4.14.52"
+ Tip: a sample known working kernel config is provided here: doc/kconfig_4.14.52"
 Prompt ""
 
 USE_QT=n   # make 'y' to use a GUI Qt configure environment
@@ -476,6 +476,10 @@ aecho " ... and done."
 #-------------- r u n _ q e m u _ S E A L S ---------------------------
 run_qemu_SEALS()
 {
+echo "TIP:
+*** If another hypervisor (like VirtualBox) is running, Qemu won't run properly ***
+"
+
  report_progress
 cd ${TOPDIR} || exit 1
 
@@ -954,7 +958,7 @@ You must fix this by creating and populating these folders with the said
 source code; and if required, update them in the config file here:
 \"${BUILD_CONFIG_FILE}\"
 
-TIP: the plcae to update these folders is within the above-mentioned
+TIP: the place to update these folders is within the above-mentioned
 config file.
 "
 }
