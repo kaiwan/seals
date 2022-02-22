@@ -125,20 +125,20 @@ Echo()
 
  local dt_log="[$(date +%a_%d%b%Y_%T.%N)]"
  local dt_disp
- [ ${VERBOSE_MSG} -eq 1 ] && dt_disp=${dt}
+ [ "${VERBOSE_MSG}" -eq 1 ] && dt_disp=${dt}
 
  local msgpfx1_log="[${loglevel}]${SEP}${dt_log}"
  local msgpfx1_disp="${dt}"
- [ ${VERBOSE_MSG} -eq 1 ] && msgpfx1_disp="${msgpfx1_log}"
+ [ "${VERBOSE_MSG}" -eq 1 ] && msgpfx1_disp="${msgpfx1_log}"
 
  local msgpfx2_log="${SEP}${name}:${FUNCNAME[ 1 ]}()${SEP}"
  local msgpfx2_disp
- [ ${VERBOSE_MSG} -eq 1 ] && msgpfx2_disp="${msgpfx2_log}"
+ [ "${VERBOSE_MSG}" -eq 1 ] && msgpfx2_disp="${msgpfx2_log}"
 
  local msgtxt="$@"
  local msgfull_log="${msgpfx1_log}${msgpfx2_log}${msgtxt}"
  local msg_disp="${msgpfx1_disp}${SEP}${msgtxt}"
- [ ${VERBOSE_MSG} -eq 1 ] && msg_disp="${msgfull_log}"
+ [ "${VERBOSE_MSG}" -eq 1 ] && msg_disp="${msgfull_log}"
 
  sudo bash -c "echo "${msgfull_log}" >> ${LOGFILE_COMMON}"  # lets log it first anyhow
 
