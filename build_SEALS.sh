@@ -46,8 +46,10 @@ export name=$(basename $0)
 #############################
 export BUILD_CONFIG_FILE=./build.config
 source ${BUILD_CONFIG_FILE} || {
-	echo "${name}: source failed! ${BUILD_CONFIG_FILE} missing or invalid?"
-	exit 1
+	#echo "${name}: source failed! ${BUILD_CONFIG_FILE} missing or invalid?"
+	echo "${name}: ${BUILD_CONFIG_FILE} missing, creating it"
+	ln -sf build.config.vexpress build.config || exit 1
+	#exit 1
 }
 source ./common.sh || {
 	echo "${name}: source failed! ./common.sh missing or invalid?"
