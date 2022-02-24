@@ -95,7 +95,7 @@ color_reset()
 # call this func and it becomes infinitely recursive.
 Echo()
 {
- local SEP=" "
+ local SEP=" " name=$(basename $0)
 # echo "# = $# : params: $@"
  [ $# -eq 0 ] && return 1
  local numparams=$#
@@ -135,12 +135,12 @@ Echo()
  local msgpfx2_disp
  [ "${VERBOSE_MSG}" -eq 1 ] && msgpfx2_disp="${msgpfx2_log}"
 
- local msgtxt="$@"
+ local msgtxt="$*"
  local msgfull_log="${msgpfx1_log}${msgpfx2_log}${msgtxt}"
  local msg_disp="${msgpfx1_disp}${SEP}${msgtxt}"
  [ "${VERBOSE_MSG}" -eq 1 ] && msg_disp="${msgfull_log}"
 
- sudo bash -c "echo "${msgfull_log}" >> ${LOGFILE_COMMON}"  # lets log it first anyhow
+ sudo bash -c "echo \"${msgfull_log}\" >> ${LOGFILE_COMMON}"  # lets log it first anyhow
 
  if [ ${numparams} -eq 1 -o ${COLOR} -eq 0 ]; then   # no color/text attribute
     [ ${DEBUG} -eq 1 ] && echo "${msgfull_log}" || echo "${msg_disp}"
