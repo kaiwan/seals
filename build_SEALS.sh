@@ -130,6 +130,7 @@ time make V=${VERBOSE_BUILD} -j${CPU_OPT} ARCH=arm CROSS_COMPILE=${CXX} all || {
 }
 ls -lh arch/arm/boot/zImage
 cp -u ${KERNEL_FOLDER}/arch/arm/boot/zImage ${IMAGES_FOLDER}/
+[ -f ${DTB_BLOB_LOC} ] && cp -u ${DTB_BLOB_LOC} ${IMAGES_FOLDER}/
 aecho "... and done."
 cd ${TOPDIR}
 } # end build_kernel()
@@ -850,7 +851,7 @@ env vars are not setup. So run from a root shell where the PATH is correctly set
 Aborting..."
  }
 
- check_deps_fatal "make qemu-system-arm mkfs.ext4 lzop"
+ check_deps_fatal "make qemu-system-arm mkfs.ext4 lzop bison flex bc"
   # lzop(1) required for the IMX6 kernel build
  [ ${GUI_MODE} -eq 1 ] && check_deps_fatal "yad xrandr"
 
