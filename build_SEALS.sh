@@ -966,6 +966,30 @@ config file.
 "
 }
 
+# Verify that the kernel and busybox src trees are indeed under STG
+i=1
+for dir in ${KERNEL_FOLDER}/kernel ${BB_FOLDER}/applets
+do
+  if [ ! -d ${dir} ] ; then
+    [ $i -eq 1 ] && {
+	   err="kernel"
+	   errdir=${KERNEL_FOLDER}
+	} || {
+	   err="busybox"
+	   errdir=${BB_FOLDER}
+	}
+	FatalError "\n\
+\Expect the ${err} source tree here:\n
+${errdir}\
+\n
+\It appears to be missing!\
+\Pl first install the kernel source tree here and rerun.\
+\n
+"
+  fi
+  let i=i+1
+done
+
 check_folder_createIA ${ROOTFS}
 check_folder_createIA ${IMAGES_FOLDER}
 check_folder_createIA ${IMAGES_BKP_FOLDER}
