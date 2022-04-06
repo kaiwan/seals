@@ -129,7 +129,7 @@ ${msgpost_con}"
   msg_gui="${msgpre_gui}<span foreground='NavyBlue'>${errmsg_gui}\n \"${1}\"</span>\n${msgpost_gui}"
   msg_con="${msgpre_con}
 ${errmsg_con}
-\"${1}\"
+${1}
 ${msgpost_con}"
  }
  #cecho "Fatal Error! Details: ${errmsg} ${1}"
