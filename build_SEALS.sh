@@ -335,6 +335,12 @@ rootfs_xtras()
  report_progress
 # To be copied into the RFS..any special cases
 # strace, tcpdump, gdb[server], misc scripts (strace, gdb copied from buildroot build)
+
+# Copy configs into the rootfs
+mkdir -p ${ROOTFS}/configs 2>/dev/null
+cp ${KERNEL_FOLDER}/.config ${ROOTFS}/configs/kernel_config
+cp ${BB_FOLDER}/.config ${ROOTFS}/configs/busybox_config
+
 if [ -d ${TOPDIR}/xtras ]; then
 	aecho "SEALS Build: Copying 'xtras' (goodies!) into the root filesystem..."
 	cd ${TOPDIR}/xtras
