@@ -534,14 +534,26 @@ seals_menu_consolemode()
 becho "SEALS :: Console Menu
 "
 
+# get_yn_reply() returns 0 on 'y', 1 on 'n' answer
 get_yn_reply "1. Build Linux kernel? : " y
 [ $? -eq 0 ] && BUILD_KERNEL=1
+# First-time kernel build? then ensure config is wiped
+[ ! -f ${KERNEL_FOLDER}/vmlinux ] && {
+  echo "First-time kernel build (?), recommend keeping wipe-config On"
+}
 get_yn_reply " a) Wipe Linux kernel current configuration clean? : " n
-[ $? -eq 0 ] && WIPE_KERNEL_CONFIG=1
+[ $? -eq 0 ] && WIPE_KERNEL_CONFIG=1 || WIPE_KERNEL_CONFIG=0
+
 get_yn_reply "2. Build Root Filesystem? : " y
 [ $? -eq 0 ] && BUILD_ROOTFS=1
-get_yn_reply " a) Wipe Busybox current configuration clean? [y/n] : " n
-[ $? -eq 0 ] && WIPE_BUSYBOX_CONFIG=1
+#get_yn_reply " a) Wipe Busybox current configuration clean? [y/n] : " n
+#[ $? -eq 0 ] && WIPE_BUSYBOX_CONFIG=1
+[ ! -d ${BB_FOLDER}/_install ] && {
+  echo "First-time busybox build (?), recommend keeping wipe-config On"
+}
+get_yn_reply " a) Wipe Busybox current configuration clean? : " n
+[ $? -eq 0 ] && WIPE_BUSYBOX_CONFIG=1 || WIPE_BUSYBOX_CONFIG=0
+
 get_yn_reply " b) Generate Root Filesystem ext4 image? [y/n] : " y
 [ $? -eq 0 ] && GEN_EXT4_ROOTFS_IMAGE=1
 get_yn_reply "3. Backup kernel & busybox images & configs? [y/n] : " y
@@ -562,9 +574,9 @@ display_current_config()
   }
   echo -n "  Wipe kernel config clean             :: "
   [ ${WIPE_KERNEL_CONFIG} -eq 1 ] && {
-	fg_green ; echo "Yes" ; color_reset
+	fg_red ; echo "Yes" ; color_reset
   } || {
-	fg_red ; echo " No" ; color_reset
+	fg_green ; echo " No" ; color_reset
   }
   echo -n " Build Root Filesystem                 :: "
   [ ${BUILD_ROOTFS} -eq 1 ] && {
@@ -574,9 +586,9 @@ display_current_config()
   }
   echo -n "  Wipe busybox config clean            :: "
   [ ${WIPE_BUSYBOX_CONFIG} -eq 1 ] && {
-	fg_green ; echo "Yes" ; color_reset
+	fg_red ; echo "Yes" ; color_reset
   } || {
-	fg_red ; echo " No" ; color_reset
+	fg_green ; echo " No" ; color_reset
   }
   echo -n " Generate rootfs ext4 image            :: "
   [ ${GEN_EXT4_ROOTFS_IMAGE} -eq 1 ] && {
