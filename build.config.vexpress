@@ -80,7 +80,7 @@ VERBOSE_BUILD=0
 # source of busybox into the folder ${BB_FOLDER} ver ${BB_VER}.
 # (Update the variables below to reflect your settings and installation).
 # @@@@@
-BB_VER="1.32.0"
+BB_VER="1.33.2"
   # 1.29 : build failing with a linker error
 BB_FOLDER=${STG}/busybox-${BB_VER}
 ROOTFS=${STG}/rootfs
@@ -117,7 +117,7 @@ ARM_PLATFORM_OPT=vexpress-a9
 # source of the Linux kernel into ${KERNEL_FOLDER} , ver ${KERNELVER}.
 # (Update the variables below to reflect your settings and installation).
 # @@@@@
-KERNELVER=5.4.63
+KERNELVER=5.10.109
 KERNEL_FOLDER=${STG}/linux-${KERNELVER}/
 
 # @@@@@
@@ -162,11 +162,11 @@ RUN_QEMU=0
 # Set var to 'y' implies any existing kernel configuration is wiped out.
 # Suggestion: set to 'y' for the FIRST build with a clean kernel source tree..
 # @@@@@
-WIPE_KERNEL_CONFIG=0
+WIPE_KERNEL_CONFIG=1
 # Set var to 'y' implies any existing busybox configuration is wiped out.
 # Suggestion: set to 'y' for the FIRST build with a clean busybox source tree..
 # @@@@@
-WIPE_BUSYBOX_CONFIG=0
+WIPE_BUSYBOX_CONFIG=1
 
 
 ###
