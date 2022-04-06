@@ -978,13 +978,13 @@ do
 	   err="busybox"
 	   errdir=${BB_FOLDER}
 	}
-	FatalError "\n\
-\Expect the ${err} source tree here:\n
-${errdir}\
-\n
-\It appears to be missing!\
-\Pl first install the kernel source tree here and rerun.\
-\n
+	FatalError "
+Expect the ${err} source tree here:
+${errdir}
+
+It appears to be invalid or missing!
+Pl first install the ${err} source tree here and rerun.
+
 "
   fi
   let i=i+1
