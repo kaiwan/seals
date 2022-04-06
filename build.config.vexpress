@@ -32,17 +32,10 @@
 # Generic Config file.
 # For a minimal QEMU-ARM project, we Expect that:
 #
-# - an x86-to-ARM toolchain is installed and working
-#   - for correct working, pl download and extract the Linaro toolchain
-#   [as of Mar 2018] via these 3 steps:
-#   (1) the toolchain xz: 
-#       https://releases.linaro.org/components/toolchain/binaries/latest/arm-linux-gnueabihf/gcc-linaro-7.2.1-2017.11-x86_64_arm-linux-gnueabihf.tar.xz
-#   (2) the 'sysroot' (rootfs) xz (holds the libraries, etc): 
-#       https://releases.linaro.org/components/toolchain/binaries/latest/arm-linux-gnueabihf/sysroot-glibc-linaro-2.25-2017.11-arm-linux-gnueabihf.tar.xz
-#   (3) set CXX_LOC (below) to the download location on your disk
-#
-# - a recent version of the Linux kernel source tree is available
-# - a recent version of busybox source tree is available
+# - an x86_64-to-ARM32 toolchain is installed and working, and setup in the config below
+#     details: https://github.com/kaiwan/seals/wiki/HOWTO-Install-required-packages-on-the-Host-for-SEALS
+# - a recent version of the Linux kernel source tree is available and setup in the config below
+# - a recent version of busybox source tree is available and setup in the config below
 ##############
 
 set -a   # auto export all vars
@@ -57,15 +50,24 @@ VERBOSE_MSG=0  # set to 1 to get more verbose messages displayed
                  #  [loglevel][date-timestamp]<actual-message>
 LOGFILE_COMMON=log_seals.txt
 
-# Toolchain
-# the toolchain to use; expect that it is installed and the PATH is setup..
+###------###
+TOPDIR=$(pwd)
+
+### Locations on Disk ###
+### UPDATE ### on your system!
+# @@@@@
+STG=~/seals_staging/seals_staging_vexpress
+ # Recommendation: if running a cloud-sync service (like Dropbox), keep the
+ # staging area outside it.
+
+# Okay, so under the ${STG} folder, we expect you have extracted the
+# Toolchain: the toolchain to use; expect that it is installed and the PATH is setup..
 # @@@@@
 CXX=arm-none-linux-gnueabihf-      # toolchain prefix
-# CXX_LOC is the location of the x86-to-ARM toolchain on disk.
+# CXX_LOC is the location of the x86-to-ARM toolchain on disk
 # (used to setup the PATH and locate the ARM shared libraries within the toolchain)
 # @@@@@
-CXX_LOC=/big/scratchpad/SEALS_staging/gcc-arm-10.2-2020.11-x86_64-arm-none-linux-gnueabihf
- #~/Downloads/gcc-linaro-7.3.1-2018.05-x86_64_arm-linux-gnueabihf
+CXX_LOC=/opt/gcc-arm-10.3-2021.07-x86_64-arm-none-linux-gnueabihf
 
 # Toolchain in the PATH
 PATH=$PATH:${CXX_LOC}/bin
@@ -73,18 +75,8 @@ PATH=$PATH:${CXX_LOC}/bin
 # Verbose build? (if 1, we run as 'make V=1 ...')
 VERBOSE_BUILD=0
 
-###------###
 
-TOPDIR=$(pwd)
-
-### Locations on Disk ###
-### UPDATE ### on your system!
-# @@@@@
-STG=/big/scratchpad/SEALS_staging/SEALS_staging_vexpress
- # Recommendation: if running a cloud-sync service (like Dropbox), keep the 
- # staging area outside it.
-
-# Okay, so under the ${STG} folder, we expect you have extracted the 
+# Also under the ${STG} folder, we expect you have extracted the
 # source of busybox into the folder ${BB_FOLDER} ver ${BB_VER}.
 # (Update the variables below to reflect your settings and installation).
 # @@@@@
