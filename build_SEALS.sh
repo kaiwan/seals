@@ -967,16 +967,18 @@ report_progress
 
 [ ! -d ${STG} ] && {
 	FatalError "
-We expect that certain folders in the project 'staging area' are
-pre-populated with appropriate content, i.e., the source code for
-their resp projects:
+!!! SEALS Staging folder (STG) not present !!!
+Currently, STG is set to \"${STG}\"
+
+We expect a project 'staging area' is setup and pre-populated with appropriate content,
+i.e., the source code for their resp projects:
 
 STG              : the project staging folder
   KERNEL_FOLDER  : kernel source tree
   BB_FOLDER      : busybox source tree
 
-You must fix this by creating and populating these folders with the said
-source code; and if required, update them in the config file here:
+You must fix this by creating the staging folder and populating it with the said
+source code; if required, update them in the config file here:
 \"${BUILD_CONFIG_FILE}\"
 
 TIP: the place to update these folders is within the above-mentioned
@@ -1002,6 +1004,7 @@ ${errdir}
 
 It appears to be invalid or missing!
 Pl first install the ${err} source tree here and rerun.
+TIP: check your SEALS config file first...
 
 "
   fi

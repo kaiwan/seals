@@ -114,8 +114,8 @@ If you feel this is a bug or issue, kindly file a bug report here:
 ${SEALS_REPORT_ERROR_EMAIL}\n
 Many thanks.
 "
- local msgpost_con="If you feel this is a bug or issue, kindly copy the full output and email it here:
- ${SEALS_REPORT_ERROR_EMAIL}
+ local msgpost_con="If you feel this is a bug or issue, *please* do raise it as an Issue on this project's GitHub repo
+ (https://github.com/kaiwan/seals/issues) and copy/paste the full output, adding any relevant details...
 Many thanks.
 "
  local msg_gui msg_con
