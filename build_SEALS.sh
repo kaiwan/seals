@@ -494,8 +494,8 @@ cd ${TOPDIR} || exit 1
 
 if [ ${SMP_EMU_MODE} -eq 1 ]; then
     # Using the "-smp n,sockets=n" QEMU options lets us emulate n processors!
-    # (can do this with n=2 for the ARM Cortex-A9)
-     SMP_EMU="-smp 2,sockets=2"
+    # (can do this with n=4 for the ARM Cortex-A9)
+     SMP_EMU="-smp 4,sockets=2"
 fi
 
 ShowTitle "

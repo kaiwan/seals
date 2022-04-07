@@ -19,6 +19,13 @@ source ./build.config || {
   exit 1
 }
 
+SMP_EMU_MODE=1
+if [ ${SMP_EMU_MODE} -eq 1 ]; then
+    # Using the "-smp n,sockets=n" QEMU options lets us emulate n processors!
+    # (can do this with n=4 for the ARM Cortex-A9)
+     SMP_EMU="-smp 4,sockets=2"
+fi
+
 KGDB_MODE=0
 [ $# -ne 1 ] && {
   echo "Usage: ${name} boot-option
@@ -47,7 +54,7 @@ K_CMDLINE="${K_CMDLINE_BASE} ${K_CMDLINE_DBG}"
 
 RAM=512
 [ ${KGDB_MODE} -eq 1 ] && K_CMDLINE="${K_CMDLINE} nokaslr"
-RUNCMD="qemu-system-arm -m ${RAM} -M vexpress-a9 -kernel ${KERN} \
+RUNCMD="qemu-system-arm -m ${RAM} -M vexpress-a9 ${SMP_EMU} -kernel ${KERN} \
 	-drive file=${ROOTFS},if=sd,format=raw \
 	-append \"${K_CMDLINE}\" \
 	-nographic -no-reboot \
