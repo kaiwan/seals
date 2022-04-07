@@ -172,7 +172,7 @@ WIPE_BUSYBOX_CONFIG=1
 ###
 # Config vars for when we run QEMU:
 KGDB_MODE=0  # make '1' to have qemu run w/ the '-S' switch (waits for gdb to 'connect')
-SMP_EMU_MODE=0  # make '1' to have qemu run w/ 2 emulated cores 
-                       # (only applicable on the Versatile Express C-A9 platform)
+SMP_EMU_MODE=1  # make '1' to have qemu run w/ 4 emulated cores 
+                # (only applicable on the Versatile Express C-A9 platform)
 
 #--- End build.config
