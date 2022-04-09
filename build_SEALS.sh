@@ -72,8 +72,8 @@ STEPS=5
 export CPU_CORES=$(getconf -a|grep _NPROCESSORS_ONLN|awk '{print $2}')
 [ -z "${CPU_CORES}" ] && CPU_CORES=2
 
-# Device Tree Blob (DTB) location
-export DTB_BLOB_LOC=${KERNEL_FOLDER}/arch/arm/boot/dts/${DTB_BLOB} # gen within kernel src tree
+# Device Tree Blob (DTB) pathname
+export DTB_BLOB_PATHNAME=${KERNEL_FOLDER}/arch/arm/boot/dts/${DTB_BLOB} # gen within kernel src tree
 
 # Signals
 trap 'wecho "User Abort. ${MSG_EXITING}" ; dumpstack ; [ ${COLOR} -eq 1 ] && color_reset ; exit 2' \
@@ -130,7 +130,10 @@ time make V=${VERBOSE_BUILD} -j${CPU_OPT} ARCH=arm CROSS_COMPILE=${CXX} all || {
 }
 ls -lh arch/arm/boot/zImage
 cp -u ${KERNEL_FOLDER}/arch/arm/boot/zImage ${IMAGES_FOLDER}/
-[ -f ${DTB_BLOB_LOC} ] && cp -u ${DTB_BLOB_LOC} ${IMAGES_FOLDER}/
+[ -f ${DTB_BLOB_PATHNAME} ] && {
+   ls -lh ${DTB_BLOB_PATHNAME}
+   cp -u ${DTB_BLOB_PATHNAME} ${IMAGES_FOLDER}/
+}
 aecho "... and done."
 cd ${TOPDIR}
 } # end build_kernel()
@@ -476,7 +479,7 @@ cd ${TOPDIR}
 unalias cp 2>/dev/null
 cp -afu ${IMAGES_FOLDER}/ ${IMAGES_BKP_FOLDER} # backup!
 cp -u ${KERNEL_FOLDER}/arch/arm/boot/zImage ${IMAGES_FOLDER}/
-[ -f ${DTB_BLOB_LOC} ] && cp -u ${DTB_BLOB_LOC} ${IMAGES_FOLDER}/
+[ -f ${DTB_BLOB_PATHNAME} ] && cp -u ${DTB_BLOB_PATHNAME} ${IMAGES_FOLDER}/
 cp ${KERNEL_FOLDER}/.config ${CONFIGS_FOLDER}/kernel_config
 cp ${BB_FOLDER}/.config ${CONFIGS_FOLDER}/busybox_config
 aecho " ... and done."
@@ -501,7 +504,7 @@ fi
 ShowTitle "
 RUN: Running qemu-system-arm now ..."
 local RUNCMD="qemu-system-arm -m ${SEALS_RAM} -M ${ARM_PLATFORM_OPT} ${SMP_EMU} -kernel ${IMAGES_FOLDER}/zImage -drive file=${IMAGES_FOLDER}/rfs.img,if=sd,format=raw -append \"${SEALS_K_CMDLINE}\" -nographic -no-reboot"
-[ -f ${DTB_BLOB_LOC} ] && RUNCMD="${RUNCMD} -dtb ${DTB_BLOB_LOC}"
+[ -f ${DTB_BLOB_PATHNAME} ] && RUNCMD="${RUNCMD} -dtb ${DTB_BLOB_PATHNAME}"
 
 # Run it!
 if [ ${KGDB_MODE} -eq 1 ]; then
