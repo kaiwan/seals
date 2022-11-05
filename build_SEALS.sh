@@ -873,7 +873,8 @@ env vars are not setup. So run from a root shell where the PATH is correctly set
 Aborting..."
  }
 
- check_deps_fatal "make qemu-system-arm mkfs.ext4 lzop bison flex bc libncurses5-dev libssl-dev yad"
+ check_deps_fatal "make qemu-system-arm mkfs.ext4 lzop bison flex bc yad"
+ #check_deps_fatal "make qemu-system-arm mkfs.ext4 lzop bison flex bc libncurses5-dev libssl-dev yad"
   # lzop(1) required for the IMX6 kernel build
  [ ${GUI_MODE} -eq 1 ] && check_deps_fatal "yad xrandr"
 
