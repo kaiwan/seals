@@ -38,6 +38,10 @@
 # (c) kaiwanTECH
 #
 # License: MIT
+
+# Turn on Bash 'strict mode'!
+# ref: http://redsymbol.net/articles/unofficial-bash-strict-mode/
+set -euo pipefail
 export name=$(basename $0)
 
 #############################
@@ -113,6 +117,11 @@ else
 	}
 fi
 
+# Tip- On many Ubuntu/Deb systems, we need to turn Off the
+# SYSTEM_REVOCATION_KEYS config option, else the build fails
+scripts/config --disable SYSTEM_REVOCATION_KEYS || echo "Warning! Disabling SYSTEM_REVOCATION_KEYS failed"
+#grep SYSTEM_REVOCATION_KEYS .config
+
 ShowTitle "Kernel Build:"
 
 #iecho "--- # detected CPU cores is ${CPU_CORES}" ; read
@@ -123,17 +132,17 @@ CPU_OPT=$((${CPU_CORES}*2))
 aecho "Doing: make V=${VERBOSE_BUILD} -j${CPU_OPT} ARCH=arm CROSS_COMPILE=${CXX} all"
 time make V=${VERBOSE_BUILD} -j${CPU_OPT} ARCH=arm CROSS_COMPILE=${CXX} all || {
   FatalError "Kernel build failed! Aborting ..."
-}
+} && true
 
 [ ! -f arch/arm/boot/zImage ] && {
   FatalError "Kernel build problem? image file zImage not existing!?? Aborting..."
-}
+} || true
 ls -lh arch/arm/boot/zImage
 cp -u ${KERNEL_FOLDER}/arch/arm/boot/zImage ${IMAGES_FOLDER}/
 [ -f ${DTB_BLOB_PATHNAME} ] && {
    ls -lh ${DTB_BLOB_PATHNAME}
    cp -u ${DTB_BLOB_PATHNAME} ${IMAGES_FOLDER}/
-}
+} || true
 aecho "... and done."
 cd ${TOPDIR}
 } # end build_kernel()
@@ -460,7 +469,7 @@ mysudo "SEALS Build: root fs image generation: enable copying into SEALS root fs
  cp -au ${ROOTFS}/* ${MNTPT}/
  [ ${DEBUG} -eq 1 ] && {
     echo; mount |grep "${MNTPT}" ; echo; df -h |grep "${MNTPT}" ; echo
- } |tee -a ${LOGFILE_COMMON}
+ } |tee -a ${LOGFILE_COMMON} || true
 mysudo "SEALS Build: root fs image generation: enable unmount. ${MSG_GIVE_PSWD_IF_REQD}" \
  umount ${MNTPT}
 sync
@@ -476,10 +485,10 @@ save_images_configs()
  report_progress
 ShowTitle "BACKUP: kernel, busybox images and config files now (as necessary) ..."
 cd ${TOPDIR}
-unalias cp 2>/dev/null
+unalias cp 2>/dev/null || true
 cp -afu ${IMAGES_FOLDER}/ ${IMAGES_BKP_FOLDER} # backup!
 cp -u ${KERNEL_FOLDER}/arch/arm/boot/zImage ${IMAGES_FOLDER}/
-[ -f ${DTB_BLOB_PATHNAME} ] && cp -u ${DTB_BLOB_PATHNAME} ${IMAGES_FOLDER}/
+[ -f ${DTB_BLOB_PATHNAME} ] && cp -u ${DTB_BLOB_PATHNAME} ${IMAGES_FOLDER}/ || true
 cp ${KERNEL_FOLDER}/.config ${CONFIGS_FOLDER}/kernel_config
 cp ${BB_FOLDER}/.config ${CONFIGS_FOLDER}/busybox_config
 aecho " ... and done."
@@ -840,7 +849,7 @@ To change settings permenantly, please edit the build.config file.
 #    on the distro [??])
 check_installed_pkg()
 {
- report_progress
+ report_progress || true
 
  GCC_SYSROOT=$(${CXX}gcc --print-sysroot)
  if [ -z "${GCC_SYSROOT}" -o "${GCC_SYSROOT}" = "/" ]; then
@@ -886,16 +895,24 @@ Aborting..."
  which dpkg > /dev/null
  if [ $? -eq 0 ] ; then
   # Ubuntu/Debian
-   dpkg -l |grep -q libncurses5-dev || {
+   set +e  # Bash strict mode side effects
+   dpkg -l |grep -q libncurses5-dev
+   local ret=$?
+   set -e
+   if [ $? -ne 0 ]; then
      FatalError "The 'libncurses5-dev' package does not seem to be installed.
 (Required for kernel config UI).
 Pl install the package (with apt-get) & re-run.  Aborting..."
-   }
-   dpkg -l |grep -q libssl-dev || {
+ fi
+   set +e  # Bash strict mode side effects
+   dpkg -l |grep -q libssl-dev
+   local ret=$?
+   set -e
+   if [ $? -ne 0 ]; then
      FatalError "The 'libssl-dev' package does not seem to be installed.
 (Required for kernel config UI).
 Pl install the package (with apt-get) & re-run.  Aborting..."
-   }
+   fi
  else
   if [ -f /etc/fedora-release ] || [ -f /etc/fedora ] ; then
   # Fedora/RHEL/CentOS - probably :)
@@ -935,10 +952,18 @@ testColor()
 
 ### "main" here
 
-is_gui_supported
-[ $? -eq 1 ] && GUI_MODE=1 || GUI_MODE=0
+mysudo
+mysudo "SEALS Build:setup logfile ${LOGFILE_COMMON}. ${MSG_GIVE_PSWD_IF_REQD}" \
+  touch ${LOGFILE_COMMON}
+mysudo "" \
+  chown ${USER}:${USER} ${LOGFILE_COMMON}
+
+GUI_MODE=$(is_gui_supported) # || true
+#is_gui_supported || true
+#[ $? -eq 1 ] && GUI_MODE=1 || GUI_MODE=0
 # testing... if we pass '-c' on cmdline, force console mode
-if [ $# -ge 1 -a "$1" = "-c" ] ; then
+mode_opt=${1:--g}
+if [ $# -ge 1 -a "${mode_opt}" = "-c" ] ; then
 	GUI_MODE=0
 fi
 [ ${GUI_MODE} -eq 1 ] && echo "[+] Running in GUI mode.. (use '-c' option switch to run in console-only mode)" || echo "[+] Running in console mode.."
@@ -948,7 +973,7 @@ echo "[+] ${name}: initializing, pl wait ..."
 #exit 0
 
 which tput >/dev/null 2>&1 && color_reset
-unalias cp 2>/dev/null
+unalias cp 2>/dev/null || true
 
 TESTMODE=0
 [ ${TESTMODE} -eq 1 ] && {

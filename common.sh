@@ -36,7 +36,7 @@ is_gui_supported()
  # On Fedora (26), xdpyinfo fails when run as root; so lets do another check as well
  ps -e|egrep -w "X|Xorg|Xwayland" >/dev/null 2>&1 && GUI_MODE=1 || GUI_MODE=0
  #echo "GUI_MODE $GUI_MODE"
- return ${GUI_MODE}
+ echo ${GUI_MODE}
 }
 
 # If we're not in a GUI (X Windows) display, abort (reqd for yad)
@@ -65,7 +65,7 @@ gui_init()
  let CAL_WIDTH=$CAL_WIDTH+200
  [ -z ${CAL_WIDTH} ] && CAL_WIDTH=600
  let CAL_HT=$res_h/2
- [ -z ${CAL_HT} -o ${CAL_HT} -lt 300 ] && CAL_HT=300
+ [ -z ${CAL_HT} -o ${CAL_HT} -lt 300 ] && CAL_HT=300 || true
  #echo "res_w=${res_w} res_h=${res_h} CAL_WIDTH=${CAL_WIDTH} CAL_HT=${CAL_HT}"
 }
 
@@ -108,13 +108,14 @@ mysudo()
 [ $# -lt 2 ] && {
  #echo "Usage: mysudo "
  return
-}
+} || true
 local msg=$1
 shift
 local cmd="$@"
 aecho "${LOGNAME}: ${msg}"
-[ ${DEBUG} -eq 1 ] && echo "mysudo():cmd: \"${cmd}\""
-sudo --preserve-env bash -c "${cmd}"
+[ ${DEBUG} -eq 1 ] && echo "mysudo():cmd: \"${cmd}\"" || true
+sudo --preserve-env bash -c "${cmd}" && true
+true
 }
 
 # check_root_AIA
@@ -142,7 +143,7 @@ check_file_AIA()
 	[ ! -f $1 ] && {
 		Echo "Error: file \"$1\" does not exist. Aborting..."
 		exit 1
-	}
+	} || true
 }
 
 # check_folder_AIA
@@ -157,7 +158,7 @@ check_folder_AIA()
 	[ ! -d $1 ] && {
 		Echo "Error: folder \"$1\" does not exist. Aborting..."
 		exit 1
-	}
+	} || true
 }
 
 # check_folder_createIA
@@ -172,7 +173,7 @@ check_folder_createIA()
 	[ ! -d $1 ] && {
 		Echo "Folder \"$1\" does not exist. Creating it..."
 		mkdir -p $1 && return 0 || return 1
-	}
+	} || true
 }
 
 
@@ -332,7 +333,7 @@ done
    } || {
       wecho "WARNING! The package(s) shown above are not present"
    }
-}
+} || true
 } # end check_deps()
 
 # Simple wrappers over check_deps();
