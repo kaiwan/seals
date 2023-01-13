@@ -125,14 +125,14 @@ Echo()
 
  local dt_log="[$(date +%a_%d%b%Y_%T.%N)]"
  local dt_disp
- [ "${VERBOSE_MSG}" -eq 1 ] && dt_disp=${dt}
+ [ "${VERBOSE_MSG}" -eq 1 ] && dt_disp=${dt_log}
 
  local msgpfx1_log="[${loglevel}]${SEP}${dt_log}"
- local msgpfx1_disp="${dt}"
+ local msgpfx1_disp="${dt_log}"
  [ "${VERBOSE_MSG}" -eq 1 ] && msgpfx1_disp="${msgpfx1_log}"
 
  local msgpfx2_log="${SEP}${name}:${FUNCNAME[ 1 ]}()${SEP}"
- local msgpfx2_disp
+ local msgpfx2_disp=""
  [ "${VERBOSE_MSG}" -eq 1 ] && msgpfx2_disp="${msgpfx2_log}"
 
  local msgtxt="$*"
