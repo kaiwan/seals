@@ -93,6 +93,12 @@ CONFIGS_FOLDER=${STG}/configs
 
 
 #####
+# Select the CPU arch (to build the kernel for); the value is the name of the
+# dir under <ksrc>/arch/XXX
+ARCH=arm
+#ARCH=arm64
+
+#####
 # Select the ARM platform (to build the kernel for). Choices:
 # For the purpose of a "real" example, this file is pre-populated with values
 # relevant to the Qemu Verastile Express (vexpress) platform (ARMv7 Cortex-A9).

@@ -95,7 +95,7 @@ ShowTitle "KERNEL: Configure and Build [kernel ver ${KERNELVER}] now ..."
 
 if [ ${WIPE_KERNEL_CONFIG} -eq 1 ]; then
 	ShowTitle "Setting default kernel config for ARM ${ARM_PLATFORM_STR} platform:"
-	make V=${VERBOSE_BUILD} ARCH=arm ${ARM_PLATFORM}_defconfig || {
+	make V=${VERBOSE_BUILD} ARCH=${ARCH} ${ARM_PLATFORM}_defconfig || {
 	   FatalError "Kernel config for ARM ${ARM_PLATFORM_STR} platform failed.."
 	}
 fi
@@ -108,11 +108,11 @@ Prompt ""
 USE_QT=n   # make 'y' to use a GUI Qt configure environment
            #  if 'y', you'll require the Qt runtime installed..
 if [ ${USE_QT} = "y" ]; then
-	make V=${VERBOSE_BUILD} ARCH=arm xconfig || {
+	make V=${VERBOSE_BUILD} ARCH=${ARCH} xconfig || {
 	  FatalError "make xconfig failed.."
 	}
 else
-	make V=${VERBOSE_BUILD} ARCH=arm menuconfig || {
+	make V=${VERBOSE_BUILD} ARCH=${ARCH} menuconfig || {
 	  FatalError "make menuconfig failed.."
 	}
 fi
@@ -129,8 +129,8 @@ CPU_OPT=$((${CPU_CORES}*2))
 
 #Prompt
 # make all => zImage, modules, dtbs (device-tree-blobs), ... - all will be built!
-aecho "Doing: make V=${VERBOSE_BUILD} -j${CPU_OPT} ARCH=arm CROSS_COMPILE=${CXX} all"
-time make V=${VERBOSE_BUILD} -j${CPU_OPT} ARCH=arm CROSS_COMPILE=${CXX} all || {
+aecho "Doing: make V=${VERBOSE_BUILD} -j${CPU_OPT} ARCH=${ARCH} CROSS_COMPILE=${CXX} all"
+time make V=${VERBOSE_BUILD} -j${CPU_OPT} ARCH=${ARCH} CROSS_COMPILE=${CXX} all || {
   FatalError "Kernel build failed! Aborting ..."
 } && true
 
@@ -162,7 +162,7 @@ fi
 
 if [ ${WIPE_BUSYBOX_CONFIG} -eq 1 ]; then
 	ShowTitle "BusyBox default config:"
-	make V=${VERBOSE_BUILD} ARCH=arm CROSS_COMPILE=${CXX} defconfig
+	make V=${VERBOSE_BUILD} ARCH=${ARCH} CROSS_COMPILE=${CXX} defconfig
 fi
 
 aecho "Edit the BusyBox config if required, Save & Exit..."
@@ -170,13 +170,13 @@ Prompt " " ${MSG_EXITING}
 
 USE_QT=n   # make 'y' to use a GUI Qt configure environment
 if [ ${USE_QT} = "y" ]; then
-	make V=${VERBOSE_BUILD} ARCH=arm CROSS_COMPILE=${CXX} xconfig
+	make V=${VERBOSE_BUILD} ARCH=${ARCH} CROSS_COMPILE=${CXX} xconfig
 else
-	make V=${VERBOSE_BUILD} ARCH=arm CROSS_COMPILE=${CXX} menuconfig
+	make V=${VERBOSE_BUILD} ARCH=${ARCH} CROSS_COMPILE=${CXX} menuconfig
 fi
 
 ShowTitle "BusyBox Build:"
-make V=${VERBOSE_BUILD} -j${CPU_CORES} ARCH=arm CROSS_COMPILE=${CXX} install || {
+make V=${VERBOSE_BUILD} -j${CPU_CORES} ARCH=${ARCH} CROSS_COMPILE=${CXX} install || {
   FatalError "Building and/or Installing busybox failed!"
 }
 
