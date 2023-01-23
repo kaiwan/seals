@@ -76,8 +76,10 @@ STEPS=5
 export CPU_CORES=$(getconf -a|grep _NPROCESSORS_ONLN|awk '{print $2}')
 [ -z "${CPU_CORES}" ] && CPU_CORES=2
 
+export KIMG=${KERNEL_FOLDER}/arch/${ARCH}/boot/zImage
+[ "${ARCH}" = "arm64" ] && KIMG=arch/${ARCH}/boot/Image.gz
 # Device Tree Blob (DTB) pathname
-export DTB_BLOB_PATHNAME=${KERNEL_FOLDER}/arch/arm/boot/dts/${DTB_BLOB} # gen within kernel src tree
+export DTB_BLOB_PATHNAME=${KERNEL_FOLDER}/arch/${ARCH}/boot/dts/${DTB_BLOB} # gen within kernel src tree
 
 # Signals
 trap 'wecho "User Abort. ${MSG_EXITING}" ; dumpstack ; [ ${COLOR} -eq 1 ] && color_reset ; exit 2' \
@@ -93,9 +95,14 @@ build_kernel()
 cd ${KERNEL_FOLDER} || exit 1
 ShowTitle "KERNEL: Configure and Build [kernel ver ${KERNELVER}] now ..."
 
+if [ -z "${ARM_PLATFORM}" ] ; then
+	PLATFORM=defconfig
+else
+	PLATFORM=${ARM_PLATFORM}_defconfig
+fi
 if [ ${WIPE_KERNEL_CONFIG} -eq 1 ]; then
 	ShowTitle "Setting default kernel config for ARM ${ARM_PLATFORM_STR} platform:"
-	make V=${VERBOSE_BUILD} ARCH=${ARCH} ${ARM_PLATFORM}_defconfig || {
+	make V=${VERBOSE_BUILD} ARCH=${ARCH} ${PLATFORM} || {
 	   FatalError "Kernel config for ARM ${ARM_PLATFORM_STR} platform failed.."
 	}
 fi
@@ -128,17 +135,21 @@ ShowTitle "Kernel Build:"
 CPU_OPT=$((${CPU_CORES}*2))
 
 #Prompt
-# make all => zImage, modules, dtbs (device-tree-blobs), ... - all will be built!
+# make all => kernel image, modules, dtbs (device-tree-blobs), ... - all will be built!
 aecho "Doing: make V=${VERBOSE_BUILD} -j${CPU_OPT} ARCH=${ARCH} CROSS_COMPILE=${CXX} all"
 time make V=${VERBOSE_BUILD} -j${CPU_OPT} ARCH=${ARCH} CROSS_COMPILE=${CXX} all || {
   FatalError "Kernel build failed! Aborting ..."
 } && true
 
-[ ! -f arch/arm/boot/zImage ] && {
-  FatalError "Kernel build problem? image file zImage not existing!?? Aborting..."
-} || true
-ls -lh arch/arm/boot/zImage
-cp -u ${KERNEL_FOLDER}/arch/arm/boot/zImage ${IMAGES_FOLDER}/
+[ ! -f ${KIMG} ] && {
+  KIMG=${KIMG::-3}  # without the .gz suffix...
+  [ ! -f ${KIMG} ] && {
+     FatalError "Kernel build problem? image file ${KIMG} not found; aborting..."
+  } || true
+}
+ls -lh ${KIMG}
+cp -u ${KIMG} ${IMAGES_FOLDER}/
+#cp -u ${KERNEL_FOLDER}/$(basename ${KIMG}) ${IMAGES_FOLDER}/
 [ -f ${DTB_BLOB_PATHNAME} ] && {
    ls -lh ${DTB_BLOB_PATHNAME}
    cp -u ${DTB_BLOB_PATHNAME} ${IMAGES_FOLDER}/
@@ -273,6 +284,15 @@ mysudo "SEALS Build:Step 3 of ${STEPS}: [SEALS rootfs]:setup of /sbin. ${MSG_GIV
 }
 mysudo "SEALS Build:Step 4 of ${STEPS}: [SEALS rootfs]:setup of /usr. ${MSG_GIVE_PSWD_IF_REQD}" \
   cp -a ${SYSROOT}/usr/* ${ROOTFS}/usr || {
+   FatalError "Copying required libs [/sbin] from toolchain failed!"
+}
+sudo mkdir -p ${ROOTFS}/lib64 || true
+mysudo "SEALS Build:Step 4.2 of ${STEPS}: [SEALS rootfs]:setup of /lib64. ${MSG_GIVE_PSWD_IF_REQD}" \
+  cp -a ${SYSROOT}/lib64/* ${ROOTFS}/lib64 || {
+   FatalError "Copying required libs [/sbin] from toolchain failed!"
+}
+mysudo "SEALS Build:Step 4.3 of ${STEPS}: [SEALS rootfs]:setup of /var. ${MSG_GIVE_PSWD_IF_REQD}" \
+  cp -a ${SYSROOT}/var/* ${ROOTFS}/var || {
    FatalError "Copying required libs [/sbin] from toolchain failed!"
 }
   # RELOOK: 
@@ -487,7 +507,7 @@ ShowTitle "BACKUP: kernel, busybox images and config files now (as necessary) ..
 cd ${TOPDIR}
 unalias cp 2>/dev/null || true
 cp -afu ${IMAGES_FOLDER}/ ${IMAGES_BKP_FOLDER} # backup!
-cp -u ${KERNEL_FOLDER}/arch/arm/boot/zImage ${IMAGES_FOLDER}/
+cp -u ${KERNEL_FOLDER}/${KIMG} ${IMAGES_FOLDER}/
 [ -f ${DTB_BLOB_PATHNAME} ] && cp -u ${DTB_BLOB_PATHNAME} ${IMAGES_FOLDER}/ || true
 cp ${KERNEL_FOLDER}/.config ${CONFIGS_FOLDER}/kernel_config
 cp ${BB_FOLDER}/.config ${CONFIGS_FOLDER}/busybox_config
@@ -511,14 +531,24 @@ if [ ${SMP_EMU_MODE} -eq 1 ]; then
 fi
 
 ShowTitle "
-RUN: Running qemu-system-arm now ..."
-local RUNCMD="qemu-system-arm -m ${SEALS_RAM} -M ${ARM_PLATFORM_OPT} ${SMP_EMU} -kernel ${IMAGES_FOLDER}/zImage -drive file=${IMAGES_FOLDER}/rfs.img,if=sd,format=raw -append \"${SEALS_K_CMDLINE}\" -nographic -no-reboot"
-[ -f ${DTB_BLOB_PATHNAME} ] && RUNCMD="${RUNCMD} -dtb ${DTB_BLOB_PATHNAME}"
+RUN: Running ${QEMUPKG} now ..."
+
+local RUNCMD
+if [ "${ARCH}" = "arm" ]; then
+   RUNCMD="${QEMUPKG} -m ${SEALS_RAM} -M ${ARM_PLATFORM_OPT} ${SMP_EMU} -kernel ${IMAGES_FOLDER}/zImage -drive file=${IMAGES_FOLDER}/rfs.img,if=sd,format=raw -append \"${SEALS_K_CMDLINE}\" -nographic -no-reboot"
+   [ -f ${DTB_BLOB_PATHNAME} ] && RUNCMD="${RUNCMD} -dtb ${DTB_BLOB_PATHNAME}"
+elif [ "${ARCH}" = "arm64" ]; then
+		RUNCMD="${QEMUPKG} -m ${SEALS_RAM} -M ${ARM_PLATFORM_OPT} -cpu max ${SMP_EMU} -kernel ${IMAGES_FOLDER}/$(basename ${KIMG}) -drive file=${IMAGES_FOLDER}/rfs.img,format=raw,id=drive0 -append \"${SEALS_K_CMDLINE}\" -nographic -no-reboot"
+fi
+
+# Aarch64:
+# qemu-system-aarch64 -m 512 -M virt -nographic -kernel arch/arm64/boot/Image.gz -append "console=ttyAMA0 root=/dev/mmcblk0 init=/sbin/init" -cpu max  
+
 
 # Run it!
 if [ ${KGDB_MODE} -eq 1 ]; then
 	# KGDB/QEMU cmdline
-	ShowTitle "Running qemu-system-arm in KGDB mode now ..."
+	ShowTitle "Running ${QEMUPKG} in KGDB mode now ..."
 	RUNCMD="${RUNCMD} -s -S"
 	# qemu-system-xxx(1) :
 	#  -S  Do not start CPU at startup (you must type 'c' in the monitor).
@@ -653,6 +683,7 @@ Toolchain prefix : ${CXX}
 Toolchain version: ${gccver}
 Staging folder   : ${STG}
 
+CPU Arch     : ${ARCH}
 ARM Platform : ${ARM_PLATFORM_STR}
 Platform RAM : ${SEALS_RAM} MB
 
@@ -694,6 +725,7 @@ Staging folder   : ${STG}
 Toolchain prefix : ${CXX}
 Toolchain version: ${gccver}
 </span>\
+CPU Arch     : ${ARCH}
 ARM Platform : ${ARM_PLATFORM_STR}
 Platform RAM : ${SEALS_RAM} MB
 <span foreground='blue'>\
@@ -857,7 +889,7 @@ check_installed_pkg()
 
 It appears to not have the toolchain 'sysroot' libraries, sbin and usr
 components within it. This could (and usually does) happen if it was installed
-via a simple package manager cmd like 'sudo apt install arm-linux-gnueabi'.
+via a simple package manager cmd like 'sudo apt install ${ARCH}-linux-gnueabi'.
 
 We insist you install a complete proper toolchain; to do so, pl follow the
 detailed instructions provided here:
@@ -882,8 +914,10 @@ env vars are not setup. So run from a root shell where the PATH is correctly set
 Aborting..."
  }
 
- check_deps_fatal "make qemu-system-arm mkfs.ext4 lzop bison flex bc yad"
- #check_deps_fatal "make qemu-system-arm mkfs.ext4 lzop bison flex bc libncurses5-dev libssl-dev yad"
+ export QEMUPKG=qemu-system-${ARCH}
+ [ "${ARCH}" = "arm64" ] && QEMUPKG=qemu-system-aarch64
+ check_deps_fatal "make ${QEMUPKG} mkfs.ext4 lzop bison flex bc yad"
+ #check_deps_fatal "make ${QEMUPKG} mkfs.ext4 lzop bison flex bc libncurses5-dev libssl-dev yad"
   # lzop(1) required for the IMX6 kernel build
  [ ${GUI_MODE} -eq 1 ] && check_deps_fatal "yad xrandr"
 
