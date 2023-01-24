@@ -2,13 +2,17 @@ SEALS
 =====
 SEALS is an abbreviation for _Simple Embedded ARM Linux System_. 
 
+**NEW! (Jan 2023): SEALS now supports both Aarch32 and Aarch64 platforms**
+
 The SEALS project consists of scripts that will enable one to build a simple
-yet complete skeletal ARM/Linux system, emulated using the powerful [QEMU][2]
+yet complete skeletal ARM\*/Linux system, emulated using the powerful [QEMU][2]
 emulator. The SEALS scripts automate the following tasks:
+
+\*ARM can now be Aarch32 or Aarch64 platforms.
 
 - Using a simple ASCII text config file to precisely customize your environment
 - Using a cross-compiler
-- ARM / Linux kernel config and build
+- ARM\* / Linux kernel config and build
 - Creating a skeletal root filesystem from scratch
 - Integrating the components together, using QEMU (qemu-system-arm,
   particularly) to run the same in an emulated environment.
