@@ -25,6 +25,7 @@
 # ./build_seals.sh [-c]
 #   -c : run in console mode only (no gui) [optional]
 #
+# Ref:
 # (old but still) very good References (by 'Balau'):
 #  Kernel: 
 #    http://balau82.wordpress.com/2012/03/31/compile-linux-kernel-3-2-for-arm-and-emulate-with-qemu/
@@ -37,8 +38,10 @@
 # License: MIT
 #
 # TODO
+# [ ] networking
+#     ref- https://github.com/MichielDerhaeg/build-linux
 # [ ] signals (like SIGINT ^C, SIGQUIT ^\, etc) not being handled within the Qemu guest ?
-# [ ] 
+#         (I think we need 'getty' running for this... ?)
 
 # Turn on Bash 'strict mode'!
 # ref: http://redsymbol.net/articles/unofficial-bash-strict-mode/
@@ -223,6 +226,7 @@ chmod 1777 tmp
 # /etc/inittab
 cat > etc/inittab << @MYMARKER@
 ::sysinit:/etc/init.d/rcS
+#tty1::respawn:/sbin/getty 38400 tty1
 #::respawn:/sbin/getty 115200 ttyS0
 @MYMARKER@
 
@@ -945,13 +949,13 @@ testColor()
 {
   ShowTitle "testing... KERNEL: Configure and Build [kernel ver ${KERNELVER}] now ..."
   #FatalError
-  FatalError "Testing ; the libncurses5-dev dev library and headers does not seem to be installed."
+  #FatalError "Testing ; the libncurses5-dev dev library and headers does not seem to be installed."
   Echo "Echo : a quick test ..."
   decho "decho : a quick test ..."
   iecho "cecho : a quick test ..."
   aecho "aecho : a quick test ..."
   wecho "wecho : a quick test ..."
-  fecho "wecho : a quick test ..."
+  #fecho "wecho : a quick test ..."
   color_reset
 }
 

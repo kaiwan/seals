@@ -163,7 +163,8 @@ K_CMDLINE_XTRA=""
 # @@@@@
 BB_VER="1.32.0"
   # 1.29 : build failing with a linker error
-BB_FOLDER=${STG}/busybox-${BB_VER}
+BB_FOLDER=${STG}/busybox  # with the GitHub ver
+#BB_FOLDER=${STG}/busybox-${BB_VER}
 
 ## RootFS
 # !Careful! Set to 1 to force a rebuild of the rootfs; implies OVERWRITING any

@@ -29,6 +29,19 @@ source ./color.sh || {
  exit 1
 }
 
+#-------------- r u n c m d -------------------------------------------
+# Display and run the provided command.
+# Parameter 1 : the command to run
+runcmd()
+{
+local SEP="------------------------------"
+[ $# -eq 0 ] && return
+echo "${SEP}
+$@
+${SEP}"
+eval $@
+}
+
 is_gui_supported()
 {
  local GUI_MODE=0

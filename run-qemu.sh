@@ -109,7 +109,12 @@ fi
 
 aecho "${RUNCMD}
 "
-Prompt "Ok? (after pressing ENTER, give it a moment ...)"
+Prompt "Ok? (after pressing ENTER, give it a moment ...)
+
+Also, please exit by properly shutting down:
+use the 'poweroff' command to do so.
+(Worst case, typing Ctrl-a-x (abruptly) shuts Qemu down).
+"
 # if we're still here, it's about to run!
 eval ${RUNCMD}
 

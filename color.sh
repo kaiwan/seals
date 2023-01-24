@@ -163,7 +163,8 @@ Echo()
          ;;
    ALERT) tput bold
          ;;
-   WARN) fg_red ; bg_yellow ; tput bold
+   WARN) #fg_white ; bg_red ; tput bold
+         fg_red ; bg_yellow ; tput bold
          ;;
    CRIT) fg_white ; bg_red ; tput bold
          ;;
@@ -183,7 +184,7 @@ Echo()
 # DEBUG-level echo :-)
 decho()
 {
- [ ${DEBUG} -eq 1 ] && Echo DDEBUG "$1"
+ [ ${DEBUG} -eq 1 ] && Echo DDEBUG "$1" || true
 }
 #--------------------- i e c h o ---------------------------------------
 # INFO-level / regular Color-echo.
