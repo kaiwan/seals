@@ -1,9 +1,14 @@
 # SEALS : run-and-log 
+# Part of the SEALS opensource project (https://github.com/kaiwan/seals)
 # logfile_post_process
 # Issue: using the 'color' routines (like wecho, aecho, techo, etc) causes
 # escape chars to get embedded into the logfile. This addresses how to get
 # rid of the color escape sequences.
-# $1 : logfile
+
+# Set Bash unofficial 'strict mode'; _really_ helps catch bugs
+# ref: http://redsymbol.net/articles/unofficial-bash-strict-mode/
+set -euo pipefail
+
 logfile_post_process()
 {
 sed -i.bkp "/###\:\:\:/d" ${1}  # take a backup & get rid of the signature line
