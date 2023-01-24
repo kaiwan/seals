@@ -95,8 +95,8 @@ build_kernel()
 cd ${KERNEL_FOLDER} || exit 1
 ShowTitle "KERNEL: Configure and Build [kernel ver ${KERNELVER}] now ..."
 
-if [ -z "${ARM_PLATFORM}" ] ; then
-	PLATFORM=defconfig
+if [ -z "${ARM_PLATFORM}" ] ; then  # arm64
+	PLATFORM=defconfig # by default all platforms selected
 else
 	PLATFORM=${ARM_PLATFORM}_defconfig
 fi
@@ -109,7 +109,10 @@ fi
 
 aecho "[Optional] Kernel Manual Configuration:
 Edit the kernel config if required, Save & Exit...
- Tip: a sample known working kernel config is provided here: doc/kconfig_4.14.52"
+"
+[ "${ARCH}" = "arm64" ] && aecho "TIP: On Aarch64, all platforms will be selected by default.
+(Can see them within the 'Platform selection' menu).
+Either build it this way or deselect all and enable only the platform(s) you want to support..."
 Prompt ""
 
 USE_QT=n   # make 'y' to use a GUI Qt configure environment
@@ -149,7 +152,6 @@ time make V=${VERBOSE_BUILD} -j${CPU_OPT} ARCH=${ARCH} CROSS_COMPILE=${CXX} all 
 }
 ls -lh ${KIMG}
 cp -u ${KIMG} ${IMAGES_FOLDER}/
-#cp -u ${KERNEL_FOLDER}/$(basename ${KIMG}) ${IMAGES_FOLDER}/
 [ -f ${DTB_BLOB_PATHNAME} ] && {
    ls -lh ${DTB_BLOB_PATHNAME}
    cp -u ${DTB_BLOB_PATHNAME} ${IMAGES_FOLDER}/
