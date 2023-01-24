@@ -63,6 +63,11 @@ KIMG=${IMAGES_FOLDER}/zImage
 export DTB_BLOB_PATHNAME=${IMAGES_FOLDER}/${DTB_BLOB} # gen within kernel src tree
 
 # TODO - when ARCH is x86[_64], use Qemu's --enable-kvm to give a big speedup!
+
+# Networking
+# ref: https://gist.github.com/extremecoders-re/e8fd8a67a515fee0c873dcafc81d811c#example-tap-network
+
+
 RUNCMD=""
 if [ "${ARCH}" = "arm" ]; then
    RUNCMD="${QEMUPKG} -m ${SEALS_RAM} -M ${ARM_PLATFORM_OPT} ${SMP_EMU} \
@@ -72,7 +77,8 @@ if [ "${ARCH}" = "arm" ]; then
    [ -f ${DTB_BLOB_PATHNAME} ] && RUNCMD="${RUNCMD} -dtb ${DTB_BLOB_PATHNAME}"
 elif [ "${ARCH}" = "arm64" ]; then
 		RUNCMD="${QEMUPKG} -m ${SEALS_RAM} -M ${ARM_PLATFORM_OPT} \
-			-cpu max ${SMP_EMU} -kernel ${KIMG} \
+			-cpu max ${SMP_EMU} -cpu ${CPU_MODEL} \
+			-kernel ${KIMG} \
 			-drive file=${IMAGES_FOLDER}/rfs.img,format=raw,id=drive0 \
 			-append \"${SEALS_K_CMDLINE}\" -nographic -no-reboot"
 fi

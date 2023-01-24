@@ -72,16 +72,17 @@ VERBOSE_BUILD=0
 #------------------------------------------------------------------------------
 
 #--------'HARDWARE'------------------------------------------------------------
-# @@@@@
 # SEALs (virtual) "Hardware"
-SEALS_RAM=512  # MB
-
+# @@@@@
 # Select the CPU arch (to build the kernel for); the value to specify is the
 # name of the dir under <kernel-src>/arch/XXX
 #ARCH=arm
 ARCH=arm64
 QEMUPKG=qemu-system-${ARCH}
 [[ "${ARCH}" = "arm64" ]] && QEMUPKG=qemu-system-aarch64
+
+CPU_MODEL=cortex-a57
+SEALS_RAM=512  # MB
 
 # Select the platform (to build the kernel for).
 # @@@@@
