@@ -46,6 +46,7 @@ Toolchain prefix : ${CXX}
 Toolchain version: ${gccver}
 Staging folder   : ${STG}
 
+CPU arch     : ${ARCH}
 ARM Platform : ${ARM_PLATFORM_STR}
 Platform RAM : ${SEALS_RAM} MB
 
