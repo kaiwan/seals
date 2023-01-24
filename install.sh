@@ -36,112 +36,51 @@ Overwrite it ? (this will destroy it, you can't recover the content)
 Y/N : "
 }
 
+aecho "Creating the staging dir..."
 mkdir -p ${STG} || FatalError "Creating the staging dir failed (permission issues?). Aborting..."
 
-# Busybox
-aecho "Installing busybox"
+[ 0 -eq 1 ] && {
+#-------------------- Busybox
+BB_INSTALLED=0
+aecho "Installing the busybox source tree"
 mkdir -p ${BB_FOLDER} #|| FatalError "Creating the staging dir failed (permission issues?). Aborting..."
-cd ${BB_FOLDER}
-runcmd "git clone https://github.com/mirror/busybox"
+cd ${STG}
+runcmd "git clone --depth=1 https://github.com/mirror/busybox"
+[[ ! -d ${BB_FOLDER}/applets ]] && FatalError "Failed to instal busybox source."
+BB_INSTALLED=1
+}
+
+#-------------------- Linux kernel
+KSRC_INSTALLED=0
+aecho "Installing the Linux kernel source tree"
+cd ${STG}
+# have to figure the URL based on kernel ver...
+# f.e. if kver is 3.16.68:
+#  https://mirrors.edge.kernel.org/pub/linux/kernel/v3.x/linux-3.16.68.tar.xz
+# support only >=3.x
+K_MJ=$(echo ${KERNELVER} | cut -d'.' -f1)
+[[ ${K_MJ} -lt 3 ]] && FatalError "Your specified kernel ver (${KERNELVER}) is too old!
+SEALS supports only kernel ver >= 3.x.
+Pl change the kernel ver (in the build.config) and rerun"
+
+mkdir -p ${KERNEL_FOLDER} #|| FatalError "Creating the staging dir failed (permission issues?). Aborting..."
+K_MN=$(echo ${KERNELVER} | cut -d'.' -f2)
+K_PL=$(echo ${KERNELVER} | cut -d'.' -f3)
+K_URL_BASE=https://mirrors.edge.kernel.org/pub/linux/kernel
+K_URL=${K_URL_BASE}/v${K_MJ}.x/linux-${KERNELVER}.tar.xz
+echo "wget ${K_URL}"
+wget ${K_URL} || FatalError "Failed to fetch kernel source."
+# TODO - verify integrity
+# Uncompress
+echo "tar xf $(basename ${K_URL})"
+tar xf $(basename ${K_URL}) || FatalError "Failed to extract kernel source."
+KSRC_INSTALLED=1
+
 
 # TODO - toolchain install
+
+
 
 color_reset
 
 exit 0
-
-
-
-
-cd ${TOPDIR} || exit 1
-
-if [ ${SMP_EMU_MODE} -eq 1 ]; then
-    # Using the "-smp n,sockets=n" QEMU options lets us emulate n processors!
-    # (can do this only for appropriate platforms)
-     SMP_EMU="-smp 4,sockets=2"
-fi
-
-KGDB_MODE=0
-[ $# -ne 1 ] && {
-  echo "Usage: ${name} boot-option
- boot-option == 0 : normal console boot
- boot-option == 1 : console boot in KGDB mode (-s -S, waits for GDB client to connect)
-                    Expect you've configured a kernel for KGDB and have the vmlinux handy;
-If booting in KGDB mode, the emulator will wait (via the embedded GDB server within the kernel!);
-you're expected to run ${CXX}gdb <path/to/vmlinux> in another terminal window
-and issue the
-(gdb) target remote :1234
-command to connect to the ARM/Linux kernel."
-  exit 1
-}
-[ $1 -eq 1 ] && KGDB_MODE=1
-
-echo "TIP:
-*** If another hypervisor (like VirtualBox) is running, Qemu won't run properly ***
-"
-ShowTitle "
-RUN: Running ${QEMUPKG} now ..."
-
-KIMG=${IMAGES_FOLDER}/zImage
-[ "${ARCH}" = "arm64" ] && KIMG=${IMAGES_FOLDER}/Image.gz
-# Device Tree Blob (DTB) pathname
-export DTB_BLOB_PATHNAME=${IMAGES_FOLDER}/${DTB_BLOB} # gen within kernel src tree
-
-# TODO - when ARCH is x86[_64], use Qemu's --enable-kvm to give a big speedup!
-
-# Networking
-# ref: https://gist.github.com/extremecoders-re/e8fd8a67a515fee0c873dcafc81d811c#example-tap-network
-
-
-RUNCMD=""
-if [ "${ARCH}" = "arm" ]; then
-   RUNCMD="${QEMUPKG} -m ${SEALS_RAM} -M ${ARM_PLATFORM_OPT} ${SMP_EMU} \
-		-kernel ${IMAGES_FOLDER}/zImage \
-		-drive file=${IMAGES_FOLDER}/rfs.img,if=sd,format=raw \
-		-append \"${SEALS_K_CMDLINE}\" -nographic -no-reboot"
-   [ -f ${DTB_BLOB_PATHNAME} ] && RUNCMD="${RUNCMD} -dtb ${DTB_BLOB_PATHNAME}"
-elif [ "${ARCH}" = "arm64" ]; then
-		RUNCMD="${QEMUPKG} -m ${SEALS_RAM} -M ${ARM_PLATFORM_OPT} \
-			-cpu max ${SMP_EMU} -cpu ${CPU_MODEL} \
-			-kernel ${KIMG} \
-			-drive file=${IMAGES_FOLDER}/rfs.img,format=raw,id=drive0 \
-			-append \"${SEALS_K_CMDLINE}\" -nographic -no-reboot"
-fi
-
-# Aarch64:
-# qemu-system-aarch64 -m 512 -M virt -nographic -kernel arch/arm64/boot/Image.gz -append "console=ttyAMA0 root=/dev/mmcblk0 init=/sbin/init" -cpu max  
-
-# Run it!
-if [ ${KGDB_MODE} -eq 1 ]; then
-	# KGDB/QEMU cmdline
-	ShowTitle "Running ${QEMUPKG} in KGDB mode now ..."
-	RUNCMD="${RUNCMD} -s -S"
-	# qemu-system-xxx(1) :
-	#  -S  Do not start CPU at startup (you must type 'c' in the monitor).
-	#  -s  Shorthand for -gdb tcp::1234, i.e. open a gdbserver on TCP port 1234.
-	aecho "
-@@@@@@@@@@@@ NOTE NOTE NOTE @@@@@@@@@@@@
-REMEMBER this qemu instance is run with the -S option: it *waits* for a GDB client to connect to it...
-
-You are expected to run (in another terminal window):
-$ ${CXX}gdb <path-to-ARM-built-kernel-src-tree>/vmlinux  <-- built w/ -g
-...
-and then have gdb connect to the target kernel using
-(gdb) target remote :1234
-...
-@@@@@@@@@@@@ NOTE NOTE NOTE @@@@@@@@@@@@"
-fi
-
-aecho "${RUNCMD}
-"
-Prompt "Ok? (after pressing ENTER, give it a moment ...)
-
-Also, please exit by properly shutting down:
-use the 'poweroff' command to do so.
-(Worst case, typing Ctrl-a-x (abruptly) shuts Qemu down).
-"
-# if we're still here, it's about to run!
-eval ${RUNCMD}
-
-aecho "
-... and done."
