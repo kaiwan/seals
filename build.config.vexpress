@@ -97,6 +97,8 @@ CONFIGS_FOLDER=${STG}/configs
 # dir under <ksrc>/arch/XXX
 ARCH=arm
 #ARCH=arm64
+QEMUPKG=qemu-system-${ARCH}
+[[ "${ARCH}" = "arm64" ]] && QEMUPKG=qemu-system-aarch64
 
 #####
 # Select the ARM platform (to build the kernel for). Choices:
@@ -126,7 +128,7 @@ ARM_PLATFORM_OPT=vexpress-a9
 # source of the Linux kernel into ${KERNEL_FOLDER} , ver ${KERNELVER}.
 # (Update the variables below to reflect your settings and installation).
 # @@@@@
-KERNELVER=5.10.60
+KERNELVER=6.1.5
 KERNEL_FOLDER=${STG}/linux-${KERNELVER}/
 
 # @@@@@
@@ -172,11 +174,11 @@ RUN_QEMU=0
 # Set var to 'y' implies any existing kernel configuration is wiped out.
 # Suggestion: set to 'y' for the FIRST build with a clean kernel source tree..
 # @@@@@
-WIPE_KERNEL_CONFIG=1
+WIPE_KERNEL_CONFIG=0
 # Set var to 'y' implies any existing busybox configuration is wiped out.
 # Suggestion: set to 'y' for the FIRST build with a clean busybox source tree..
 # @@@@@
-WIPE_BUSYBOX_CONFIG=1
+WIPE_BUSYBOX_CONFIG=0
 
 
 ###

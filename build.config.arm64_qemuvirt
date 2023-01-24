@@ -1,6 +1,6 @@
 #!/bin/bash
 #######################################################################
-# build.config
+# build.config.arm64_qemuvirt
 #
 # Part of the SEALs project.
 # This is the configuration file; all config variables must go here.
@@ -56,11 +56,11 @@ LOGFILE_COMMON=log_seals.txt
 TOPDIR=$(pwd)
 #------------------------------------------------------------------------------
 
-#--------KEY DISK LOCATIONS------------------------------------------------------------
+#--------KEY DISK LOCATIONS and Settings---------------------------------------
 ### Locations on Disk ###
 ### UPDATE ### on your system!
 # @@@@@
-STG=/big/scratchpad/SEALS_staging/SEALS_staging_qemuvirt/
+STG=${PWD}/staging_arm64_qemuvirt  # here, a soft link to the actual staging folder
  # Recommendation: if running a cloud-sync service (like Dropbox), keep the
  # staging area outside it.
 ROOTFS=${STG}/rootfs
@@ -80,6 +80,8 @@ SEALS_RAM=512  # MB
 # name of the dir under <kernel-src>/arch/XXX
 #ARCH=arm
 ARCH=arm64
+QEMUPKG=qemu-system-${ARCH}
+[[ "${ARCH}" = "arm64" ]] && QEMUPKG=qemu-system-aarch64
 
 # Select the platform (to build the kernel for).
 # @@@@@
@@ -179,6 +181,7 @@ BUILD_ROOTFS=0
 GEN_EXT4_ROOTFS_IMAGE=0
 SAVE_BACKUP_IMG_CONFIGS=0
 RUN_QEMU=0
+#SHELL_PROMPT_STR="qarm64 \w # "
 
 ### "WIPE_*_CONFIG" directives
 # Set var to 'y' implies any existing kernel configuration is wiped out.

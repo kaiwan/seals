@@ -541,65 +541,14 @@ aecho " ... and done."
 } # end save_images_configs()
 
 #-------------- r u n _ q e m u _ S E A L S ---------------------------
+# Use the wrapper script 'run-qemu.sh'
 run_qemu_SEALS()
 {
-echo "TIP:
-*** If another hypervisor (like VirtualBox) is running, Qemu won't run properly ***
-"
 
- report_progress
-cd ${TOPDIR} || exit 1
-
-if [ ${SMP_EMU_MODE} -eq 1 ]; then
-    # Using the "-smp n,sockets=n" QEMU options lets us emulate n processors!
-    # (can do this with n=4 for the ARM Cortex-A9)
-     SMP_EMU="-smp 4,sockets=2"
-fi
-
-ShowTitle "
-RUN: Running ${QEMUPKG} now ..."
-
-local RUNCMD
-if [ "${ARCH}" = "arm" ]; then
-   RUNCMD="${QEMUPKG} -m ${SEALS_RAM} -M ${ARM_PLATFORM_OPT} ${SMP_EMU} -kernel ${IMAGES_FOLDER}/zImage -drive file=${IMAGES_FOLDER}/rfs.img,if=sd,format=raw -append \"${SEALS_K_CMDLINE}\" -nographic -no-reboot"
-   [ -f ${DTB_BLOB_PATHNAME} ] && RUNCMD="${RUNCMD} -dtb ${DTB_BLOB_PATHNAME}"
-elif [ "${ARCH}" = "arm64" ]; then
-		RUNCMD="${QEMUPKG} -m ${SEALS_RAM} -M ${ARM_PLATFORM_OPT} -cpu max ${SMP_EMU} -kernel ${IMAGES_FOLDER}/$(basename ${KIMG}) -drive file=${IMAGES_FOLDER}/rfs.img,format=raw,id=drive0 -append \"${SEALS_K_CMDLINE}\" -nographic -no-reboot"
-fi
-
-# Aarch64:
-# qemu-system-aarch64 -m 512 -M virt -nographic -kernel arch/arm64/boot/Image.gz -append "console=ttyAMA0 root=/dev/mmcblk0 init=/sbin/init" -cpu max  
-
-
-# Run it!
-if [ ${KGDB_MODE} -eq 1 ]; then
-	# KGDB/QEMU cmdline
-	ShowTitle "Running ${QEMUPKG} in KGDB mode now ..."
-	RUNCMD="${RUNCMD} -s -S"
-	# qemu-system-xxx(1) :
-	#  -S  Do not start CPU at startup (you must type 'c' in the monitor).
-	#  -s  Shorthand for -gdb tcp::1234, i.e. open a gdbserver on TCP port 1234.
-	aecho "
-@@@@@@@@@@@@ NOTE NOTE NOTE @@@@@@@@@@@@
-REMEMBER this qemu instance is run w/ the -S : it *waits* for a gdb client to connect to it...
-
-You are expected to run (in another terminal window):
-$ ${CXX}gdb <path-to-ARM-built-kernel-src-tree>/vmlinux  <-- built w/ -g
-...
-and then have gdb connect to the target kernel using
-(gdb) target remote :1234
-...
-@@@@@@@@@@@@ NOTE NOTE NOTE @@@@@@@@@@@@"
-fi
-
-aecho "${RUNCMD}
-"
-Prompt "Ok? (after pressing ENTER, give it a moment ...)"
-# if we're still here, it's about to run!
-eval ${RUNCMD}
-
-aecho "
-... and done."
+	[[ ! -f ${TOPDIR}/run-qemu.sh ]] && {
+	  FatalError " !!! Run script run-qemu.sh not found? Aborting..."
+	}
+	${TOPDIR}/run-qemu.sh
 } # end run_qemu_SEALS()
 
 #------ s e a l s _ m e n u _ c o n s o l e m o d e -------------------
