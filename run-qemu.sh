@@ -62,6 +62,7 @@ KIMG=${IMAGES_FOLDER}/zImage
 # Device Tree Blob (DTB) pathname
 export DTB_BLOB_PATHNAME=${IMAGES_FOLDER}/${DTB_BLOB} # gen within kernel src tree
 
+# TODO - when ARCH is x86[_64], use Qemu's --enable-kvm to give a big speedup!
 RUNCMD=""
 if [ "${ARCH}" = "arm" ]; then
    RUNCMD="${QEMUPKG} -m ${SEALS_RAM} -M ${ARM_PLATFORM_OPT} ${SMP_EMU} \

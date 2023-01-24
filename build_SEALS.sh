@@ -3,12 +3,8 @@
 # The SEALS Opensource Project
 # SEALS : Simple Embedded Arm Linux System
 # Author and Maintainer : Kaiwan N Billimoria
-# kaiwan -at- kaiwantech -dot- com
-# kaiwan -dot- billimoria -at- gmail -dot- com
-#
 # Project URL:
 # https://github.com/kaiwan/seals
-#
 #----------------------------------------------------------------------
 # Important:
 # To get started, pl read:
@@ -39,6 +35,10 @@
 # (c) kaiwanTECH
 #
 # License: MIT
+#
+# TODO
+# [ ] signals (like SIGINT ^C, SIGQUIT ^\, etc) not being handled within the Qemu guest ?
+# [ ] 
 
 # Turn on Bash 'strict mode'!
 # ref: http://redsymbol.net/articles/unofficial-bash-strict-mode/
@@ -52,10 +52,8 @@ export name=$(basename $0)
 #############################
 export BUILD_CONFIG_FILE=./build.config
 source ${BUILD_CONFIG_FILE} || {
-	#echo "${name}: source failed! ${BUILD_CONFIG_FILE} missing or invalid?"
 	echo "${name}: ${BUILD_CONFIG_FILE} missing, creating it"
 	ln -sf build.config.vexpress build.config || exit 1
-	#exit 1
 }
 source ./common.sh || {
 	echo "${name}: source failed! ./common.sh missing or invalid?"
