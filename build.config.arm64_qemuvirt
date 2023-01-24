@@ -111,6 +111,9 @@ ARM_PLATFORM=
 # Look for it via qemu-system-arm -M ?   ; eg.
 #  qemu-system-arm -M ? |grep -i "i.mx"
 ARM_PLATFORM_OPT=virt
+
+SMP_EMU_MODE=1  # make '1' to have qemu run w/ 4 emulated cores 
+                # (only works on appropriate h/w-emulated platforms)
 #------------------------------------------------------------------------------
 
 
@@ -196,8 +199,6 @@ WIPE_BUSYBOX_CONFIG=0
 ###
 # Config vars for when we run QEMU:
 KGDB_MODE=0  # make '1' to have qemu run w/ the '-S' switch (waits for gdb to 'connect')
-SMP_EMU_MODE=1  # make '1' to have qemu run w/ 4 emulated cores 
-                # (only works on appropriate h/w-emulated platforms)
 #------------------------------------------------------------------------------
 
 #--- End build.config

@@ -22,11 +22,6 @@ source ./build.config || {
   echo "Tip: check/edit the build.config file"
   exit 1
 }
-
-echo "TIP:
-*** If another hypervisor (like VirtualBox) is running, Qemu won't run properly ***
-"
-
 source ./common.sh || {
 	echo "${name}: source failed! ./common.sh missing or invalid?"
 	exit 1
@@ -37,10 +32,28 @@ cd ${TOPDIR} || exit 1
 
 if [ ${SMP_EMU_MODE} -eq 1 ]; then
     # Using the "-smp n,sockets=n" QEMU options lets us emulate n processors!
-    # (can do this with n=4 for the ARM Cortex-A9)
+    # (can do this only for appropriate platforms)
      SMP_EMU="-smp 4,sockets=2"
 fi
 
+KGDB_MODE=0
+[ $# -ne 1 ] && {
+  echo "Usage: ${name} boot-option
+ boot-option == 0 : normal console boot
+ boot-option == 1 : console boot in KGDB mode (-s -S, waits for GDB client to connect)
+                    Expect you've configured a kernel for KGDB and have the vmlinux handy;
+If booting in KGDB mode, the emulator will wait (via the embedded GDB server within the kernel!);
+you're expected to run ${CXX}gdb <path/to/vmlinux> in another terminal window
+and issue the
+(gdb) target remote :1234
+command to connect to the ARM/Linux kernel."
+  exit 1
+}
+[ $1 -eq 1 ] && KGDB_MODE=1
+
+echo "TIP:
+*** If another hypervisor (like VirtualBox) is running, Qemu won't run properly ***
+"
 ShowTitle "
 RUN: Running ${QEMUPKG} now ..."
 
@@ -76,7 +89,7 @@ if [ ${KGDB_MODE} -eq 1 ]; then
 	#  -s  Shorthand for -gdb tcp::1234, i.e. open a gdbserver on TCP port 1234.
 	aecho "
 @@@@@@@@@@@@ NOTE NOTE NOTE @@@@@@@@@@@@
-REMEMBER this qemu instance is run w/ the -S : it *waits* for a gdb client to connect to it...
+REMEMBER this qemu instance is run with the -S option: it *waits* for a GDB client to connect to it...
 
 You are expected to run (in another terminal window):
 $ ${CXX}gdb <path-to-ARM-built-kernel-src-tree>/vmlinux  <-- built w/ -g

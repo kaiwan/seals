@@ -544,11 +544,10 @@ aecho " ... and done."
 # Use the wrapper script 'run-qemu.sh'
 run_qemu_SEALS()
 {
-
 	[[ ! -f ${TOPDIR}/run-qemu.sh ]] && {
 	  FatalError " !!! Run script run-qemu.sh not found? Aborting..."
 	}
-	${TOPDIR}/run-qemu.sh
+	${TOPDIR}/run-qemu.sh 0
 } # end run_qemu_SEALS()
 
 #------ s e a l s _ m e n u _ c o n s o l e m o d e -------------------
