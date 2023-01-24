@@ -1,14 +1,9 @@
 #!/bin/bash
-#
-# The SEALS Opensource Project
+# Part of the SEALS opensource Project
 # SEALS : Simple Embedded Arm Linux System
 # Author and Maintainer : Kaiwan N Billimoria
-# kaiwan -at- kaiwantech -dot- com
-# kaiwan -dot- billimoria -at- gmail -dot- com
-#
 # Project URL:
 # https://github.com/kaiwan/seals
-#
 #----------------------------------------------------------------------
 # Important:
 # To get started, pl read:
@@ -18,7 +13,12 @@
 # ${BUILD_CONFIG_FILE} : a configuration script that asks the user for and sets up
 # folder locations, toolchain PATH, any other configs as required.
 #############################
-name=$(basename $0)
+
+# Turn on Bash 'strict mode'!
+# ref: http://redsymbol.net/articles/unofficial-bash-strict-mode/
+set -euo pipefail
+
+export name=$(basename $0)
 export BUILD_CONFIG_FILE=./build.config
 source ${BUILD_CONFIG_FILE} || {
 	echo "${name}: source failed! ${BUILD_CONFIG_FILE} missing or invalid?"
