@@ -18,8 +18,9 @@
 # A helper script designed to build:
 # a custom kernel + root filesystem for an "embedded" QEMU/ARM Linux system.
 # By default, this helper script uses the 'default config' found in the file
-# 'build.config'.
-# build.config, again by default, holds the configuration for building:
+# 'build.config'. For convenience, build.config is simply a soft (symbolic) link
+# to the actual config file (of the form build.config.FOO).
+# The build.config holds the configuration for building:
 #  - a Linux kernel (+DTB) and root filesystem for:
 #    - the ARM Versatile Express (Cortex-A9) platform (supported by Qemu).
 # By tweaking build.config , you can use the SEALS project to build something else..
@@ -45,8 +46,9 @@ set -euo pipefail
 export name=$(basename $0)
 
 #############################
-# ${BUILD_CONFIG_FILE} : a configuration script that asks the user for and sets up
-# folder locations, toolchain PATH, any other configs as required.
+# ${BUILD_CONFIG_FILE} : a configuration script that specifies
+# folder locations, toolchain PATH, kernel & busybbox versions and locations,
+# memory sizes, any other configs as required.
 #############################
 export BUILD_CONFIG_FILE=./build.config
 source ${BUILD_CONFIG_FILE} || {
@@ -188,7 +190,16 @@ else
 	make V=${VERBOSE_BUILD} ARCH=${ARCH} CROSS_COMPILE=${CXX} menuconfig
 fi
 
+# Ensure CONFIG_BASH_IS_HUSH=y (so that we can run bash)
+sed -i '/# CONFIG_BASH_IS_HUSH/d' .config
+cat >> .config << @MYMARKER@
+CONFIG_BASH_IS_HUSH=y
+@MYMARKER@
+
 ShowTitle "BusyBox Build:"
+aecho "If prompted like this: 'Choose which shell is aliased to 'bash' name'
+select option 2 : '  2. hush (BASH_IS_HUSH)'"
+Prompt ""
 make V=${VERBOSE_BUILD} -j${CPU_CORES} ARCH=${ARCH} CROSS_COMPILE=${CXX} install || {
   FatalError "Building and/or Installing busybox failed!"
 }
@@ -208,19 +219,32 @@ setup_etc_in_rootfs()
 aecho "SEALS Build: Manually generating required SEALS rootfs /etc files ..."
 cd ${ROOTFS}
 MYPRJ=myprj
-mkdir -p dev etc/init.d lib ${MYPRJ} proc sys tmp
+mkdir -p dev etc/init.d lib lib64 ${MYPRJ} proc sys tmp
 chmod 1777 tmp
 
 # /etc/inittab
 cat > etc/inittab << @MYMARKER@
 ::sysinit:/etc/init.d/rcS
 #::respawn:/sbin/getty 115200 ttyS0
+@MYMARKER@
 
-::respawn:env PS1='ARM \w \$ ' /bin/sh
+# Custom prompt str (PS1)!
+# Earlier ensured that CONFIG_BASH_IS_HUSH=y (so that we can run bash)
+if [[ "${ARCH}" = "arm" ]]; then
+   cat >> etc/inittab << @MYMARKER@
+::respawn:env PS1='ARM \w \$ ' /bin/bash
+@MYMARKER@
+elif [[ "${ARCH}" = "arm64" ]]; then
+   cat >> etc/inittab << @MYMARKER@
+::respawn:env PS1='ARM64 \w \$ ' /bin/bash
+@MYMARKER@
+fi
+
 #::askfirst:env PS1='ARM \w \$ ' /bin/sh
 #::askfirst:/bin/sh
 #::askfirst:-/bin/sh
 
+cat >> etc/inittab << @MYMARKER@
 ::restart:/sbin/init
 ::shutdown:/bin/umount -a -r
 @MYMARKER@
@@ -570,7 +594,7 @@ fi
 
 aecho "${RUNCMD}
 "
-Prompt "Ok?"
+Prompt "Ok? (after pressing ENTER, give it a moment ...)"
 # if we're still here, it's about to run!
 eval ${RUNCMD}
 
