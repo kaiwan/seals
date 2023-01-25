@@ -161,10 +161,7 @@ K_CMDLINE_XTRA=""
 # source of busybox into the folder ${BB_FOLDER} ver ${BB_VER}.
 # (Update the variables below to reflect your settings and installation).
 # @@@@@
-BB_VER="1.32.0"
-  # 1.29 : build failing with a linker error
 BB_FOLDER=${STG}/busybox  # with the GitHub ver
-#BB_FOLDER=${STG}/busybox-${BB_VER}
 
 ## RootFS
 # !Careful! Set to 1 to force a rebuild of the rootfs; implies OVERWRITING any

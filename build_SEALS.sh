@@ -37,11 +37,16 @@
 #
 # License: MIT
 #
-# TODO
+# TODO / ISSUES
 # [ ] networking
 #     ref- https://github.com/MichielDerhaeg/build-linux
+# [+] installer- for busybix & kernel source trees
 # [ ] signals (like SIGINT ^C, SIGQUIT ^\, etc) not being handled within the Qemu guest ?
 #         (I think we need 'getty' running for this... ?)
+#----------------------------------------------------------------------
+# RELOOK
+# [ ] mysudo func()?
+#----------------------------------------------------------------------
 
 # Turn on Bash 'strict mode'!
 # ref: http://redsymbol.net/articles/unofficial-bash-strict-mode/
@@ -672,7 +677,7 @@ Kernel command-line : \"${SEALS_K_CMDLINE}\"
 
 Verbose Build : ${VERBOSE_BUILD}
 
-Busybox: Busybox to use: ${BB_VER} | Busybox location: ${BB_FOLDER}
+Busybox location: ${BB_FOLDER}
 
 Qemu: KGDB mode: ${KGDB_MODE} | SMP mode: ${SMP_EMU_MODE}
 
@@ -713,7 +718,7 @@ Linux kernel codebase location : ${KERNEL_FOLDER}
 Kernel command-line : \"${SEALS_K_CMDLINE}\"
 Verbose Build : ${VERBOSE_BUILD}
 <span foreground='blue'>\
-Busybox: Busybox to use: ${BB_VER} | Busybox location: ${BB_FOLDER}
+Busybox location: ${BB_FOLDER}
 </span>\
 Qemu: KGDB mode: ${KGDB_MODE} | SMP mode: ${SMP_EMU_MODE}
 <span foreground='blue'>\
@@ -949,7 +954,7 @@ testColor()
 {
   ShowTitle "testing... KERNEL: Configure and Build [kernel ver ${KERNELVER}] now ..."
   #FatalError
-  #FatalError "Testing ; the libncurses5-dev dev library and headers does not seem to be installed."
+  FatalError "Testing ; the libncurses5-dev dev library and headers does not seem to be installed."
   Echo "Echo : a quick test ..."
   decho "decho : a quick test ..."
   iecho "cecho : a quick test ..."

@@ -59,7 +59,7 @@ Kernel command-line : \"${SEALS_K_CMDLINE}\"
 
 Verbose Build : ${VERBOSE_BUILD}
 
-Busybox: Busybox to use: ${BB_VER} | Busybox location: ${BB_FOLDER}
+Busybox location: ${BB_FOLDER}
 
 Qemu: KGDB mode: ${KGDB_MODE} | SMP mode: ${SMP_EMU_MODE}
 
