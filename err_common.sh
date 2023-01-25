@@ -142,7 +142,7 @@ ${msgpost_con}"
    yad --title="${title}" --image=dialog-warning --text="${msg_gui}" \
 	--button="Close!${ICON_NO}:0" \
 	--wrap --text-align=center --button-layout=center --center \
-	--selectable-labels --no-escape --dialog-sep --sticky --on-top --skip-taskbar 2>/dev/null
+	--selectable-labels --no-escape --dialog-sep --sticky --on-top --skip-taskbar 2>/dev/null &
    # also show on the console
    cli_handle_error "${msg_con}"  #"$@"
  } || {
