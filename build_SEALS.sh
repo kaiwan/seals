@@ -864,7 +864,26 @@ check_installed_pkg()
 {
  report_progress || true
 
- GCC_SYSROOT=$(${CXX}gcc --print-sysroot)
+ # Toolchain installed?
+ set +e
+ which ${CXX}gcc >/dev/null 2>&1
+ res=$?
+ set -e
+ [[ ${res} -ne 0 ]] && {
+   FatalError "
+   There is an issue with the toolchain
+   (as specified in your build.config: ${CXX}).
+   *** It doesn't seem to be installed ***
+
+We insist you install a complete proper toolchain; to do so, pl follow the
+detailed instructions provided here:
+https://github.com/kaiwan/seals/wiki/HOWTO-Install-required-packages-on-the-Host-for-SEALS
+
+Thanks.
+"
+ }
+
+ GCC_SYSROOT=$(${CXX}gcc --print-sysroot) || true
  if [ -z "${GCC_SYSROOT}" -o "${GCC_SYSROOT}" = "/" ]; then
    FatalError "There is an issue with the provided toolchain.
 
