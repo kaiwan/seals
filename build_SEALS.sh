@@ -113,7 +113,7 @@ fi
 aecho "[Optional] Kernel Manual Configuration:
 Edit the kernel config if required, Save & Exit...
 "
-[ "${ARCH}" = "arm64" ] && aecho "TIP: On Aarch64, all platforms will be selected by default.
+[ "${ARCH}" = "arm64" ] && aecho "TIP: On Aarch64, with recent kernels, *all* platforms will be selected by default.
 (Can see them within the 'Platform selection' menu).
 Either build it this way or deselect all and enable only the platform(s) you want to support..."
 Prompt ""
@@ -191,15 +191,15 @@ else
 	make V=${VERBOSE_BUILD} ARCH=${ARCH} CROSS_COMPILE=${CXX} menuconfig
 fi
 
-# Ensure CONFIG_BASH_IS_HUSH=y (so that we can run bash)
-sed -i '/# CONFIG_BASH_IS_HUSH/d' .config
+# Ensure CONFIG_BASH_IS_ASH=y (so that we can run bash)
+sed -i '/# CONFIG_BASH_IS_ASH/d' .config
 cat >> .config << @MYMARKER@
-CONFIG_BASH_IS_HUSH=y
+CONFIG_BASH_IS_ASH=y
 @MYMARKER@
 
 ShowTitle "BusyBox Build:"
 aecho "If prompted like this: 'Choose which shell is aliased to 'bash' name'
-select option 2 : '  2. hush (BASH_IS_HUSH)'"
+select option 1 : '  1. hush (BASH_IS_ASH)'"
 Prompt ""
 make V=${VERBOSE_BUILD} -j${CPU_CORES} ARCH=${ARCH} CROSS_COMPILE=${CXX} install || {
   FatalError "Building and/or Installing busybox failed!"
@@ -231,7 +231,7 @@ cat > etc/inittab << @MYMARKER@
 @MYMARKER@
 
 # Custom prompt str (PS1)!
-# Earlier ensured that CONFIG_BASH_IS_HUSH=y (so that we can run bash)
+# Earlier ensured that CONFIG_BASH_IS_ASH=y (so that we can run bash)
 if [[ "${ARCH}" = "arm" ]]; then
    cat >> etc/inittab << @MYMARKER@
 ::respawn:env PS1='ARM \w \$ ' /bin/bash
@@ -259,7 +259,7 @@ echo "SEALS: /etc/init.d/rcS running now ..."
 /bin/mount -o remount,rw /
 
 # networking
-ifconfig eth0 192.168.2.100 netmask 255.255.255.0 up
+ifconfig eth0 192.168.1.100 netmask 255.255.255.0 up
 
 # Misc
 if [ $(id -u) -eq 0 ]; then
@@ -1010,18 +1010,18 @@ report_progress
 !!! SEALS Staging folder (STG) not present !!!
 Currently, STG is set to \"${STG}\"
 
-We expect a project 'staging area' is setup and pre-populated with appropriate content,
-i.e., the source code for their resp projects:
+IMP ::
+  Fix this by running the install script (install.sh) first.
+  First verify that the staging folder pathname is correct within your SEALS config file.
 
+(FYI, we expect a project 'staging area' is setup and pre-populated with appropriate content,
+i.e., the source code for their resp projects:
 STG              : the project staging folder
   KERNEL_FOLDER  : kernel source tree
   BB_FOLDER      : busybox source tree
-
-You must fix this by creating the staging folder and populating it with the said
-source code; if required, update them in the config file here:
-\"${BUILD_CONFIG_FILE}\"
-
-TIP: the place to update these folders is within the above-mentioned
+).
+You must fix this by running the install.sh script.
+Tip: the place to update these folders is within the above-mentioned
 config file.
 "
 }
@@ -1043,8 +1043,10 @@ Expect the ${err} source tree here:
 ${errdir}
 
 It appears to be invalid or missing!
-Pl first install the ${err} source tree here and rerun.
-TIP: check your SEALS config file first...
+
+IMP ::
+  Fix this by running the install script (install.sh) first.
+  First verify that the ${err} source version is correct within your SEALS config file.
 
 "
   fi
