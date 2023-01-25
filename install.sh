@@ -32,23 +32,26 @@ ShowTitle "SEALS :: Install Script"
 [[ -d "${STG}" ]] && {
 	wecho "The staging directory already exists (${STG}).
 
-Overwrite it ? (this will destroy it, you can't recover the content)
-Y/N : "
+OVERWRITE it ? Doing so will DESTROY it's content, you can't recover it:   y/N ? "
+get_yn_reply "" n
+[ $? -eq 1 ] && exit 0
 }
 
 aecho "Creating the staging dir..."
 mkdir -p ${STG} || FatalError "Creating the staging dir failed (permission issues?). Aborting..."
 
-[ 0 -eq 1 ] && {
 #-------------------- Busybox
 BB_INSTALLED=0
 aecho "Installing the busybox source tree"
+[[ -d ${BB_FOLDER} ]] && {
+  aecho "Deleting old content..."
+  rm -rf ${BB_FOLDER}
+}
 mkdir -p ${BB_FOLDER} #|| FatalError "Creating the staging dir failed (permission issues?). Aborting..."
 cd ${STG}
 runcmd "git clone --depth=1 https://github.com/mirror/busybox"
 [[ ! -d ${BB_FOLDER}/applets ]] && FatalError "Failed to instal busybox source."
 BB_INSTALLED=1
-}
 
 #-------------------- Linux kernel
 KSRC_INSTALLED=0
@@ -67,20 +70,27 @@ mkdir -p ${KERNEL_FOLDER} #|| FatalError "Creating the staging dir failed (permi
 K_MN=$(echo ${KERNELVER} | cut -d'.' -f2)
 K_PL=$(echo ${KERNELVER} | cut -d'.' -f3)
 K_URL_BASE=https://mirrors.edge.kernel.org/pub/linux/kernel
-K_URL=${K_URL_BASE}/v${K_MJ}.x/linux-${KERNELVER}.tar.xz
-echo "wget ${K_URL}"
-wget ${K_URL} || FatalError "Failed to fetch kernel source."
+K_URL_TARXZ=${K_URL_BASE}/v${K_MJ}.x/linux-${KERNELVER}.tar.xz
+
+[[ -d ${KERNEL_FOLDER} ]] && {
+  aecho "Deleting old content..."
+  rm -f $(basename ${K_URL_TARXZ})*
+  rm -rf ${KERNEL_FOLDER}
+}
+
+echo "wget ${K_URL_TARXZ}"
+wget ${K_URL_TARXZ} || FatalError "Failed to fetch kernel source."
 # TODO - verify integrity
 # Uncompress
-echo "tar xf $(basename ${K_URL})"
-tar xf $(basename ${K_URL}) || FatalError "Failed to extract kernel source."
+echo "tar xf $(basename ${K_URL_TARXZ})"
+tar xf $(basename ${K_URL_TARXZ}) || FatalError "Failed to extract kernel source."
 KSRC_INSTALLED=1
 
 
 # TODO - toolchain install
 
 
-
+aecho "${name}: all done."
 color_reset
 
 exit 0
