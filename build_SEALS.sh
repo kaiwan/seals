@@ -875,9 +875,12 @@ check_installed_pkg()
    (as specified in your build.config: ${CXX}).
    *** It doesn't seem to be installed ***
 
-We insist you install a complete proper toolchain; to do so, pl follow the
-detailed instructions provided here:
-https://github.com/kaiwan/seals/wiki/HOWTO-Install-required-packages-on-the-Host-for-SEALS
+We insist you install a complete proper toolchain (Linux x86_64 host to Aach32 or
+Aarch64 target). To do so, pl see:
+
+https://github.com/kaiwan/seals/wiki/SEALs-HOWTO
+
+It has detailed instructions.
 
 Thanks.
 "

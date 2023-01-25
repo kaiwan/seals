@@ -103,7 +103,10 @@ Pl change the kernel ver (in the build.config) and rerun"
 fi
 
 # TODO - toolchain install
-
+echo "To install the toolchain (Linux x86_64 host to Aach32 or Aarch64 target), pl see:
+https://github.com/kaiwan/seals/wiki/SEALs-HOWTO
+It has detailed instructions.
+"
 
 aecho "${name}: all done."
 color_reset
