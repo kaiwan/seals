@@ -32,7 +32,9 @@ ShowTitle "SEALS :: Install Script"
 [[ -d "${STG}" ]] && {
 	wecho "The staging directory already exists (${STG}).
 
-OVERWRITE it ? Doing so will DESTROY it's content, you can't recover it:   y/N ? "
+OVERWRITE it ? Doing so will DESTROY it's content, you can't recover it:
+(As a safety measure, you'll again be prompted before wiping Busybox and the kernel source trees)
+y/N ? "
 get_yn_reply "" n
 [ $? -eq 1 ] && exit 0
 }
