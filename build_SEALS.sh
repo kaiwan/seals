@@ -84,7 +84,7 @@ STEPS=5
 export CPU_CORES=$(getconf -a|grep _NPROCESSORS_ONLN|awk '{print $2}')
 [ -z "${CPU_CORES}" ] && CPU_CORES=2
 
-export KIMG=${KERNEL_FOLDER}/arch/${ARCH}/boot/zImage
+export KIMG=arch/${ARCH}/boot/zImage
 [ "${ARCH}" = "arm64" ] && KIMG=arch/${ARCH}/boot/Image.gz
 # Device Tree Blob (DTB) pathname
 export DTB_BLOB_PATHNAME=${KERNEL_FOLDER}/arch/${ARCH}/boot/dts/${DTB_BLOB} # gen within kernel src tree
@@ -135,7 +135,7 @@ else
 	}
 fi
 
-# Tip- On many Ubuntu/Deb systems, we need to turn Off the
+# Tip- On many Ubuntu/Deb s/big/scratchpad/SEALS_staging/SEALS_staging_vexpress/linux-6.1.5//arch/arm/boot/dts/vexpress-v2p-ca9.dtbystems, we need to turn Off the
 # SYSTEM_REVOCATION_KEYS config option, else the build fails
 scripts/config --disable SYSTEM_REVOCATION_KEYS || echo "Warning! Disabling SYSTEM_REVOCATION_KEYS failed"
 #grep SYSTEM_REVOCATION_KEYS .config
@@ -152,14 +152,13 @@ time make V=${VERBOSE_BUILD} -j${CPU_OPT} ARCH=${ARCH} CROSS_COMPILE=${CXX} all 
   FatalError "Kernel build failed! Aborting ..."
 } && true
 
-[ ! -f ${KIMG} ] && {
-  KIMG=${KIMG::-3}  # without the .gz suffix...
-  [ ! -f ${KIMG} ] && {
-     FatalError "Kernel build problem? image file ${KIMG} not found; aborting..."
+[[ "${ARCH}" = "arm64" ]] && KIMG=${KIMG::-3}  # without the .gz suffix...
+[[ ! -f ${KIMG} ]] && {
+     FatalError "Kernel build problem? kernel image file ${KIMG} not found; aborting..."
   } || true
 }
 ls -lh ${KIMG}
-cp -u ${KIMG} ${IMAGES_FOLDER}/
+cp -u ${KIMG}* ${IMAGES_FOLDER}/
 [ -f ${DTB_BLOB_PATHNAME} ] && {
    ls -lh ${DTB_BLOB_PATHNAME}
    cp -u ${DTB_BLOB_PATHNAME} ${IMAGES_FOLDER}/
@@ -540,6 +539,7 @@ ShowTitle "BACKUP: kernel, busybox images and config files now (as necessary) ..
 cd ${TOPDIR}
 unalias cp 2>/dev/null || true
 cp -afu ${IMAGES_FOLDER}/ ${IMAGES_BKP_FOLDER} # backup!
+#cp -u ${KERNEL_FOLDER}/$(basename ${KIMG}) ${IMAGES_FOLDER}/
 cp -u ${KERNEL_FOLDER}/${KIMG} ${IMAGES_FOLDER}/
 [ -f ${DTB_BLOB_PATHNAME} ] && cp -u ${DTB_BLOB_PATHNAME} ${IMAGES_FOLDER}/ || true
 cp ${KERNEL_FOLDER}/.config ${CONFIGS_FOLDER}/kernel_config
