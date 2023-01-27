@@ -47,6 +47,7 @@ Toolchain version: ${gccver}
 Staging folder   : ${STG}
 
 CPU arch     : ${ARCH}
+CPU model    : ${CPU_MODEL}
 ARM Platform : ${ARM_PLATFORM_STR}
 Platform RAM : ${SEALS_RAM} MB
 

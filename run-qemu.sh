@@ -67,10 +67,10 @@ export DTB_BLOB_PATHNAME=${IMAGES_FOLDER}/${DTB_BLOB} # gen within kernel src tr
 # Networking
 # ref: https://gist.github.com/extremecoders-re/e8fd8a67a515fee0c873dcafc81d811c#example-tap-network
 
-
 RUNCMD=""
 if [ "${ARCH}" = "arm" ]; then
-   RUNCMD="${QEMUPKG} -m ${SEALS_RAM} -M ${ARM_PLATFORM_OPT} ${SMP_EMU} \
+   RUNCMD="${QEMUPKG} -m ${SEALS_RAM} -M ${ARM_PLATFORM_OPT} \
+		-cpu max ${SMP_EMU} -cpu ${CPU_MODEL} \
 		-kernel ${IMAGES_FOLDER}/zImage \
 		-drive file=${IMAGES_FOLDER}/rfs.img,if=sd,format=raw \
 		-append \"${SEALS_K_CMDLINE}\" -nographic -no-reboot"
@@ -81,6 +81,7 @@ elif [ "${ARCH}" = "arm64" ]; then
 			-kernel ${KIMG} \
 			-drive file=${IMAGES_FOLDER}/rfs.img,format=raw,id=drive0 \
 			-append \"${SEALS_K_CMDLINE}\" -nographic -no-reboot"
+			# no DTB for the 'dummy,virt' platform
 fi
 
 # Aarch64:
