@@ -156,7 +156,6 @@ time make V=${VERBOSE_BUILD} -j${CPU_OPT} ARCH=${ARCH} CROSS_COMPILE=${CXX} all 
 [[ ! -f ${KIMG} ]] && {
      FatalError "Kernel build problem? kernel image file ${KIMG} not found; aborting..."
   } || true
-}
 ls -lh ${KIMG}
 cp -u ${KIMG}* ${IMAGES_FOLDER}/
 [ -f ${DTB_BLOB_PATHNAME} ] && {
@@ -854,6 +853,31 @@ To change settings permenantly, please edit the build.config file.
 
 } # end config_setup()
 
+install_deb_pkgs()
+{
+ # For libncurses lib: have to take into account whether running on Ubuntu/Deb
+ # or Fedora/RHEL/CentOS
+ which dpkg > /dev/null
+ if [ $? -ne 0 ] ; then
+	return
+ fi
+ # Ubuntu/Debian
+ local pkg
+ for pkg in $*
+ do
+	#echo "pkg=${pkg}"
+    set +e  # Bash strict mode side effects
+    dpkg -l |grep ${pkg} >/dev/null 2>&1
+	  # don't use grep -q here: see https://stackoverflow.com/a/19120438/779269
+    local ret=$? #; echo "ret=$ret"
+    set -e
+    if [ ${ret} -ne 0 ]; then
+	   # installing libgmp3-dev libmpc-dev regardless of ARCH=arm here... should be ok?
+	   sudo apt install ${pkg}
+    fi
+done
+}
+
 #--------- c h e c k _ i n s t a l l e d _ p k g ----------------------
 #  + use superior checking func (fr CQuATS code)
 # TODO
@@ -864,7 +888,7 @@ check_installed_pkg()
 {
  report_progress || true
 
- # Toolchain installed?
+ # Toolchain
  set +e
  which ${CXX}gcc >/dev/null 2>&1
  res=$?
@@ -927,38 +951,16 @@ Aborting..."
 ## TODO : the dpkg & rpm -qa are very time consuming!
 ## so do this only on 'first-time'.
 
- # For libncurses lib: have to take into account whether running on Ubuntu/Deb
- # or Fedora/RHEL/CentOS
- which dpkg > /dev/null
- if [ $? -eq 0 ] ; then
-  # Ubuntu/Debian
-   set +e  # Bash strict mode side effects
-   dpkg -l |grep -q libncurses5-dev
-   local ret=$?
-   set -e
-   if [ $? -ne 0 ]; then
-     FatalError "The 'libncurses5-dev' package does not seem to be installed.
-(Required for kernel config UI).
-Pl install the package (with apt-get) & re-run.  Aborting..."
- fi
-   set +e  # Bash strict mode side effects
-   dpkg -l |grep -q libssl-dev
-   local ret=$?
-   set -e
-   if [ $? -ne 0 ]; then
-     FatalError "The 'libssl-dev' package does not seem to be installed.
-(Required for kernel config UI).
-Pl install the package (with apt-get) & re-run.  Aborting..."
-   fi
- else
-  if [ -f /etc/fedora-release ] || [ -f /etc/fedora ] ; then
+ install_deb_pkgs libncurses5-dev libssl-dev libgmp3-dev libmpc-dev
+
+ # TODO - more pkgs to check for on these distros...
+ if [ -f /etc/fedora-release ] || [ -f /etc/fedora ] ; then
   # Fedora/RHEL/CentOS - probably :)
   rpm -qa |grep -q ncurses-devel || {
      FatalError "The 'ncurses-devel' package does not seem to be installed.
 (Required for kernel config UI).
 Pl install the package (with dnf/yum/rpm) & re-run.  Aborting..."
    }
-  fi
  fi
 
  # Terminal 'color' support?
