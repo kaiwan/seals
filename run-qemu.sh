@@ -30,6 +30,7 @@ color_reset
 
 cd ${TOPDIR} || exit 1
 
+SMP_EMU=""
 if [ ${SMP_EMU_MODE} -eq 1 ]; then
     # Using the "-smp n,sockets=n" QEMU options lets us emulate n processors!
     # (can do this only for appropriate platforms)
@@ -60,7 +61,11 @@ RUN: Running ${QEMUPKG} now ..."
 KIMG=${IMAGES_FOLDER}/zImage
 [ "${ARCH}" = "arm64" ] && KIMG=${IMAGES_FOLDER}/Image.gz
 # Device Tree Blob (DTB) pathname
-export DTB_BLOB_PATHNAME=${IMAGES_FOLDER}/${DTB_BLOB} # gen within kernel src tree
+DTB_BLOB_IMG=""
+[[ ! -z "${DTB_BLOB}" ]] && {
+	export DTB_BLOB_PATHNAME=${IMAGES_FOLDER}/${DTB_BLOB} # gen within kernel src tree
+	DTB_BLOB_IMG=${IMAGES_FOLDER}/$(basename ${DTB_BLOB}) # within image folder
+}
 
 # TODO - when ARCH is x86[_64], use Qemu's --enable-kvm to give a big speedup!
 
@@ -81,7 +86,10 @@ elif [ "${ARCH}" = "arm64" ]; then
 			-kernel ${KIMG} \
 			-drive file=${IMAGES_FOLDER}/rfs.img,format=raw,id=drive0 \
 			-append \"${SEALS_K_CMDLINE}\" -nographic -no-reboot"
-			# no DTB for the 'dummy,virt' platform
+	# no DTB for the 'dummy,virt' platform
+#set -x
+  echo "DTB_BLOB_IMG = ${DTB_BLOB_IMG}"
+	[[ -f ${DTB_BLOB_IMG} && -n "${DTB_BLOB_IMG}" ]] && RUNCMD="${RUNCMD} -dtb ${DTB_BLOB_IMG}"
 fi
 
 # Aarch64:

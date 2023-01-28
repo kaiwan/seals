@@ -156,10 +156,10 @@ time make V=${VERBOSE_BUILD} -j${CPU_OPT} ARCH=${ARCH} CROSS_COMPILE=${CXX} all 
 [[ ! -f ${KIMG} ]] && {
      FatalError "Kernel build problem? kernel image file ${KIMG} not found; aborting..."
   } || true
-ls -lh ${KIMG}
+ls -lh ${KIMG}*
 cp -u ${KIMG}* ${IMAGES_FOLDER}/
 [ -f ${DTB_BLOB_PATHNAME} ] && {
-   ls -lh ${DTB_BLOB_PATHNAME}
+   echo; ls -lh ${DTB_BLOB_PATHNAME}
    cp -u ${DTB_BLOB_PATHNAME} ${IMAGES_FOLDER}/
 } || true
 aecho "... and done."
