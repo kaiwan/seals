@@ -985,6 +985,7 @@ testColor()
   aecho "aecho : a quick test ..."
   wecho "wecho : a quick test ..."
   #fecho "wecho : a quick test ..."
+  fg_grey;  echo "rep progres ..." 
   color_reset
 }
 
