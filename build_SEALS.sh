@@ -237,11 +237,13 @@ cat > etc/inittab << @MYMARKER@
 # Earlier ensured that CONFIG_BASH_IS_ASH=y (so that we can run bash)
 if [[ "${ARCH}" = "arm" ]]; then
    cat >> etc/inittab << @MYMARKER@
-::respawn:env PS1='ARM \w \$ ' /bin/bash
+::respawn:env PS1='ARM \w \$ ' ${SHELL2RUN}
+#::respawn:env PS1='ARM64 \w \$ ' /bin/bash
 @MYMARKER@
 elif [[ "${ARCH}" = "arm64" ]]; then
    cat >> etc/inittab << @MYMARKER@
-::respawn:env PS1='ARM64 \w \$ ' /bin/bash
+::respawn:env PS1='ARM64 \w \$ ' ${SHELL2RUN}
+#::respawn:env PS1='ARM64 \w \$ ' /bin/bash
 @MYMARKER@
 fi
 
@@ -978,7 +980,7 @@ testColor()
 {
   ShowTitle "testing... KERNEL: Configure and Build [kernel ver ${KERNELVER}] now ..."
   #FatalError
-  FatalError "Testing ; the libncurses5-dev dev library and headers does not seem to be installed."
+#  FatalError "Testing ; the libncurses5-dev dev library and headers does not seem to be installed."
   Echo "Echo : a quick test ..."
   decho "decho : a quick test ..."
   iecho "cecho : a quick test ..."
