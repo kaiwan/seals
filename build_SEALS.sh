@@ -75,7 +75,7 @@ export PRJ_TITLE="SEALS: Simple Embedded ARM Linux System"
 # Message strings
 export MSG_GIVE_PSWD_IF_REQD="If asked, please enter password"
 export MSG_EXITING="
-${name}: all done, exiting.
+All done, exiting.
 Thanks for using SEALS, hope you like it.
 Please do consider contributing your feedback, ideas, and code!
 https://github.com/kaiwan/seals"
@@ -736,25 +736,26 @@ Press 'Yes' (or Enter) to proceed, 'No' (or Esc) to abort
 </i></span>"
 
 
- [ ${GUI_MODE} -eq 0 ] && {
+ if [ ${GUI_MODE} -eq 0 ] ; then
         becho "
 [[ SEALS Config :: Please Review Carefully ]]"
 	iecho "${msg1}"
 	aecho "${msg1_2}"
 	Prompt ""
- } || {
+ else
    #wecho "WIDTHxHT=$CAL_WIDTH x ${CAL_HT} "
    iecho "${msg1}"   # also show it on the terminal window..
    echo
-   yad --image "dialog-question" --title "${PRJ_TITLE}" --center \
+   YAD_COMMON_OPTS="--on-top  --center"
+   yad ${YAD_COMMON_OPTS} --image "dialog-question" --title "${PRJ_TITLE}" \
          --button=gtk-yes:0 --button=gtk-no:1 \
-	 --width=${CAL_WIDTH} --height=${CAL_HT} \
-	 --text "${msg1_yad}"
+		 --fixed \ # Oh Wow! we need '--fixed' to keep the height sane and show the buttons !! \
+ 	     --text "${msg1_yad}"
    [ $? -ne 0 ] && {
      aecho "Aborting. Edit the config file ${BUILD_CONFIG_FILE} as required and re-run."
      exit 1
    }
- }
+ fi
 
  local s1="Build kernel?                                    N"
  [ ${BUILD_KERNEL} -eq 1 ] && s1="Build kernel?                                    Y"
@@ -803,7 +804,8 @@ To change settings permenantly, please edit the build.config file.
 - if selected and wipe, implies that you will lose your existing config, of course.
 "
 
- local yad_dothis=$(yad --form \
+ local yad_dothis=$(yad ${YAD_COMMON_OPTS} --form \
+	--width 800 --height 220 \
    --field="Build Kernel (ver ${KERNELVER})":CHK \
    --field=" Wipe kernel config (Careful!*)":CHK \
    --field="Build Root Filesystem":CHK \
