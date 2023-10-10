@@ -214,6 +214,7 @@ GetIP()
 # Lookup the value via $? in the caller.
 get_yn_reply()
 {
+set +e   # temporarily turn off 'bash safe mode -e'
 str="${1}"
 while true
 do
@@ -248,6 +249,7 @@ do
    	*) aecho "*** Pl type 'Y' or 'N' ***"
    esac
 done
+set -e
 }
 
 # MountPartition

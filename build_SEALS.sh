@@ -40,9 +40,10 @@
 # TODO / ISSUES
 # [ ] networking
 #     ref- https://github.com/MichielDerhaeg/build-linux
-# [+] installer- for busybix & kernel source trees
+# [+] installer- for busybox & kernel source trees
 # [ ] signals (like SIGINT ^C, SIGQUIT ^\, etc) not being handled within the Qemu guest ?
 #         (I think we need 'getty' running for this... ?)
+# [ ] GUI for target machine selection
 #----------------------------------------------------------------------
 # RELOOK
 # [ ] mysudo func()?
@@ -59,6 +60,10 @@ export name=$(basename $0)
 # memory sizes, any other configs as required.
 #############################
 export BUILD_CONFIG_FILE=./build.config
+[[ ! -f ${BUILD_CONFIG_FILE} ]] && {
+	echo "*** FATAL *** Couldn't find build.config (is the relevant config file present?)"
+	exit 1
+}
 source ${BUILD_CONFIG_FILE} || {
 	echo "${name}: ${BUILD_CONFIG_FILE} missing, creating it"
 	ln -sf build.config.vexpress build.config || exit 1
@@ -70,7 +75,7 @@ source ./common.sh || {
 color_reset
 
 ### "Globals"
-export PRJ_TITLE="SEALS: Simple Embedded ARM Linux System"
+export PRJ_TITLE="SEALS - Simple Embedded ARM Linux System"
 
 # Message strings
 export MSG_GIVE_PSWD_IF_REQD="If asked, please enter password"
@@ -115,6 +120,7 @@ if [ ${WIPE_KERNEL_CONFIG} -eq 1 ]; then
 	}
 fi
 
+#set -x
 aecho "[Optional] Kernel Manual Configuration:
 Edit the kernel config if required, Save & Exit...
 "
@@ -591,7 +597,6 @@ get_yn_reply "3. Backup kernel & busybox images & configs? [y/n] : " y
 [ $? -eq 0 ] && SAVE_BACKUP_IMG_CONFIGS=1
 get_yn_reply "4. Run emulated system with Qemu? [y/n] : " y
 [ $? -eq 0 ] && RUN_QEMU=1
-
 } # end seals_menu_consolemode()
 
 display_current_config()
@@ -641,6 +646,59 @@ display_current_config()
   }
 }
 
+config_symlink_setup()
+{
+	aecho "config_symlink_setup()"
+	# Match the current config to set it to selected state
+#set -x
+	local arm32_vexpress_state=False arm64_qemuvirt_state=False arm64_rpi3b_state=False amd64_state=False 
+	local CONFIG_CURR=$(basename $(realpath ${BUILD_CONFIG_FILE}))
+	local CONFIG_FILE=$(ls build.config.* | grep "${CONFIG_CURR}")
+	[[ -z "${CONFIG_FILE}" ]] && FatalError "Couldn't get config file" || true
+
+	case "${CONFIG_FILE}" in
+	  build.config.arm32_vexpress) arm32_vexpress_state=True ;;
+	  build.config.arm64_qemuvirt) arm64_qemuvirt_state=True ;;
+	  build.config.arm64_rpi3b) arm64_rpi3b_state=True ;;
+	  build.config.amd64) amd64_state=True ;;
+	esac
+
+	# Fmt of radio btn: Bool                        "label str"                  value_when_selected 
+	local OUT=$(yad --on-top  --center --title "Select the target machine to deploy via Qemu"  \
+			--width 500 --height 200  \
+			--list --radiolist --columns=3 \
+			--column "   Select   " --column "   Machine   " --column "   Machine number - Do Not Display":HD  \
+			${arm32_vexpress_state} "ARM-32 Versatile Express (vexpress-cortex a15)" arm32_vexpress   \
+			${arm64_qemuvirt_state} "ARM-64 Qemu Virt" arm64_qemuvirt   \
+			${arm64_rpi3b_state} "ARM-64 Raspberry Pi 3B" arm64_rpi3b   \
+			${amd64_state} "X86_64 Qemu Virt" amd64   \
+			--print-column=2 --print-column 3 \
+			--buttons-layout=center --button="Select":2  --button=gtk-cancel:1)
+
+	if [ -z "${OUT}" -o $? = "1" ]; then return; fi;  # Cancel clicked (or Esc); keep current m/c
+	local MACH=$(echo ${OUT} | cut -d '|' -f1)
+
+	# (Re)create the build.config soft link to point to the selected machine's config file
+	#  ln [OPTION]... [-T] TARGET LINK_NAME
+	local TARGET
+	case "${MACH}" in
+	  arm32_vexpress) TARGET=build.config.arm32_vexpress ;;
+	  arm64_qemuvirt) TARGET=build.config.arm64_qemuvirt ;;
+	  arm64_rpi3b) TARGET=build.config.arm64_rpi3b ;;
+	  amd64) TARGET=build.config.amd64 ;;
+	esac
+	[[ ! -f ${TARGET} ]] && FatalError "Couldn't find the required build.config file : ${TARGET}"
+	ln -sf ${TARGET} build.config || FatalError "Couldn't setup new build.config symlink"
+	BUILD_CONFIG_FILE=$(realpath ./build.config)
+	[[ ! -f ${BUILD_CONFIG_FILE} ]] && FatalError "Couldn't setup new build.config (is the relevant config file present?)"
+
+	yad --center --title "Target Machine" --text-info \
+			--text="Target machine is now set to ${MACH}" \
+			--width 500 --height 100  \
+			--wrap --justify=center --button=OK:0
+#set +x
+}
+
 #---------- c o n f i g _ s e t u p -----------------------------------
 # config_setup
 # Based on values in the build.config file,
@@ -656,9 +714,11 @@ config_setup()
  local gccver=$(${CXX}gcc --version |head -n1 |cut -f2- -d" ")
 
  report_progress
+ config_symlink_setup
 
  msg1="
-Config file : ${BUILD_CONFIG_FILE}   [edit it to change any settings shown below]
+Config file : ${BUILD_CONFIG_FILE} -> $(basename $(realpath ${BUILD_CONFIG_FILE}))\
+ [edit it to change any settings shown below]
 Config name : ${CONFIG_NAME_STR}
 
 Toolchain prefix : ${CXX}
@@ -698,7 +758,7 @@ config file: ${BUILD_CONFIG_FILE}
 SEALS Config :: Please Review Carefully\
 </span></i></b>
 <span foreground='blue'>
-Config file : ${BUILD_CONFIG_FILE}\
+Config file : ${BUILD_CONFIG_FILE} -> $(basename $(realpath ${BUILD_CONFIG_FILE}))\
       <span foreground='red'><i>[edit it to change any settings shown below]</i></span>
 Config name : ${CONFIG_NAME_STR}\
 </span>
@@ -746,15 +806,19 @@ Press 'Yes' (or Enter) to proceed, 'No' (or Esc) to abort
    #wecho "WIDTHxHT=$CAL_WIDTH x ${CAL_HT} "
    iecho "${msg1}"   # also show it on the terminal window..
    echo
+#set -x
    YAD_COMMON_OPTS="--on-top  --center"
-   yad ${YAD_COMMON_OPTS} --image "dialog-question" --title "${PRJ_TITLE}" \
+   yad ${YAD_COMMON_OPTS} --image "dialog-question" --title "${PRJ_TITLE} : $(basename ${BUILD_CONFIG_FILE})" \
+ 	     --text "${msg1_yad}" \
          --button=gtk-yes:0 --button=gtk-no:1 \
-		 --fixed \ # Oh Wow! we need '--fixed' to keep the height sane and show the buttons !! \
- 	     --text "${msg1_yad}"
-   [ $? -ne 0 ] && {
+		 --fixed
+	 # Oh Wow! we need '--fixed' to keep the height sane and show the buttons !!
+   local ret=$?
+   echo "ret=$?"
+   if [[ ${ret} -eq 1 || ${ret} -eq 252 ]] ; then
      aecho "Aborting. Edit the config file ${BUILD_CONFIG_FILE} as required and re-run."
      exit 1
-   }
+   fi
  fi
 
  local s1="Build kernel?                                    N"
@@ -891,7 +955,7 @@ done
 check_installed_pkg()
 {
  report_progress || true
-
+set -x
  # Toolchain
  set +e
  which ${CXX}gcc >/dev/null 2>&1
@@ -915,8 +979,10 @@ Thanks.
  }
 
  GCC_SYSROOT=$(${CXX}gcc --print-sysroot) || true
- if [ -z "${GCC_SYSROOT}" -o "${GCC_SYSROOT}" = "/" ]; then
-   FatalError "There is an issue with the provided toolchain.
+ local buildconfig=$(basename $(realpath build.config))
+ if [[ "${buildconfig}" != "build.config.amd64" ]] ; then
+	if [ -z "${GCC_SYSROOT}" -o "${GCC_SYSROOT}" = "/" ] ; then
+		FatalError "There is an issue with the provided toolchain.
 
 It appears to not have the toolchain 'sysroot' libraries, sbin and usr
 components within it. This could (and usually does) happen if it was installed
@@ -928,7 +994,8 @@ https://github.com/kaiwan/seals/wiki/HOWTO-Install-required-packages-on-the-Host
 
 Thanks.
 "
- fi
+   fi
+fi
 
  which ${CXX}gcc > /dev/null || {
    FatalError "Cross toolchain does not seem to be valid! PATH issue?
@@ -947,6 +1014,7 @@ Aborting..."
 
  export QEMUPKG=qemu-system-${ARCH}
  [ "${ARCH}" = "arm64" ] && QEMUPKG=qemu-system-aarch64
+ [ -z "${ARCH}" ] && QEMUPKG=qemu-system-x86_64 # for AMD64
  check_deps_fatal "make ${QEMUPKG} mkfs.ext4 lzop bison flex bc yad"
  #check_deps_fatal "make ${QEMUPKG} mkfs.ext4 lzop bison flex bc libncurses5-dev libssl-dev yad"
   # lzop(1) required for the IMX6 kernel build
@@ -1028,7 +1096,8 @@ TESTMODE=0
 
 check_installed_pkg
 [ ${GUI_MODE} -eq 1 ] && gui_init
-#exit 0
+
+config_setup
 
 ###
 # !NOTE!
@@ -1060,12 +1129,19 @@ config file.
 "
 }
 
-# Verify that the kernel and busybox src trees are indeed under STG
+# Conditionally verify that the kernel and busybox src trees are indeed under STG
+CHK_SRCTREES=""
+[ ${BUILD_KERNEL} -eq 1 ] && CHK_SRCTREES="${KERNEL_FOLDER}/kernel"
+[ ${BUILD_ROOTFS} -eq 1 ] && CHK_SRCTREES="${CHK_SRCTREES} ${BB_FOLDER}/applets"
+echo "CHK_SRCTREES = ${CHK_SRCTREES}"
+#exit 0
 i=1
-for dir in ${KERNEL_FOLDER}/kernel ${BB_FOLDER}/applets
+#for dir in ${KERNEL_FOLDER}/kernel ${BB_FOLDER}/applets
+for dir in ${CHK_SRCTREES}
 do
   if [ ! -d ${dir} ] ; then
-    [ $i -eq 1 ] && {
+#    [ $i -eq 1 ] && {
+     [[ ${dir} = *kernel* ]] && {
 	   err="kernel"
 	   errdir=${KERNEL_FOLDER}
 	} || {
@@ -1092,7 +1168,7 @@ check_folder_createIA ${IMAGES_FOLDER}
 check_folder_createIA ${IMAGES_BKP_FOLDER}
 check_folder_createIA ${CONFIGS_FOLDER}
 
-config_setup
+#config_setup
 
 ### Which of the functions below run depends on the
 # config specified in the Build Config file!

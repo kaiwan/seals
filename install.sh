@@ -85,7 +85,7 @@ Pl change the kernel ver (in the build.config) and rerun"
 
    mkdir -p ${KERNEL_FOLDER} #|| FatalError "Creating the staging dir failed (permission issues?). Aborting..."
    K_MN=$(echo ${KERNELVER} | cut -d'.' -f2)
-   K_PL=$(echo ${KERNELVER} | cut -d'.' -f3)
+   #K_PL=$(echo ${KERNELVER} | cut -d'.' -f3)
    K_URL_BASE=https://mirrors.edge.kernel.org/pub/linux/kernel
    K_URL_TARXZ=${K_URL_BASE}/v${K_MJ}.x/linux-${KERNELVER}.tar.xz
 
@@ -105,7 +105,7 @@ Pl change the kernel ver (in the build.config) and rerun"
 fi
 
 # TODO - toolchain install
-echo "To install the toolchain (Linux x86_64 host to Aach32 or Aarch64 target), pl see:
+echo "To install the toolchain (Linux x86_64 host to AArch32 or AArch64 target), pl see:
 https://github.com/kaiwan/seals/wiki/SEALs-HOWTO
 It has detailed instructions.
 "
