@@ -166,6 +166,11 @@ Prompt()
  [ ${COLOR} -eq 1 ] && fg_magenta
  echo "$1
  [Press ENTER to continue, or Ctrl-C to abort now...]"
- read
+
+ # Failed with: read: read error: 0: Resource temporarily unavailable
+ # sol: https://stackoverflow.com/questions/54775816/read-read-error-0-resource-temporarily-unavailable
+ exec 3<&0 < /dev/tty  #/dev/null
+ read -r x
+ 
  [ ${COLOR} -eq 1 ] && color_reset
 } # end Prompt()
