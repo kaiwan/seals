@@ -691,6 +691,7 @@ config_symlink_setup()
 	ln -sf ${TARGET} build.config || FatalError "Couldn't setup new build.config symlink"
 	BUILD_CONFIG_FILE=$(realpath ./build.config)
 	[[ ! -f ${BUILD_CONFIG_FILE} ]] && FatalError "Couldn't setup new build.config (is the relevant config file present?)"
+	source ${BUILD_CONFIG_FILE} || echo "*Warning* Couldn't source the just-set build.config file ${BUILD_CONFIG_FILE}"
 
 	yad --center --title "Target Machine" --text-info \
 			--text="Target machine is now set to ${MACH}" \
