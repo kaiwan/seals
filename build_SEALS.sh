@@ -955,7 +955,7 @@ done
 check_installed_pkg()
 {
  report_progress || true
-set -x
+#set -x
  # Toolchain
  set +e
  which ${CXX}gcc >/dev/null 2>&1
