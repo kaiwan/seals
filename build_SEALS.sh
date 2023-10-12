@@ -664,9 +664,9 @@ config_symlink_setup()
 	esac
 
 	# Fmt of radio btn: Bool                        "label str"                  value_when_selected 
-	local OUT=$(yad --on-top  --center --title "Select the target machine to deploy via Qemu" \
-			--width 500 --height 200  \
-			--text "The current machine is the one that's now selected" \
+	local OUT=$(yad --on-top  --center --title "Select the target machine to deploy via Qemu; press Esc / Cancel to keep the current one" \
+			--width 500 --height 210  \
+			--text "The current machine is the one that's now selected; press Esc / Cancel to keep the current one" \
 			--list --radiolist --columns=3 \
 			--column "   Select   " --column "   Machine   " --column "   Machine number - Do Not Display":HD  \
 			${arm32_vexpress_state} "ARM-32 Versatile Express (vexpress-cortex a15)" arm32_vexpress   \
@@ -676,12 +676,16 @@ config_symlink_setup()
 			--print-column=2 --print-column 3 \
 			--buttons-layout=center --button="Select":2  --button=gtk-cancel:1)
 
-	if [ -z "${OUT}" -o $? = "1" ]; then return; fi;  # Cancel clicked (or Esc); keep current m/c
-	local MACH=$(echo ${OUT} | cut -d '|' -f1)
+	if [ -z "${OUT}" -o $? = "1" ]; then return; fi;  # Cancel clicked (or Esc); keep current m/c and return
+
+	# Retrieve the just-selected machine
+	local TARGET MACH=$(echo ${OUT} | cut -d '|' -f1)
+	local MACH_CURR=$(echo ${CONFIG_CURR} |cut -d'.' -f3)
+	# Short circuit, return if it's the same machine that's selected
+	if [ "${MACH}" = "${MACH_CURR}" ]; then return; fi;
 
 	# (Re)create the build.config soft link to point to the selected machine's config file
 	#  ln [OPTION]... [-T] TARGET LINK_NAME
-	local TARGET
 	case "${MACH}" in
 	  arm32_vexpress) TARGET=build.config.arm32_vexpress ;;
 	  arm64_qemuvirt) TARGET=build.config.arm64_qemuvirt ;;
@@ -698,9 +702,9 @@ config_symlink_setup()
 	source ${BUILD_CONFIG_FILE} || echo "*Warning* Couldn't source the just-set build.config file ${BUILD_CONFIG_FILE}"
 	GUI_MODE=${saved_guimode}
 
-	yad --center --title "Target Machine" --text-info \
-			--text="Target machine is now set to ${MACH}" \
-			--width 500 --height 100  \
+	yad --center --title "Target Machine Confirmation" --text-info \
+			--text="CONFIRM :: Target machine is now set to ${MACH}" \
+			--width 500 --height 50  \
 			--wrap --justify=center --button=OK:0
 #set +x
 }
@@ -814,7 +818,7 @@ Press 'Yes' (or Enter) to proceed, 'No' (or Esc) to abort
    echo
 #set -x
    YAD_COMMON_OPTS="--on-top  --center"
-   yad ${YAD_COMMON_OPTS} --image "dialog-question" --title "${PRJ_TITLE} : $(basename ${BUILD_CONFIG_FILE})" \
+   yad ${YAD_COMMON_OPTS} --image "dialog-question" --title "${PRJ_TITLE} : $(basename $(realpath ${BUILD_CONFIG_FILE}))" \
  	     --text "${msg1_yad}" \
          --button=gtk-yes:0 --button=gtk-no:1 \
 		 --fixed
