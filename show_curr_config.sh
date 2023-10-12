@@ -39,7 +39,7 @@ local gccver=$(${CXX}gcc --version |head -n1 |cut -f2- -d" ")
 
 aecho " ---------------- Current Configuration -----------------"
 local msg1="
-Config file : ${BUILD_CONFIG_FILE}   [edit it to change any settings shown below]
+Config file : build.config -> $(realpath ${BUILD_CONFIG_FILE})   [edit it to change any settings shown below]
 Config name : ${CONFIG_NAME_STR}
 
 Toolchain prefix : ${CXX}
