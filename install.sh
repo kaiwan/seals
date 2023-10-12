@@ -50,17 +50,26 @@ get_yn_reply "Pl confirm: Install (and possibly overwrite) busybox source tree (
 ans=$?
 set -e
 
+#set -x
 if [[ ${ans} -eq 0 ]] ; then  # ans 'y'
    aecho "Installing the busybox source tree"
    [[ -d ${BB_FOLDER} ]] && {
      aecho "Deleting old content..."
-     rm -rf ${BB_FOLDER}
+		rm -rf ${BB_FOLDER} $(dirname ${BB_FOLDER})/busybox
    }
-   mkdir -p ${BB_FOLDER} #|| FatalError "Creating the staging dir failed (permission issues?). Aborting..."
+   mkdir -p ${BB_FOLDER} # abs pathname #|| FatalError "Creating the staging dir failed (permission issues?). Aborting..."
    cd ${STG}
    runcmd "git clone --depth=1 https://github.com/mirror/busybox"
-   [[ ! -d ${BB_FOLDER}/applets ]] && FatalError "Failed to instal busybox source."
+   [[ ! -d ${BB_FOLDER}/applets ]] && {
+		# [1] Pecuiliar! busybox src gets installed under the dir 'busybox' NOT 'busybox-<ver#>'
+		# BB_FOLDER_ALT is set to $STG/busybox
+		[[ ! -d ${BB_FOLDER_ALT}/applets ]] && FatalError "Failed to install busybox source."
+   }
+   # Because of [1]:
+   rmdir ${BB_FOLDER}
+   ln -sf busybox ${BB_FOLDER}
    BB_INSTALLED=1
+   aecho "[+] Busybox source tree installed"
 fi
 
 #-------------------- Linux kernel
@@ -73,7 +82,7 @@ set -e
 
 if [[ ${ans} -eq 0 ]] ; then  # ans 'y'
    aecho "Installing the Linux kernel source tree"
-   cd ${STG}
+   cd ${STG}  # abs pathname
    # have to figure the URL based on kernel ver...
    # f.e. if kver is 3.16.68:
    #  https://mirrors.edge.kernel.org/pub/linux/kernel/v3.x/linux-3.16.68.tar.xz
@@ -102,6 +111,7 @@ Pl change the kernel ver (in the build.config) and rerun"
    echo "tar xf $(basename ${K_URL_TARXZ})"
    tar xf $(basename ${K_URL_TARXZ}) || FatalError "Failed to extract kernel source."
    KSRC_INSTALLED=1
+   aecho "[+] Kernel source tree linux-${KERNELVER} installed"
 fi
 
 # TODO - toolchain install
