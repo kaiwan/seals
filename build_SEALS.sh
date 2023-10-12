@@ -651,7 +651,7 @@ config_symlink_setup()
 	aecho "config_symlink_setup()"
 	# Match the current config to set it to selected state
 #set -x
-	local arm32_vexpress_state=False arm64_qemuvirt_state=False arm64_rpi3b_state=False amd64_state=False 
+	local arm32_vexpress_state=False arm64_qemuvirt_state=False arm64_rpi3b_cm3_state=False amd64_state=False 
 	local CONFIG_CURR=$(basename $(realpath ${BUILD_CONFIG_FILE}))
 	local CONFIG_FILE=$(ls build.config.* | grep "${CONFIG_CURR}")
 	[[ -z "${CONFIG_FILE}" ]] && FatalError "Couldn't get config file" || true
@@ -659,19 +659,20 @@ config_symlink_setup()
 	case "${CONFIG_FILE}" in
 	  build.config.arm32_vexpress) arm32_vexpress_state=True ;;
 	  build.config.arm64_qemuvirt) arm64_qemuvirt_state=True ;;
-	  build.config.arm64_rpi3b) arm64_rpi3b_state=True ;;
+	  build.config.arm64_rpi3b_cm3) arm64_rpi3b_cm3_state=True ;;
 	  build.config.amd64) amd64_state=True ;;
 	esac
 
 	# Fmt of radio btn: Bool                        "label str"                  value_when_selected 
-	local OUT=$(yad --on-top  --center --title "Select the target machine to deploy via Qemu"  \
+	local OUT=$(yad --on-top  --center --title "Select the target machine to deploy via Qemu" \
 			--width 500 --height 200  \
+			--text "The current machine is the one that's now selected" \
 			--list --radiolist --columns=3 \
 			--column "   Select   " --column "   Machine   " --column "   Machine number - Do Not Display":HD  \
 			${arm32_vexpress_state} "ARM-32 Versatile Express (vexpress-cortex a15)" arm32_vexpress   \
 			${arm64_qemuvirt_state} "ARM-64 Qemu Virt" arm64_qemuvirt   \
-			${arm64_rpi3b_state} "ARM-64 Raspberry Pi 3B" arm64_rpi3b   \
-			${amd64_state} "X86_64 Qemu Virt" amd64   \
+			${arm64_rpi3b_cm3_state} "ARM-64 Raspberry Pi 3B (CM3)" arm64_rpi3b_cm3   \
+			${amd64_state} "x86_64 (or AMD64) Qemu Virt" amd64   \
 			--print-column=2 --print-column 3 \
 			--buttons-layout=center --button="Select":2  --button=gtk-cancel:1)
 
@@ -684,7 +685,7 @@ config_symlink_setup()
 	case "${MACH}" in
 	  arm32_vexpress) TARGET=build.config.arm32_vexpress ;;
 	  arm64_qemuvirt) TARGET=build.config.arm64_qemuvirt ;;
-	  arm64_rpi3b) TARGET=build.config.arm64_rpi3b ;;
+	  arm64_rpi3b_cm3) TARGET=build.config.arm64_rpi3b_cm3 ;;
 	  amd64) TARGET=build.config.amd64 ;;
 	esac
 	[[ ! -f ${TARGET} ]] && FatalError "Couldn't find the required build.config file : ${TARGET}"
