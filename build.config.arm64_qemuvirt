@@ -45,7 +45,7 @@ set -a   # auto export all vars
 # @@@@@
 CONFIG_NAME_STR="SEALs config file for generic Aarch64 Virt system"
 COLOR=1        # terminal color support? Assume yes..
-GUI_MODE=0     # mode is auto-detected
+GUI_MODE=0     # auto-detects GUI / console mode
 DEBUG=0        # set to 1 to get debug messages displayed
 [ ${DEBUG} -eq 1 ] && export PS4='+(${BASH_SOURCE}:${LINENO}): ${FUNCNAME[0]:+${FUNCNAME[0]}(): }'
 VERBOSE_MSG=0  # set to 1 to get more verbose messages displayed
@@ -85,6 +85,7 @@ CPU_MODEL=cortex-a57
 SEALS_RAM=512  # MB
 
 # Select the platform (to build the kernel for).
+ARCH_PLATFORM=""
 # @@@@@
 # English-like name
 ARM_PLATFORM_STR="Qemu Virt"

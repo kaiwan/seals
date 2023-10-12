@@ -45,7 +45,7 @@ set -a   # auto export all vars
 # @@@@@
 CONFIG_NAME_STR="SEALs config file for the Raspberry Pi 3B AArch64 (or RPi CM3 Compute Model 3)"
 COLOR=1        # terminal color support? Assume yes..
-GUI_MODE=0     # mode is auto-detected
+GUI_MODE=0     # auto-detects GUI / console mode
 DEBUG=0        # set to 1 to get debug messages displayed
 [ ${DEBUG} -eq 1 ] && export PS4='+(${BASH_SOURCE}:${LINENO}): ${FUNCNAME[0]:+${FUNCNAME[0]}(): }'
 VERBOSE_MSG=0  # set to 1 to get more verbose messages displayed

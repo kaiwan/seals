@@ -45,7 +45,7 @@ set -a   # auto export all vars
 # @@@@@
 CONFIG_NAME_STR="SEALs config file for ARM-32 Versatile Express (vexpress-a15) board"
 COLOR=1        # terminal color support? Assume yes..
-GUI_MODE=0     # mode is auto-detected
+GUI_MODE=0     # auto-detects GUI / console mode
 DEBUG=0        # set to 1 to get debug messages displayed
 [ ${DEBUG} -eq 1 ] && export PS4='+(${BASH_SOURCE}:${LINENO}): ${FUNCNAME[0]:+${FUNCNAME[0]}(): }'
 VERBOSE_MSG=0  # set to 1 to get more verbose messages displayed
@@ -162,6 +162,7 @@ K_CMDLINE_XTRA=""
 # (Update the variables below to reflect your settings and installation).
 # @@@@@
 BB_FOLDER=${STG}/busybox  # with the GitHub ver
+BB_FOLDER_ALT=${STG}/busybox # the src seems to reside only in the dir named 'busybox' and ! 'busybox-<ver#>'  (?)
 SHELL2RUN=/bin/sh  #/bin/bash
 
 ## RootFS
