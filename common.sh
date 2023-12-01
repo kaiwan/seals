@@ -344,7 +344,7 @@ done
 [ ${needinstall} -eq 1 ] && {
    [ ${severity} -eq 1 ] && {
       FatalError "Kindly first install the required package(s) shown above \
-(check console and log output too) and then retry, thanks. Aborting now..."
+(check console and/or log output) and then retry, thanks. Aborting now..."
    } || {
       wecho "WARNING! The package(s) shown above are not present"
    }
