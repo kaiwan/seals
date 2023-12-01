@@ -96,8 +96,7 @@ export KIMG=arch/${ARCH}/boot/zImage
 export DTB_BLOB_PATHNAME=${KERNEL_FOLDER}/arch/${ARCH}/boot/dts/${DTB_BLOB} # gen within kernel src tree
 
 # Signals
-trap 'wecho "User Abort. ${MSG_EXITING}" ; dumpstack ; [ ${COLOR} -eq 1 ] && color_reset ; exit 2' \
- HUP INT QUIT
+trap 'wecho "User Abort. ${MSG_EXITING}" ; dumpstack ; [ ${COLOR} -eq 1 ] && color_reset ; exit 2' HUP INT QUIT
 
 ##-------------------- Functions Start --------------------------------
 
@@ -125,7 +124,7 @@ fi
 aecho "[Optional] Kernel Manual Configuration:
 Edit the kernel config if required, Save & Exit...
 "
-[ "${ARCH}" = "arm64" ] && aecho "TIP: On Aarch64, with recent kernels, *all* platforms will be selected by default.
+[ "${ARCH}" = "arm64" ] && aecho "TIP: On Aarch64, with recent kernels, *all* platforms will be selected by default."
 [ "${ARCH}" = "arm64" ] && aecho "TIP: On AArch64, with recent kernels, *all* platforms will be selected by default.
 (Can see them within the 'Platform selection' menu).
 Either build it this way or deselect all and enable only the platform(s) you want to support..."
