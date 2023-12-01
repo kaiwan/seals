@@ -78,7 +78,7 @@ VERBOSE_BUILD=0
 # name of the dir under <kernel-src>/arch/XXX
 #ARCH=arm
 ARCH=arm64
-QEMUPKG=qemu-system-${ARCH}
+QEMUPKG=qemu-system-aarch64
 [[ "${ARCH}" = "arm64" ]] && QEMUPKG=qemu-system-aarch64
 
 CPU_MODEL=cortex-a57
@@ -124,11 +124,11 @@ SMP_EMU_MODE=1  # make '1' to have qemu run w/ 4 emulated cores
 #--------TOOLCHAIN------------------------------------------------------------
 # The toolchain to use; expect that it is installed and the PATH is setup..
 # @@@@@
-CXX=aarch64-none-linux-gnu- # toolchain prefix
+CXX=aarch64-linux-gnu-  #aarch64-none-linux-gnu- # toolchain prefix
 # CXX_LOC is the location of the x86-to-ARM toolchain on disk
 # (used to setup the PATH and locate the ARM shared libraries within the toolchain)
 # @@@@@
-CXX_LOC=/big/scratchpad/gcc-arm-10.2-2020.11-x86_64-aarch64-none-linux-gnu/bin
+CXX_LOC=/usr/bin   #/big/scratchpad/gcc-arm-10.2-2020.11-x86_64-aarch64-none-linux-gnu/bin
 # Keep your toolchain in the PATH
 PATH=$PATH:${CXX_LOC}/bin
 #------------------------------------------------------------------------------
