@@ -28,10 +28,7 @@ source ./common.sh || {
 	echo "${name}: source failed! ./common.sh missing or invalid?"
 	exit 1
 }
-color_reset
-export PRJ_TITLE="SEALS: Simple Embedded ARM Linux System"
 
-techo "${PRJ_TITLE}"
 
 show_curr_build_config()
 {
@@ -92,7 +89,13 @@ ls -lth ${STG}/images
 
 
 #--- 'main'
-[[ "${ARCH}" != "x86" ]] && [[ ! -f  ${CXX}gcc ]] && becho "!WARNING! Toolchain ${CXX}* doesn't seem to be installed correctly"
+color_reset
+export PRJ_TITLE="SEALS: Simple Embedded ARM Linux System"
+techo "${PRJ_TITLE}"
+
+if [[ "${ARCH}" != "x86" ]] ; then
+    which ${CXX}gcc >/dev/null || becho "!WARNING! Toolchain ${CXX}* doesn't seem to be installed correctly"
+fi
 show_curr_build_config
 show_stg
 exit 0
