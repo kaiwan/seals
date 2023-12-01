@@ -44,6 +44,7 @@
 # [ ] signals (like SIGINT ^C, SIGQUIT ^\, etc) not being handled within the Qemu guest ?
 #         (I think we need 'getty' running for this... ?)
 # [ ] GUI for target machine selection
+# [.] GUI for target machine selection
 #----------------------------------------------------------------------
 # RELOOK
 # [ ] mysudo func()?
@@ -125,6 +126,7 @@ aecho "[Optional] Kernel Manual Configuration:
 Edit the kernel config if required, Save & Exit...
 "
 [ "${ARCH}" = "arm64" ] && aecho "TIP: On Aarch64, with recent kernels, *all* platforms will be selected by default.
+[ "${ARCH}" = "arm64" ] && aecho "TIP: On AArch64, with recent kernels, *all* platforms will be selected by default.
 (Can see them within the 'Platform selection' menu).
 Either build it this way or deselect all and enable only the platform(s) you want to support..."
 Prompt ""
@@ -141,8 +143,9 @@ else
 	}
 fi
 
-# Tip- On many Ubuntu/Deb s/big/scratchpad/SEALS_staging/SEALS_staging_vexpress/linux-6.1.5//arch/arm/boot/dts/vexpress-v2p-ca9.dtbystems, we need to turn Off the
+# Tip- On many Ubuntu/Deb systems, we need to turn Off the
 # SYSTEM_REVOCATION_KEYS config option, else the build fails
+echo "[+] scripts/config --disable SYSTEM_REVOCATION_KEYS"
 scripts/config --disable SYSTEM_REVOCATION_KEYS || echo "Warning! Disabling SYSTEM_REVOCATION_KEYS failed"
 #grep SYSTEM_REVOCATION_KEYS .config
 
@@ -153,11 +156,19 @@ CPU_OPT=$((${CPU_CORES}*2))
 
 #Prompt
 # make all => kernel image, modules, dtbs (device-tree-blobs), ... - all will be built!
-aecho "Doing: make V=${VERBOSE_BUILD} -j${CPU_OPT} ARCH=${ARCH} CROSS_COMPILE=${CXX} all"
-time make V=${VERBOSE_BUILD} -j${CPU_OPT} ARCH=${ARCH} CROSS_COMPILE=${CXX} all || {
+local CMD="time make V=${VERBOSE_BUILD} -j${CPU_OPT} ARCH=${ARCH} CROSS_COMPILE=${CXX} all"
+set +u
+if [[ "${ARCH_PLATFORM}" = "x86_64" ]] ; then
+	CMD="time make V=${VERBOSE_BUILD} -j${CPU_OPT}"
+fi
+set -u
+aecho "Doing: ${CMD}"
+eval ${CMD} || {
   FatalError "Kernel build failed! Aborting ..."
 } && true
 
+#set -x
+echo "KIMG = $KIMG"
 [[ "${ARCH}" = "arm64" ]] && KIMG=${KIMG::-3}  # without the .gz suffix...
 [[ ! -f ${KIMG} ]] && {
      FatalError "Kernel build problem? kernel image file ${KIMG} not found; aborting..."
@@ -210,9 +221,24 @@ ShowTitle "BusyBox Build:"
 aecho "If prompted like this: 'Choose which shell is aliased to 'bash' name'
 select option 1 : '  1. hush (BASH_IS_ASH)'"
 Prompt ""
-make V=${VERBOSE_BUILD} -j${CPU_CORES} ARCH=${ARCH} CROSS_COMPILE=${CXX} install || {
+
+local CMD="time make V=${VERBOSE_BUILD} -j${CPU_CORES} ARCH=${ARCH} CROSS_COMPILE=${CXX} install"
+set +u
+if [[ "${ARCH_PLATFORM}" = "x86_64" ]] ; then
+	CMD="time make V=${VERBOSE_BUILD} -j${CPU_CORES} install"
+fi
+set -u
+set -x
+aecho "Doing: ${CMD}"
+eval ${CMD} || {
   FatalError "Building and/or Installing busybox failed!"
-}
+} && true
+
+
+#////
+#make V=${VERBOSE_BUILD} -j${CPU_CORES} ARCH=${ARCH} CROSS_COMPILE=${CXX} install || {
+#  FatalError "Building and/or Installing busybox failed!"
+#}
 
 mysudo "SEALS Build:Step 1 of ${STEPS}: Copying of required busybox files. ${MSG_GIVE_PSWD_IF_REQD}" \
  cp -af ${BB_FOLDER}/_install/* ${ROOTFS}/ || {
@@ -847,6 +873,7 @@ Press 'Yes' (or Enter) to proceed, 'No' (or Esc) to abort
  [ ${RUN_QEMU} -eq 1 ] && s5="Run QEMU ARM emulator?                         Y"
 
 [ ${GUI_MODE} -eq 1 ] && {
+if [ ${GUI_MODE} -eq 1 ] ; then
  #--- YAD
  local disp_kernel="FALSE"
  [ ${BUILD_KERNEL} -eq 1 ] && disp_kernel="TRUE"
@@ -916,7 +943,7 @@ To change settings permenantly, please edit the build.config file.
 
  display_current_config
 
-} || {
+else # console mode
 
   seals_menu_consolemode
   becho "
@@ -927,7 +954,7 @@ To change settings permenantly, please edit the build.config file.
   echo
   get_yn_reply "Proceed? (if you say No, you can reenter choices)" y
   [ $? -eq 1 ] && seals_menu_consolemode
-}
+fi
 
 } # end config_setup()
 
@@ -978,7 +1005,7 @@ check_installed_pkg()
    *** It doesn't seem to be installed ***
 
 We insist you install a complete proper toolchain (Linux x86_64 host to Aach32 or
-Aarch64 target). To do so, pl see:
+AArch64 target). To do so, pl see:
 
 https://github.com/kaiwan/seals/wiki/SEALs-HOWTO
 
@@ -996,11 +1023,11 @@ Thanks.
 
 It appears to not have the toolchain 'sysroot' libraries, sbin and usr
 components within it. This could (and usually does) happen if it was installed
-via a simple package manager cmd like 'sudo apt install ${ARCH}-linux-gnueabi'.
+via a simple package manager cmd similar to 'sudo apt install ${ARCH}-linux-gnueabi'.
 
 We insist you install a complete proper toolchain; to do so, pl follow the
 detailed instructions provided here:
-https://github.com/kaiwan/seals/wiki/HOWTO-Install-required-packages-on-the-Host-for-SEALS
+https://github.com/kaiwan/seals/wiki/SEALs-HOWTO
 
 Thanks.
 "
@@ -1022,27 +1049,27 @@ env vars are not setup. So run from a root shell where the PATH is correctly set
 Aborting..."
  }
 
- export QEMUPKG=qemu-system-${ARCH}
+ #export QEMUPKG=qemu-system-${ARCH}
+ [ "${ARCH}" = "arm" ] && QEMUPKG=qemu-system-arm
  [ "${ARCH}" = "arm64" ] && QEMUPKG=qemu-system-aarch64
- [ -z "${ARCH}" ] && QEMUPKG=qemu-system-x86_64 # for AMD64
- check_deps_fatal "make ${QEMUPKG} mkfs.ext4 lzop bison flex bc yad"
- #check_deps_fatal "make ${QEMUPKG} mkfs.ext4 lzop bison flex bc libncurses5-dev libssl-dev yad"
+ check_deps_fatal "${QEMUPKG} mkfs.ext4 lzop bison flex bc yad make"
   # lzop(1) required for the IMX6 kernel build
  [ ${GUI_MODE} -eq 1 ] && check_deps_fatal "yad xrandr"
 
 ## TODO : the dpkg & rpm -qa are very time consuming!
 ## so do this only on 'first-time'.
 
- install_deb_pkgs libncurses5-dev libssl-dev libgmp3-dev libmpc-dev
-
  # TODO - more pkgs to check for on these distros...
  if [ -f /etc/fedora-release ] || [ -f /etc/fedora ] ; then
   # Fedora/RHEL/CentOS - probably :)
-  rpm -qa |grep -q ncurses-devel || {
+  rpm -qa |grep ncurses-devel >/dev/null
+  [ $? -ne 0 ] && {
      FatalError "The 'ncurses-devel' package does not seem to be installed.
 (Required for kernel config UI).
 Pl install the package (with dnf/yum/rpm) & re-run.  Aborting..."
    }
+ else # Debian / Ubuntu
+	install_deb_pkgs libncurses5-dev libssl-dev libgmp3-dev libmpc-dev
  fi
 
  # Terminal 'color' support?
