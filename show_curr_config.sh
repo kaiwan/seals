@@ -47,8 +47,11 @@ Toolchain version: ${gccver}
 Staging folder   : ${STG}
 
 CPU arch     : ${ARCH}
-CPU model    : ${CPU_MODEL}
-ARM Platform : ${ARM_PLATFORM_STR}
+CPU model    : ${CPU_MODEL}"
+
+local msg2="ARM Platform : ${ARM_PLATFORM_STR}"
+
+local msg3="
 Platform RAM : ${SEALS_RAM} MB
 
 RootFS force rebuild : ${RFS_FORCE_REBUILD}
@@ -69,11 +72,17 @@ Diplay:
 Log file              : ${LOGFILE_COMMON}"
 
 echo "${msg1}"
+[[ "${ARCH}" != "x86" ]] && echo "${msg2}"
+echo "${msg3}"
 echo "----------------------------------------------------------"
 }
 
 show_stg()
 {
+[[ ! -d  ${STG} ]] && {
+	becho "!WARNING! Staging dir ${STG} not present."
+	return
+}
 becho "Staging area ::"
 ls ${STG}/
 echo
@@ -81,6 +90,9 @@ becho "Latest images ::"
 ls -lth ${STG}/images
 }
 
+
+#--- 'main'
+[[ "${ARCH}" != "x86" ]] && [[ ! -f  ${CXX}gcc ]] && becho "!WARNING! Toolchain ${CXX}* doesn't seem to be installed correctly"
 show_curr_build_config
 show_stg
 exit 0
