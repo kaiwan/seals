@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 #------------------------------------------------------------------
 # common.sh
 #
@@ -16,8 +16,8 @@
 # https://github.com/kaiwan/seals
 
 export TOPDIR=$(pwd)
-ON=1
-OFF=0
+#ON=1
+#OFF=0
 
 ### UPDATE for your box
 source ./err_common.sh || {
@@ -37,9 +37,9 @@ runcmd()
 local SEP="------------------------------"
 [ $# -eq 0 ] && return
 echo "${SEP}
-$@
+$*
 ${SEP}"
-eval $@
+eval "$@"
 }
 
 is_gui_supported()
@@ -70,9 +70,9 @@ gui_init()
  #--- Screen Resolution stuff
  res_w=$(xrandr --current | grep '*' | uniq | awk '{print $1}' | cut -d 'x' -f1 | head -n1)
  res_h=$(xrandr --current | grep '*' | uniq | awk '{print $1}' | cut -d 'x' -f2 | tail -n1)
- let centre_x=${res_w}/3
- let centre_y=$res_h/3
- let centre_y=$centre_y-100
+# let centre_x=${res_w}/3
+# let centre_y=$res_h/3
+# let centre_y=$centre_y-100
 
  CAL_WIDTH=$((${res_w}/3))
  let CAL_WIDTH=$CAL_WIDTH+200
@@ -124,7 +124,7 @@ mysudo()
 } || true
 local msg=$1
 shift
-local cmd="$@"
+local cmd="$*"
 aecho "${LOGNAME}: ${msg}"
 [ ${DEBUG} -eq 1 ] && echo "mysudo():cmd: \"${cmd}\"" || true
 sudo --preserve-env bash -c "${cmd}" && true
@@ -138,7 +138,7 @@ true
 # "AIA" = Abort If Absent :-)
 check_root_AIA()
 {
-	if [ `id -u` -ne 0 ]; then
+	if [ $(id -u) -ne 0 ]; then
 		Echo "Error: need to run as root! Aborting..."
 		exit 1
 	fi
@@ -332,7 +332,7 @@ local util needinstall=0
 local severity=$1
 shift
 
-for util in $@
+for util in "$@"
 do
  which ${util} > /dev/null 2>&1 || {
    [ ${needinstall} -eq 0 ] && wecho "The following utilit[y|ies] or package(s) do NOT seem to be installed:"

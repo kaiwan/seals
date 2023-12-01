@@ -227,7 +227,7 @@ if [[ "${ARCH_PLATFORM}" = "x86_64" ]] ; then
 	CMD="time make V=${VERBOSE_BUILD} -j${CPU_CORES} install"
 fi
 set -u
-set -x
+#set -x
 aecho "Doing: ${CMD}"
 eval ${CMD} || {
   FatalError "Building and/or Installing busybox failed!"
@@ -752,7 +752,7 @@ config_setup()
  config_symlink_setup
 
  msg1="
-Config file : ${BUILD_CONFIG_FILE} -> $(basename $(realpath ${BUILD_CONFIG_FILE}))\
+Config file : ${BUILD_CONFIG_FILE} -> $(basename "$(realpath ${BUILD_CONFIG_FILE})")\
  [edit it to change any settings shown below]
 Config name : ${CONFIG_NAME_STR}
 
@@ -793,7 +793,7 @@ config file: ${BUILD_CONFIG_FILE}
 SEALS Config :: Please Review Carefully\
 </span></i></b>
 <span foreground='blue'>
-Config file : ${BUILD_CONFIG_FILE} -> $(basename $(realpath ${BUILD_CONFIG_FILE}))\
+Config file : ${BUILD_CONFIG_FILE} -> $(basename "$(realpath ${BUILD_CONFIG_FILE})")\
       <span foreground='red'><i>[edit it to change any settings shown below]</i></span>
 Config name : ${CONFIG_NAME_STR}\
 </span>
@@ -843,7 +843,7 @@ Press 'Yes' (or Enter) to proceed, 'No' (or Esc) to abort
    echo
 #set -x
    YAD_COMMON_OPTS="--on-top  --center"
-   yad ${YAD_COMMON_OPTS} --image "dialog-question" --title "${PRJ_TITLE} : $(basename $(realpath ${BUILD_CONFIG_FILE}))" \
+   yad ${YAD_COMMON_OPTS} --image "dialog-question" --title "${PRJ_TITLE} : $(basename "$(realpath ${BUILD_CONFIG_FILE})")" \
  	     --text "${msg1_yad}" \
          --button=gtk-yes:0 --button=gtk-no:1 \
 		 --fixed
@@ -871,7 +871,6 @@ Press 'Yes' (or Enter) to proceed, 'No' (or Esc) to abort
  local s5="Run QEMU ARM emulator?                           N"
  [ ${RUN_QEMU} -eq 1 ] && s5="Run QEMU ARM emulator?                         Y"
 
-[ ${GUI_MODE} -eq 1 ] && {
 if [ ${GUI_MODE} -eq 1 ] ; then
  #--- YAD
  local disp_kernel="FALSE"
@@ -967,7 +966,7 @@ install_deb_pkgs()
  fi
  # Ubuntu/Debian
  local pkg
- for pkg in $*
+ for pkg in "$@"
  do
 	#echo "pkg=${pkg}"
     set +e  # Bash strict mode side effects

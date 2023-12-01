@@ -124,8 +124,8 @@ Echo()
  esac
 
  local dt_log="[$(date +%a_%d%b%Y_%T.%N)]"
- local dt_disp
- [ "${VERBOSE_MSG}" -eq 1 ] && dt_disp=${dt_log}
+ #local dt_disp
+ #[ "${VERBOSE_MSG}" -eq 1 ] && dt_disp=${dt_log}
 
  local msgpfx1_log="[${loglevel}]${SEP}${dt_log}"
  local msgpfx1_disp="${dt_log}"

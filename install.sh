@@ -43,7 +43,7 @@ aecho "Creating the staging dir..."
 mkdir -p ${STG} || FatalError "Creating the staging dir failed (permission issues?). Aborting..."
 
 #-------------------- Busybox
-BB_INSTALLED=0
+#BB_INSTALLED=0
 echo
 set +e		# work-around for bash strict mode
 get_yn_reply "Pl confirm: Install (and possibly overwrite) busybox source tree (to ${BB_FOLDER}) now? Y/n" y
@@ -68,12 +68,12 @@ if [[ ${ans} -eq 0 ]] ; then  # ans 'y'
    # Because of [1]:
    rmdir ${BB_FOLDER}
    ln -sf busybox ${BB_FOLDER}
-   BB_INSTALLED=1
+   #BB_INSTALLED=1
    aecho "[+] Busybox source tree installed"
 fi
 
 #-------------------- Linux kernel
-KSRC_INSTALLED=0
+#KSRC_INSTALLED=0
 echo
 set +e		# work-around for bash strict mode
 get_yn_reply "Pl confirm: Install (and possibly overwrite) kernel source tree (to ${BB_FOLDER}) now? Y/n" y
@@ -93,7 +93,7 @@ SEALS supports only kernel ver >= 3.x.
 Pl change the kernel ver (in the build.config) and rerun"
 
    mkdir -p ${KERNEL_FOLDER} #|| FatalError "Creating the staging dir failed (permission issues?). Aborting..."
-   K_MN=$(echo ${KERNELVER} | cut -d'.' -f2)
+   #K_MN=$(echo ${KERNELVER} | cut -d'.' -f2)
    #K_PL=$(echo ${KERNELVER} | cut -d'.' -f3)
    K_URL_BASE=https://mirrors.edge.kernel.org/pub/linux/kernel
    K_URL_TARXZ=${K_URL_BASE}/v${K_MJ}.x/linux-${KERNELVER}.tar.xz
@@ -110,7 +110,7 @@ Pl change the kernel ver (in the build.config) and rerun"
    # Uncompress
    echo "tar xf $(basename ${K_URL_TARXZ})"
    tar xf $(basename ${K_URL_TARXZ}) || FatalError "Failed to extract kernel source."
-   KSRC_INSTALLED=1
+   #KSRC_INSTALLED=1
    aecho "[+] Kernel source tree linux-${KERNELVER} installed"
 fi
 

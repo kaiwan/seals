@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 #------------------------------------------------------------------
 # err_common.sh
 #
@@ -15,7 +15,7 @@
 # Project URL:
 # https://github.com/kaiwan/seals
 
-export TOPDIR=$(pwd)
+export TOPDIR="$(pwd)"
 SEALS_REPORT_ERROR_EMAIL=kaiwan.billimoria@gmail.com
 #SEALS_REPORT_ERROR_URL=https://github.com/kaiwan/seals/issues
 
@@ -82,7 +82,7 @@ cli_handle_error()
   if [ $# -lt 1 ] ; then
 	cecho "FatalError :: <no errmsg>"
   else
-	cecho "FatalError :: $@"
+	cecho "FatalError :: $*"
   fi
   dumpstack
   [ ${COLOR} -eq 1 ] && color_reset
