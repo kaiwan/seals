@@ -29,6 +29,16 @@ source ./common.sh || {
 	exit 1
 }
 
+# yesorno
+#  $1 : variable to test
+#   if 0, eval to 'no'
+#   if 1, eval to 'yes'
+yesorno()
+{
+ [[ $# -ne 1 ]] && return
+ [[ $1 -eq 0 ]] && echo "no"
+ [[ $1 -eq 1 ]] && echo "yes"
+}
 
 show_curr_build_config()
 {
@@ -51,21 +61,19 @@ local msg2="ARM Platform : ${ARM_PLATFORM_STR}"
 local msg3="
 Platform RAM : ${SEALS_RAM} MB
 
-RootFS force rebuild : ${RFS_FORCE_REBUILD}
+RootFS force rebuild : $(yesorno ${RFS_FORCE_REBUILD})
 RootFS size  : ${RFS_SZ_MB} MB [note: new size applied only on 'RootFS force rebuild']
 
 Linux kernel to use : ${KERNELVER}
 Linux kernel codebase location : ${KERNEL_FOLDER}
 Kernel command-line : \"${SEALS_K_CMDLINE}\"
-
-Verbose Build : ${VERBOSE_BUILD}
-
+Verbose Build : $(yesorno ${VERBOSE_BUILD})
 Busybox location: ${BB_FOLDER}
 
-Qemu: KGDB mode: ${KGDB_MODE} | SMP mode: ${SMP_EMU_MODE}
+Qemu: KGDB mode: $(yesorno ${KGDB_MODE}) | SMP mode: $(yesorno ${SMP_EMU_MODE})
 
 Diplay:
- [Terminal Colors mode: ${COLOR}] [DEBUG mode: ${DEBUG}] [VERBOSE mode: ${VERBOSE_MSG}]
+ Terminal Colors mode: $(yesorno ${COLOR}) | DEBUG mode: $(yesorno ${DEBUG}) | VERBOSE mode: $(yesorno ${VERBOSE_MSG})
 Log file              : ${LOGFILE_COMMON}"
 
 echo "${msg1}"
