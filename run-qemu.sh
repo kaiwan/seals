@@ -53,13 +53,17 @@ command to connect to the ARM/Linux kernel."
 [ $1 -eq 1 ] && KGDB_MODE=1
 
 echo "TIP:
-*** If another hypervisor (like VirtualBox) is running, Qemu won't run properly ***
+*** If another hypervisor (like VirtualBox) is running, Qemu run with KVM support won't work properly ***
 "
 ShowTitle "
 RUN: Running ${QEMUPKG} now ..."
 
-KIMG=${IMAGES_FOLDER}/zImage
-[ "${ARCH}" = "arm64" ] && KIMG=${IMAGES_FOLDER}/Image.gz
+#KIMG=${IMAGES_FOLDER}/zImage
+#[ "${ARCH}" = "arm64" ] && KIMG=${IMAGES_FOLDER}/Image.gz
+#set +u
+#[ "${ARCH_PLATFORM}" = "x86_64" ] && KIMG=${IMAGES_FOLDER}/bzImage
+#set -u
+
 # Device Tree Blob (DTB) pathname
 DTB_BLOB_IMG=""
 [[ ! -z "${DTB_BLOB}" ]] && {
@@ -69,7 +73,7 @@ DTB_BLOB_IMG=""
 
 # TODO - when ARCH is x86[_64], use Qemu's --enable-kvm to give a big speedup!
 
-# Networking
+# TODO : Networking
 # ref: https://gist.github.com/extremecoders-re/e8fd8a67a515fee0c873dcafc81d811c#example-tap-network
 
 RUNCMD=""
@@ -81,19 +85,32 @@ if [ "${ARCH}" = "arm" ]; then
 		-append \"${SEALS_K_CMDLINE}\" -nographic -no-reboot"
    [ -f ${DTB_BLOB_PATHNAME} ] && RUNCMD="${RUNCMD} -dtb ${DTB_BLOB_PATHNAME}"
 elif [ "${ARCH}" = "arm64" ]; then
-		RUNCMD="${QEMUPKG} -m ${SEALS_RAM} -M ${ARM_PLATFORM_OPT} \
-			-cpu max ${SMP_EMU} -cpu ${CPU_MODEL} \
-			-kernel ${KIMG} \
-			-drive file=${IMAGES_FOLDER}/rfs.img,format=raw,id=drive0 \
-			-append \"${SEALS_K_CMDLINE}\" -nographic -no-reboot"
+	RUNCMD="${QEMUPKG} -m ${SEALS_RAM} -M ${ARM_PLATFORM_OPT} \
+		-cpu max ${SMP_EMU} -cpu ${CPU_MODEL} \
+		-kernel ${IMAGES_FOLDER}/Image.gz \
+		-drive file=${IMAGES_FOLDER}/rfs.img,format=raw,id=drive0 \
+		-append \"${SEALS_K_CMDLINE}\" -nographic -no-reboot"
 	# no DTB for the 'dummy,virt' platform
 #set -x
-  echo "DTB_BLOB_IMG = ${DTB_BLOB_IMG}"
+	#echo "DTB_BLOB_IMG = ${DTB_BLOB_IMG}"
 	[[ -f ${DTB_BLOB_IMG} && -n "${DTB_BLOB_IMG}" ]] && RUNCMD="${RUNCMD} -dtb ${DTB_BLOB_IMG}"
+elif [ "${ARCH_PLATFORM}" = "x86_64" ]; then
+	#SEALS_K_CMDLINE="console=ttyS0 root=/dev/sda init=/sbin/init"
+	SEALS_K_CMDLINE="console=ttyS0 root=/dev/sda init=/bin/busybox sh"
+	RUNCMD="${QEMUPKG} -M ${CPU_MODEL} -m ${SEALS_RAM} \
+		-cpu max ${SMP_EMU} \
+		-kernel ${IMAGES_FOLDER}/bzImage \
+		-hda ${IMAGES_FOLDER}/rfs.img \
+		-append \"${SEALS_K_CMDLINE}\" -nographic -no-reboot"
 fi
 
 # Aarch64:
 # qemu-system-aarch64 -m 512 -M virt -nographic -kernel arch/arm64/boot/Image.gz -append "console=ttyAMA0 root=/dev/mmcblk0 init=/sbin/init" -cpu max  
+
+[[ -z "${RUNCMD}" ]] && {
+	echo "${name}: FATAL: no run command defined, aborting..."
+	exit 1
+}
 
 # Run it!
 if [ ${KGDB_MODE} -eq 1 ]; then
@@ -108,7 +125,7 @@ if [ ${KGDB_MODE} -eq 1 ]; then
 REMEMBER this qemu instance is run with the -S option: it *waits* for a GDB client to connect to it...
 
 You are expected to run (in another terminal window):
-$ ${CXX}gdb <path-to-ARM-built-kernel-src-tree>/vmlinux  <-- built w/ -g
+$ ${CXX}gdb <path-to-${ARCH}-built-kernel-src-tree>/vmlinux  <-- built w/ -g
 ...
 and then have gdb connect to the target kernel using
 (gdb) target remote :1234
@@ -116,8 +133,9 @@ and then have gdb connect to the target kernel using
 @@@@@@@@@@@@ NOTE NOTE NOTE @@@@@@@@@@@@"
 fi
 
-aecho "${RUNCMD}
-"
+echo "${RUNCMD}"
+#aecho "${RUNCMD}
+#"
 Prompt "Ok? (after pressing ENTER, give it a moment ...)
 
 Also, please exit the Qemu VM by properly shutting down:
