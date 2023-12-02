@@ -45,6 +45,8 @@
 #         (I think we need 'getty' running for this... ?)
 # [ ] GUI for target machine selection
 # [.] GUI for target machine selection
+# [.] AMD64 / x86_64 platform
+# [ ] do the kbuild outside k src tree
 #----------------------------------------------------------------------
 # RELOOK
 # [ ] mysudo func()?
@@ -90,8 +92,12 @@ STEPS=5
 export CPU_CORES=$(getconf -a|grep _NPROCESSORS_ONLN|awk '{print $2}')
 [ -z "${CPU_CORES}" ] && CPU_CORES=2
 
+# TODO : put this in individual build.config* files
 export KIMG=arch/${ARCH}/boot/zImage
 [ "${ARCH}" = "arm64" ] && KIMG=arch/${ARCH}/boot/Image.gz
+set +u
+[ "${ARCH_PLATFORM}" = "x86_64" ] && KIMG=arch/x86/boot/bzImage
+set -u
 # Device Tree Blob (DTB) pathname
 export DTB_BLOB_PATHNAME=${KERNEL_FOLDER}/arch/${ARCH}/boot/dts/${DTB_BLOB} # gen within kernel src tree
 
@@ -108,15 +114,18 @@ build_kernel()
 cd ${KERNEL_FOLDER} || exit 1
 ShowTitle "KERNEL: Configure and Build [kernel ver ${KERNELVER}] now ..."
 
-if [ -z "${ARM_PLATFORM}" ] ; then  # arm64
+if [ -z "${ARM_PLATFORM}" ] ; then  # arm64 and x86_64
 	PLATFORM=defconfig # by default all platforms selected
 else
 	PLATFORM=${ARM_PLATFORM}_defconfig
 fi
 if [ ${WIPE_KERNEL_CONFIG} -eq 1 ]; then
-	ShowTitle "Setting default kernel config for ARM ${ARM_PLATFORM_STR} platform:"
+	ShowTitle "Setting default kernel config"
+    echo "make defconfig"
+    make defconfig
+    #make mrproper
 	make V=${VERBOSE_BUILD} ARCH=${ARCH} ${PLATFORM} || {
-	   FatalError "Kernel config for ARM ${ARM_PLATFORM_STR} platform failed.."
+	   FatalError "Kernel config for platform failed.."
 	}
 fi
 
@@ -124,7 +133,6 @@ fi
 aecho "[Optional] Kernel Manual Configuration:
 Edit the kernel config if required, Save & Exit...
 "
-[ "${ARCH}" = "arm64" ] && aecho "TIP: On Aarch64, with recent kernels, *all* platforms will be selected by default."
 [ "${ARCH}" = "arm64" ] && aecho "TIP: On AArch64, with recent kernels, *all* platforms will be selected by default.
 (Can see them within the 'Platform selection' menu).
 Either build it this way or deselect all and enable only the platform(s) you want to support..."
@@ -147,6 +155,8 @@ fi
 echo "[+] scripts/config --disable SYSTEM_REVOCATION_KEYS"
 scripts/config --disable SYSTEM_REVOCATION_KEYS || echo "Warning! Disabling SYSTEM_REVOCATION_KEYS failed"
 #grep SYSTEM_REVOCATION_KEYS .config
+echo "[+] scripts/config --disable WERROR" # 'treat warnings as errors'
+scripts/config --disable WERROR || echo "Warning! Disabling WERROR failed"
 
 ShowTitle "Kernel Build:"
 
@@ -550,7 +560,7 @@ mysudo "SEALS Build: root fs image generation: enable mount. ${MSG_GIVE_PSWD_IF_
 
 aecho " Now copying across rootfs data to ${RFS} ..."
 mysudo "SEALS Build: root fs image generation: enable copying into SEALS root fs image. ${MSG_GIVE_PSWD_IF_REQD}" \
- cp -au ${ROOTFS}/* ${MNTPT}/
+ cp -au ${ROOTFS}/* ${MNTPT}/ || FatalError "Copying all rootfs content failed"
  [ ${DEBUG} -eq 1 ] && {
     echo; mount |grep "${MNTPT}" ; echo; df -h |grep "${MNTPT}" ; echo
  } |tee -a ${LOGFILE_COMMON} || true
