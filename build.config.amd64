@@ -1,0 +1,204 @@
+#!/bin/bash
+#######################################################################
+# build.config
+#
+# Part of the SEALs project.
+# This is the configuration file; all config variables must go here.
+# 
+# !! IMP NOTE TO THE END-USER OF THIS PROJECT !!
+# You are responsible for editing this configuration file, setting the 
+# variables to sane values.
+# To help you out, the place in the source below which has the config 
+# variables that you MUST update have been marked with a comment line 
+# as follows:
+# # @@@@@
+# So, you could just search for this string '@@@@@' (excluding the quotes of course),
+# and make sure you update the following config variable(s) to the sane value 
+# for your box.
+# !!
+#---
+# Author: Kaiwan N Billimoria
+# (C) kaiwanTECH
+#---
+#######################################################################
+#
+#----------------------
+# !!!VERY IMPORTANT!!! 
+#----------------------
+# Pl read the documentation here, at least once:
+# https://github.com/kaiwan/seals/wiki
+#----------------------
+#
+# Generic Config file.
+# For a minimal QEMU-ARM project, we Expect that:
+#
+# - an x86_64-to-ARM32 toolchain is installed and working, and setup in the config below
+#     details: https://github.com/kaiwan/seals/wiki/HOWTO-Install-required-packages-on-the-Host-for-SEALS
+# - a recent version of the Linux kernel source tree is available and setup in the config below
+# - a recent version of busybox source tree is available and setup in the config below
+##############
+
+set -a   # auto export all vars
+
+##################### UPDATE as required
+# @@@@@
+CONFIG_NAME_STR="SEALs config file for the PC ! (AMD64 / x86_64)"
+COLOR=1        # terminal color support? Assume yes..
+GUI_MODE=0     # auto-detects GUI / console mode
+DEBUG=0        # set to 1 to get debug messages displayed
+VERBOSE_MSG=0  # set to 1 to get more verbose messages displayed
+                 #  [loglevel][date-timestamp]<actual-message>
+LOGFILE_COMMON=log_seals.txt
+
+###------###
+TOPDIR=$(pwd)
+
+### Locations on Disk ###
+### UPDATE ### on your system!
+# @@@@@
+STG=~/seals_staging/seals_staging_amd64    #  big/scratchpad/SEALS_staging/stg_x86_64
+ # Recommendation: if running a cloud-sync service (like pCloud/Dropbox),
+ # keep the staging area outside it.
+
+# Okay, so under the ${STG} folder, we expect you have extracted the
+# Toolchain: the toolchain to use; expect that it is installed and the PATH is setup..
+# TODO - if arch is x86 ...
+# @@@@@
+USE_NATIVE_TOOLCHAIN=1   # set to 1 for x86[_64] / AMD64, else 0
+#CXX=one-linux-gnueabihf-      # toolchain prefix
+CXX=""
+# CXX_LOC is the location of the x86-to-ARM toolchain on disk
+# (used to setup the PATH and locate the ARM shared libraries within the toolchain)
+# @@@@@
+#CXX_LOC=/opt/gcc-arm-10.3-2021.07-x86_64-arm-none-linux-gnueabihf
+CXX_LOC=""
+
+# Toolchain in the PATH
+PATH=$PATH:${CXX_LOC}/bin
+
+# Verbose build? (if 1, we run as 'make V=1 ...')
+VERBOSE_BUILD=0
+
+
+# Also under the ${STG} folder, we expect you have extracted the
+# source of busybox into the folder ${BB_FOLDER} ver ${BB_VER}.
+# (Update the variables below to reflect your settings and installation).
+# @@@@@
+BB_VER="1.33.2"
+  # 1.29 : build failing with a linker error
+BB_FOLDER=${STG}/busybox-${BB_VER}
+BB_FOLDER_ALT=${STG}/busybox # the src seems to reside only in the dir named 'busybox' and ! 'busybox-<ver#>'  (?)
+ROOTFS=${STG}/rootfs
+IMAGES_FOLDER=${STG}/images
+IMAGES_BKP_FOLDER=${STG}/images_bkp
+CONFIGS_FOLDER=${STG}/configs
+
+
+#####
+# @@@@@
+# Set to exactly one of:
+#  arc   arm64  csky   hexagon  m68k	 mips	nios2	  parisc   riscv  sh	 um   x86_64
+#  alpha arm    c6x    h8300    ia64     microblaze  nds32	openrisc  powerpc  s390   sparc  x86  xtensa
+# TODO / RELOOK - do we need this ??
+ARCH_SPEC=x86_64
+
+# Select the platform (to build the kernel for). Choices:
+# For the purpose of a "real" example, this file is pre-populated with values
+# relevant to the Qemu Verastile Express (vexpress) platform (ARMv7 Cortex-A9).
+# @@@@@
+# English-like name
+ARCH_PLATFORM_STR="AMD64"
+
+# ! IMPORTANT !
+# Pl set the variable ARCH_PLATFORM carefully; it will be used to setup
+# the inital config and is therefore very critical that it's given correctly:
+#   make ARCH=${ARCH_SPEC} ${ARCH_PLATFORM}_defconfig
+# So, check under <kernel-src>/arch/<cpu>/configs/
+# for the best match to your platform, in the form
+#  <ARCH_PLATFORM>_defconfig
+# and put it here..
+# For AMD64, put 'x86_64'
+ARCH_PLATFORM=x86_64
+
+# ARCH_PLATFORM_OPT is the value passed via the -M switch to Qemu
+# Look for it via qemu-system-arm -M ?   ; eg.
+#  qemu-system-arm -M ? |grep -i "i.mx"
+# For AMD64, comment it out!
+#ARCH_PLATFORM_OPT=vexpress-a9
+
+# For this platform - AMD64 (or x86_64) - many options are simply NULL
+ARCH="x86"  #x86_64"
+CPU_MODEL="pc"   # -M option to Qemu ; becomes 'Standard PC (i440FX + PIIX, 1996) (alias of pc-i440fx-7.2)'
+ARM_PLATFORM=""
+ARM_PLATFORM_STR=""
+DTB_BLOB=""
+
+### UPDATE ### on your system!
+# Okay, so under the ${STG} folder (or other), we expect you have extracted the 
+# source of the Linux kernel into ${KERNEL_FOLDER} , ver ${KERNELVER}.
+# (Update the variables below to reflect your settings and installation).
+# @@@@@
+KERNELVER=6.1.25
+KERNEL_FOLDER=${STG}/linux-${KERNELVER}/
+
+# @@@@@
+# DTB: specify the Device Tree Blob <filename>.dtb
+#DTB_BLOB=vexpress-v2p-ca9.dtb
+#####
+
+#####
+# @@@@@
+# SEALs (virtual) "Hardware"
+SEALS_RAM=1024  # MB
+## RootFS
+# !Careful! Set to 1 to force a rebuild of the rootfs; implies OVERWRITING any
+# existing rootfs
+RFS_FORCE_REBUILD=0
+# Rootfs size: Recommendation: if using a kdump kernel, as a rough thumb rule,
+# make it ~ 150% of the size of RAM on the platform (so for eg. if the RAM is 512M,
+# make the rootfs size ~ >= 768 MB).
+# Else (no kdump), 512 MB is fine for the Vexpress.
+RFS_SZ_MB=512
+
+# PC - AMD64 / x86_64 - SPECIAL CASE:
+# Download, extract and build the rootfs from a base image
+PC_ROOTFS_BASEIMG_URL=https://cdimage.ubuntu.com/ubuntu-base/releases/23.04/release/ubuntu-base-23.04-base-amd64.tar.gz
+
+#####
+# @@@@@
+# SEALs kernel command-line
+SEALS_K_CMDLINE="console=ttyS0 root=/dev/sda init=/sbin/init"
+# if 512M RAM, reserve 32M for crashk, else if 256M RAM, reserve 16M
+#K_CMDLINE_XTRA="crashkernel=32M" # works with 32M not 16M [?]
+#K_CMDLINE_XTRA="initcall_debug ignore_loglevel debug"
+K_CMDLINE_XTRA=""
+[ ! -z "${K_CMDLINE_XTRA}" ] && SEALS_K_CMDLINE="${SEALS_K_CMDLINE} ${K_CMDLINE_XTRA}"
+
+##### Config vars for what to build
+# VAR=1   :   'do' the work 'VAR'
+# VAR=0   :   'do Not' do the work 'VAR'
+BUILD_KERNEL=0
+BUILD_ROOTFS=0
+GEN_EXT4_ROOTFS_IMAGE=0
+SAVE_BACKUP_IMG_CONFIGS=0
+RUN_QEMU=0
+
+
+### "WIPE_*_CONFIG" directives
+# Set var to 'y' implies any existing kernel configuration is wiped out.
+# Suggestion: set to 'y' for the FIRST build with a clean kernel source tree..
+# @@@@@
+WIPE_KERNEL_CONFIG=0
+# Set var to 'y' implies any existing busybox configuration is wiped out.
+# Suggestion: set to 'y' for the FIRST build with a clean busybox source tree..
+# @@@@@
+WIPE_BUSYBOX_CONFIG=0
+
+
+###
+# Config vars for when we run QEMU:
+QEMUPKG=qemu-system-${ARCH_PLATFORM}
+KGDB_MODE=0  # make '1' to have qemu run with the '-s -S' switch (waits for client GDB to 'connect')
+SMP_EMU_MODE=1  # make '1' to have qemu run w/ 2 emulated cores 
+
+#--- End build.config
