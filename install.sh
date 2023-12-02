@@ -76,7 +76,7 @@ fi
 #KSRC_INSTALLED=0
 echo
 set +e		# work-around for bash strict mode
-get_yn_reply "Pl confirm: Install (and possibly overwrite) kernel source tree (to ${BB_FOLDER}) now? Y/n" y
+get_yn_reply "Pl confirm: Install (and possibly overwrite) kernel source tree (to ${KERNEL_FOLDER}) now? Y/n" y
 ans=$?
 set -e
 
