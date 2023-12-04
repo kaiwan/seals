@@ -66,8 +66,8 @@ if [[ ${ans} -eq 0 ]] ; then  # ans 'y'
 		[[ ! -d ${BB_FOLDER_ALT}/applets ]] && FatalError "Failed to install busybox source."
    }
    # Because of [1]:
-   rmdir ${BB_FOLDER}
-   ln -sf busybox ${BB_FOLDER}
+   rmdir ${BB_FOLDER} || true
+   #ln -sf busybox ${BB_FOLDER}
    #BB_INSTALLED=1
    aecho "[+] Busybox source tree installed"
 fi
@@ -120,7 +120,8 @@ https://github.com/kaiwan/seals/wiki/SEALs-HOWTO
 It has detailed instructions.
 "
 
-aecho "${name}: all done."
+aecho "${name}: all done.
+You can now run the build_SEALS.sh script."
 color_reset
 
 exit 0
