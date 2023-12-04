@@ -92,19 +92,24 @@ STEPS=5
 export CPU_CORES=$(getconf -a|grep _NPROCESSORS_ONLN|awk '{print $2}')
 [ -z "${CPU_CORES}" ] && CPU_CORES=2
 
+# Signals
+trap 'wecho "User Abort. ${MSG_EXITING}" ; dumpstack ; [ ${COLOR} -eq 1 ] && color_reset ; exit 2' HUP INT QUIT
+
+
+##-------------------- Functions Start --------------------------------
+
+set_kernelimg_var()
+{
 # TODO : put this in individual build.config* files
 export KIMG=arch/${ARCH}/boot/zImage
 [ "${ARCH}" = "arm64" ] && KIMG=arch/${ARCH}/boot/Image.gz
 set +u
 [ "${ARCH_PLATFORM}" = "x86_64" ] && KIMG=arch/x86/boot/bzImage
 set -u
+#echo "@@@ KIMG = ${KIMG}"
 # Device Tree Blob (DTB) pathname
 export DTB_BLOB_PATHNAME=${KERNEL_FOLDER}/arch/${ARCH}/boot/dts/${DTB_BLOB} # gen within kernel src tree
-
-# Signals
-trap 'wecho "User Abort. ${MSG_EXITING}" ; dumpstack ; [ ${COLOR} -eq 1 ] && color_reset ; exit 2' HUP INT QUIT
-
-##-------------------- Functions Start --------------------------------
+}
 
 #------------------ b u i l d _ k e r n e l ---------------------------
 build_kernel()
@@ -154,7 +159,6 @@ fi
 # SYSTEM_REVOCATION_KEYS config option, else the build fails
 echo "[+] scripts/config --disable SYSTEM_REVOCATION_KEYS"
 scripts/config --disable SYSTEM_REVOCATION_KEYS || echo "Warning! Disabling SYSTEM_REVOCATION_KEYS failed"
-#grep SYSTEM_REVOCATION_KEYS .config
 echo "[+] scripts/config --disable WERROR" # 'treat warnings as errors'
 scripts/config --disable WERROR || echo "Warning! Disabling WERROR failed"
 
@@ -176,12 +180,7 @@ eval ${CMD} || {
   FatalError "Kernel build failed! Aborting ..."
 } && true
 
-#set -x
-echo "KIMG = $KIMG"
-[[ "${ARCH}" = "arm64" ]] && KIMG=${KIMG::-3}  # without the .gz suffix...
-[[ ! -f ${KIMG} ]] && {
-     FatalError "Kernel build problem? kernel image file ${KIMG} not found; aborting..."
-  } || true
+set_kernelimg_var
 ls -lh ${KIMG}*
 cp -u ${KIMG}* ${IMAGES_FOLDER}/
 [ -f ${DTB_BLOB_PATHNAME} ] && {
@@ -730,9 +729,10 @@ config_symlink_setup()
 	esac
 	[[ ! -f ${TARGET} ]] && FatalError "Couldn't find the required build.config file : ${TARGET}"
 	ln -sf ${TARGET} build.config || FatalError "Couldn't setup new build.config symlink"
+	sync ; sleep .5  # ? but it MUST be refreshed via the 'source  ${BUILD_CONFIG_FILE}' below...
 	BUILD_CONFIG_FILE=$(realpath ./build.config)
 	[[ ! -f ${BUILD_CONFIG_FILE} ]] && FatalError "Couldn't setup new build.config (is the relevant config file present?)"
-	# IMP : refresh to the newly selected config
+	# IMP : Must refresh (source) the newly selected config
 	# Side effect: GUI_MODE can get reset to 0; so do a save & restore
 	local saved_guimode=${GUI_MODE}
 	source ${BUILD_CONFIG_FILE} || echo "*Warning* Couldn't source the just-set build.config file ${BUILD_CONFIG_FILE}"
@@ -760,7 +760,6 @@ config_setup()
  local gccver=$(${CXX}gcc --version |head -n1 |cut -f2- -d" ")
 
  report_progress
- config_symlink_setup
 
  msg1="
 Config file : ${BUILD_CONFIG_FILE} -> $(basename "$(realpath ${BUILD_CONFIG_FILE})")\
@@ -1226,6 +1225,7 @@ check_folder_createIA ${CONFIGS_FOLDER}
 ###
 [ ${BUILD_KERNEL} -eq 1 ] && {
   check_folder_AIA ${KERNEL_FOLDER}
+  set_kernelimg_var
   build_kernel
 }
 [ ${BUILD_ROOTFS} -eq 1 ] && {
