@@ -199,9 +199,9 @@ build_copy_busybox()
 cd ${BB_FOLDER} || exit 1
 
 ShowTitle "BUSYBOX: Configure and Build Busybox now ... [$(basename ${BB_FOLDER})]"
-iecho " [sanity chk: ROOTFS=${ROOTFS}]"
+iecho " [Sanity chk: ROOTFS_DIR=${ROOTFS_DIR}]"
 # safety check!
-if [ -z "${ROOTFS}" ]; then
+if [ -z "${ROOTFS_DIR}" ]; then
 	FatalError "SEALS: ROOTFS has dangerous value of null or '/'. Aborting..."
 fi
 
@@ -250,7 +250,7 @@ eval ${CMD} || {
 #}
 
 mysudo "SEALS Build:Step 1 of ${STEPS}: Copying of required busybox files. ${MSG_GIVE_PSWD_IF_REQD}" \
- cp -af ${BB_FOLDER}/_install/* ${ROOTFS}/ || {
+ cp -af ${BB_FOLDER}/_install/* ${ROOTFS_DIR}/ || {
   FatalError "Copying required folders from busybox _install/ failed! 
  [Tip: Ensure busybox has been successfully built]. Aborting..."
 }
@@ -261,11 +261,8 @@ aecho "SEALS Build: busybox files copied across successfully ..."
 setup_etc_in_rootfs()
 {
  report_progress
+cd ${ROOTFS_DIR}
 aecho "SEALS Build: Manually generating required SEALS rootfs /etc files ..."
-cd ${ROOTFS}
-MYPRJ=myprj
-mkdir -p dev etc/init.d lib lib64 ${MYPRJ} proc sys tmp
-chmod 1777 tmp
 
 # /etc/inittab
 cat > etc/inittab << @MYMARKER@
@@ -349,24 +346,24 @@ fi
 # Quick solution: just copy _all_ the shared libraries, etc from the toolchain
 # into the rfs/lib.
 mysudo "SEALS Build:Step 2 of ${STEPS}: [SEALS rootfs]:setup of library objects. ${MSG_GIVE_PSWD_IF_REQD}" \
-  cp -a ${SYSROOT}/lib/* ${ROOTFS}/lib || {
+  cp -a ${SYSROOT}/lib/* ${ROOTFS_DIR}/lib || {
    FatalError "Copying required libs [/lib] from toolchain failed!"
 }
 mysudo "SEALS Build:Step 3 of ${STEPS}: [SEALS rootfs]:setup of /sbin. ${MSG_GIVE_PSWD_IF_REQD}" \
-  cp -a ${SYSROOT}/sbin/* ${ROOTFS}/sbin || {
+  cp -a ${SYSROOT}/sbin/* ${ROOTFS_DIR}/sbin || {
    FatalError "Copying required libs [/sbin] from toolchain failed!"
 }
 mysudo "SEALS Build:Step 4 of ${STEPS}: [SEALS rootfs]:setup of /usr. ${MSG_GIVE_PSWD_IF_REQD}" \
-  cp -a ${SYSROOT}/usr/* ${ROOTFS}/usr || {
+  cp -a ${SYSROOT}/usr/* ${ROOTFS_DIR}/usr || {
    FatalError "Copying required libs [/sbin] from toolchain failed!"
 }
-sudo mkdir -p ${ROOTFS}/lib64 || true
+sudo mkdir -p ${ROOTFS_DIR}/lib64 || true
 mysudo "SEALS Build:Step 4.2 of ${STEPS}: [SEALS rootfs]:setup of /lib64. ${MSG_GIVE_PSWD_IF_REQD}" \
-  cp -a ${SYSROOT}/lib64/* ${ROOTFS}/lib64 || {
+  cp -a ${SYSROOT}/lib64/* ${ROOTFS_DIR}/lib64 || {
    FatalError "Copying required libs [/sbin] from toolchain failed!"
 }
 mysudo "SEALS Build:Step 4.3 of ${STEPS}: [SEALS rootfs]:setup of /var. ${MSG_GIVE_PSWD_IF_REQD}" \
-  cp -a ${SYSROOT}/var/* ${ROOTFS}/var || {
+  cp -a ${SYSROOT}/var/* ${ROOTFS_DIR}/var || {
    FatalError "Copying required libs [/sbin] from toolchain failed!"
 }
   # RELOOK: 
@@ -379,7 +376,7 @@ mysudo "SEALS Build:Step 4.3 of ${STEPS}: [SEALS rootfs]:setup of /var. ${MSG_GI
 # FIXME - when kernel ver has '-extra' it doesn't take it into account..
 local KDIR=$(echo ${KERNELVER} | cut -d'-' -f2)
 # for 'rmmod'
-mkdir -p ${ROOTFS}/lib/modules/${KDIR} || FatalError "rmmod setup failure!"
+mkdir -p ${ROOTFS_DIR}/lib/modules/${KDIR} || FatalError "rmmod setup failure!"
 } # end setup_lib_in_rootfs
 
 #------ s e t u p _ d e v _ i n _ r o o t f s -------------------------
@@ -388,7 +385,7 @@ setup_dev_in_rootfs()
  report_progress
 #---------- Device Nodes [static only]
 aecho "SEALS Build: Manually generating required Device Nodes in /dev ..."
-cd ${ROOTFS}/dev
+cd ${ROOTFS_DIR}/dev
 
 cat > mkdevtmp.sh << @MYMARKER@
 #!/bin/sh
@@ -426,9 +423,9 @@ mknod -m 660 sda b 8 0
 #ln -s /proc/self/fd/2 stderr
 @MYMARKER@
 
-chmod u+x ${ROOTFS}/dev/mkdevtmp.sh
+chmod u+x ${ROOTFS_DIR}/dev/mkdevtmp.sh
 mysudo "SEALS Build:Step 5 of ${STEPS}: [SEALS rootfs]:setup of device nodes. ${MSG_GIVE_PSWD_IF_REQD}" \
-  ${ROOTFS}/dev/mkdevtmp.sh || {
+  ${ROOTFS_DIR}/dev/mkdevtmp.sh || {
    rm -f mkdevtmp.sh
    FatalError "Setup of device nodes failed!"
 }
@@ -443,42 +440,42 @@ rootfs_xtras()
 # strace, tcpdump, gdb[server], misc scripts (strace, gdb copied from buildroot build)
 
 # Copy configs into the rootfs
-mkdir -p ${ROOTFS}/configs 2>/dev/null
-cp ${KERNEL_FOLDER}/.config ${ROOTFS}/configs/kernel_config
-cp ${BB_FOLDER}/.config ${ROOTFS}/configs/busybox_config
+mkdir -p ${ROOTFS_DIR}/configs 2>/dev/null
+cp ${KERNEL_FOLDER}/.config ${ROOTFS_DIR}/configs/kernel_config
+cp ${BB_FOLDER}/.config ${ROOTFS_DIR}/configs/busybox_config
 
 if [ -d ${TOPDIR}/xtras ]; then
 	aecho "SEALS Build: Copying 'xtras' (goodies!) into the root filesystem..."
 	cd ${TOPDIR}/xtras
 
-	[ -f strace ] && cp strace ${ROOTFS}/usr/bin
-	[ -f tcpdump ] && cp tcpdump ${ROOTFS}/usr/sbin
+	[ -f strace ] && cp strace ${ROOTFS_DIR}/usr/bin
+	[ -f tcpdump ] && cp tcpdump ${ROOTFS_DIR}/usr/sbin
 
 	# for gdb on-board, we need libncurses* & libz* (for gdb v7.1)
-	mkdir -p ${ROOTFS}/usr/lib
-	cp -a libncurses* libz* ${ROOTFS}/usr/lib
-	[ -f gdb ] && cp gdb ${ROOTFS}/usr/bin
+	mkdir -p ${ROOTFS_DIR}/usr/lib
+	cp -a libncurses* libz* ${ROOTFS_DIR}/usr/lib
+	[ -f gdb ] && cp gdb ${ROOTFS_DIR}/usr/bin
 
 	# misc
-	[ -f 0setup ] && cp 0setup ${ROOTFS}/
+	[ -f 0setup ] && cp 0setup ${ROOTFS_DIR}/
 	[ -f procshow.sh ] && chmod +x procshow.sh
-	#cp common.sh procshow.sh pidshow.sh ${ROOTFS}/${MYPRJ}
+	#cp common.sh procshow.sh pidshow.sh ${ROOTFS_DIR}/${MYPRJ}
 
 	# useful for k debug stuff
-	cp ${KERNEL_FOLDER}/System.map ${ROOTFS}/
+	cp ${KERNEL_FOLDER}/System.map ${ROOTFS_DIR}/
 fi
 } # end rootfs_xtras
 
 #------------------ b u i l d _ r o o t f s ---------------------------
 #
-# NOTE: The root filesystem is now populated in the ${ROOTFS} folder under ${TOPDIR}
+# NOTE: The root filesystem is now populated in the ${ROOTFS_DIR} folder under ${TOPDIR}
 #
 build_rootfs()
 {
  report_progress
 # First reset the 'rootfs' staging area so that regular user can update
 mysudo "SEALS Build: reset SEALS root fs. ${MSG_GIVE_PSWD_IF_REQD}" \
- chown -R ${LOGNAME}:${LOGNAME} ${ROOTFS}/*
+ chown -R ${LOGNAME}:${LOGNAME} ${ROOTFS_DIR}/*
 
 #---------Generate necessary pieces for the rootfs
 build_copy_busybox
@@ -491,11 +488,14 @@ mysudo "SEALS Build: enable final setup of SEALS root fs. ${MSG_GIVE_PSWD_IF_REQ
   chown -R root:root ${ROOTFS}/* || {
    FatalError "SEALS Build: chown on rootfs/ failed!"
 }
+#mysudo "SEALS Build: enable final setup of SEALS root fs. ${MSG_GIVE_PSWD_IF_REQD}" \
+aecho "SEALS Build: enable final setup of SEALS root fs. ${MSG_GIVE_PSWD_IF_REQD}"
+sudo chown -R root:root ${ROOTFS_DIR}/* || FatalError "SEALS Build: chown on ${ROOTFS_DIR}/ failed!"
 
 cd ${TOPDIR}/
-ShowTitle "Done!"
-ls -l ${ROOTFS}/
-local RFS_ACTUAL_SZ_MB=$(du -ms ${ROOTFS}/ |awk '{print $1}')
+ShowTitle "Done! Platform root filesystem toplevel content follows:"
+ls -l ${ROOTFS_DIR}/
+local RFS_ACTUAL_SZ_MB=$(du -ms ${ROOTFS_DIR}/ |awk '{print $1}')
 aecho "SEALS root fs: actual size = ${RFS_ACTUAL_SZ_MB} MB"
 } # end build_rootfs()
 
@@ -503,7 +503,7 @@ aecho "SEALS root fs: actual size = ${RFS_ACTUAL_SZ_MB} MB"
 generate_rootfs_img_ext4()
 {
  report_progress
-cd ${ROOTFS} || exit 1
+cd ${ROOTFS_DIR} || FatalError "generate_rootfs_img_ext4(): cd failed"
 
 ShowTitle "SEALS ROOT FS: Generating ext4 image for root fs now:"
 
@@ -560,10 +560,11 @@ mysudo "SEALS Build: root fs image generation: enable mount. ${MSG_GIVE_PSWD_IF_
 
 aecho " Now copying across rootfs data to ${RFS} ..."
 mysudo "SEALS Build: root fs image generation: enable copying into SEALS root fs image. ${MSG_GIVE_PSWD_IF_REQD}" \
- cp -au ${ROOTFS}/* ${MNTPT}/ || FatalError "Copying all rootfs content failed"
+ cp -au ${ROOTFS_DIR}/* ${MNTPT}/ || FatalError "Copying all rootfs content failed"
  [ ${DEBUG} -eq 1 ] && {
     echo; mount |grep "${MNTPT}" ; echo; df -h |grep "${MNTPT}" ; echo
  } |tee -a ${LOGFILE_COMMON} || true
+rm -f ${ROOTFS_DIR}/${LOGFILE_COMMON}
 mysudo "SEALS Build: root fs image generation: enable unmount. ${MSG_GIVE_PSWD_IF_REQD}" \
  umount ${MNTPT}
 sync
@@ -1143,6 +1144,10 @@ check_installed_pkg
 [ ${GUI_MODE} -eq 1 ] && gui_init
 
 config_setup
+# NOTE: From now on we use the var ROOTFS_DIR as the rootfs dir
+export ROOTFS_DIR=${ROOTFS}
+[[ "${ARCH_PLATFORM}" = "x86_64" ]] && ROOTFS_DIR=${ROOTFS_PC}
+
 
 ###
 # !NOTE!
@@ -1208,7 +1213,7 @@ IMP ::
   let i=i+1
 done
 
-check_folder_createIA ${ROOTFS}
+check_folder_createIA ${ROOTFS_DIR}
 check_folder_createIA ${IMAGES_FOLDER}
 check_folder_createIA ${IMAGES_BKP_FOLDER}
 check_folder_createIA ${CONFIGS_FOLDER}
