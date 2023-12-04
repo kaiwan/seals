@@ -1,0 +1,11 @@
+#!/bin/bash
+
+echo "*** Test 1 *** "
+echo "ShellCheck !"
+
+shellcheck -e SC2155,SC2063,SC2166 -S warning *.sh
+# https://www.shellcheck.net/wiki/
+# -e : exclude warning
+#  SC2155 : Declare and assign separately to avoid masking return values.
+#  SC2063 : (warning): Prefer [ p ] || [ q ] as [ p -o q ] is not well defined.
+#  SC2166 : (warning): Prefer [ p ] && [ q ] as [ p -a q ] is not well defined.
