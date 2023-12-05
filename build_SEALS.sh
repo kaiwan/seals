@@ -98,6 +98,17 @@ trap 'wecho "User Abort. ${MSG_EXITING}" ; dumpstack ; [ ${COLOR} -eq 1 ] && col
 
 ##-------------------- Functions Start --------------------------------
 
+kernel_uname_r()
+{
+# /lib/modules/`uname -r` required for rmmod to function
+# FIXME - when kernel ver has '-extra' it doesn't take it into account..
+local KDIR=$(echo ${KERNELVER} | cut -d'-' -f2)
+# get the EXTRAVERSION component from the kernel config
+local XV=$(grep "^CONFIG_LOCALVERSION=" ${KERNEL_FOLDER}/.config |cut -d'=' -f2|tr -d '"')
+KDIR=${KDIR}${XV}
+echo "${KDIR}"
+}
+
 set_kernelimg_var()
 {
 # TODO : put this in individual build.config* files
@@ -107,10 +118,29 @@ set +u
 [ "${ARCH_PLATFORM}" = "x86_64" ] && KIMG=arch/x86/boot/bzImage
 set -u
 #echo "@@@ KIMG = ${KIMG}"
+
+# Set the kernel modules install location
+# Careful! see https://www.kernel.org/doc/Documentation/kbuild/modules.txt
+# ...
+# A prefix can be added to the installation path using the variable INSTALL_MOD_PATH:
+#	$ make INSTALL_MOD_PATH=/frodo modules_install
+#	=> Install dir: /frodo/lib/modules/$(KERNELRELEASE)/kernel/
+# ...
+export KMODDIR=${ROOTFS_DIR}/   #lib/modules/$(kernel_uname_r)
+#echo "KMODDIR = ${KMODDIR}"
+
 # Device Tree Blob (DTB) pathname
 export DTB_BLOB_PATHNAME=${KERNEL_FOLDER}/arch/${ARCH}/boot/dts/${DTB_BLOB} # gen within kernel src tree
 }
 
+install_kernel_modules()
+{
+echo "[+] Install kernel modules
+     ( into dir: ${KMODDIR}/lib/modules/$(kernel_uname_r)/ )"
+[[ -z "${KMODDIR}" ]] && set_kernelimg_var
+[[ ! -d ${KMODDIR} ]] && mkdir -p ${KMODDIR}
+sudo make INSTALL_MOD_PATH=${KMODDIR} modules_install || FatalError "Kernel modules install step failed"
+}
 #------------------ b u i l d _ k e r n e l ---------------------------
 build_kernel()
 {
@@ -180,6 +210,7 @@ eval ${CMD} || {
   FatalError "Kernel build failed! Aborting ..."
 } && true
 
+install_kernel_modules
 set_kernelimg_var
 ls -lh ${KIMG}*
 cp -u ${KIMG}* ${IMAGES_FOLDER}/
