@@ -79,33 +79,37 @@ DTB_BLOB_IMG=""
 RUNCMD=""
 if [ "${ARCH}" = "arm" ]; then
    RUNCMD="${QEMUPKG} -m ${SEALS_RAM} -M ${ARM_PLATFORM_OPT} \
-		-cpu max ${SMP_EMU} -cpu ${CPU_MODEL} \
-		-kernel ${IMAGES_FOLDER}/zImage \
-		-drive file=${IMAGES_FOLDER}/rfs.img,if=sd,format=raw \
-		-append \"${SEALS_K_CMDLINE}\" -nographic -no-reboot"
+-cpu max ${SMP_EMU} -cpu ${CPU_MODEL} \
+-kernel ${IMAGES_FOLDER}/zImage \
+-drive file=${IMAGES_FOLDER}/rfs.img,if=sd,format=raw \
+-append \"${SEALS_K_CMDLINE}\" -nographic -no-reboot"
    [ -f ${DTB_BLOB_PATHNAME} ] && RUNCMD="${RUNCMD} -dtb ${DTB_BLOB_PATHNAME}"
+
 elif [ "${ARCH}" = "arm64" ]; then
+
 	RUNCMD="${QEMUPKG} -m ${SEALS_RAM} -M ${ARM_PLATFORM_OPT} \
-		-cpu max ${SMP_EMU} -cpu ${CPU_MODEL} \
-		-kernel ${IMAGES_FOLDER}/Image.gz \
-		-drive file=${IMAGES_FOLDER}/rfs.img,format=raw,id=drive0 \
-		-append \"${SEALS_K_CMDLINE}\" -nographic -no-reboot"
+-cpu max ${SMP_EMU} -cpu ${CPU_MODEL} \
+-kernel ${IMAGES_FOLDER}/Image.gz \
+-drive file=${IMAGES_FOLDER}/rfs.img,format=raw,id=drive0 \
+-append \"${SEALS_K_CMDLINE}\" -nographic -no-reboot"
 	# no DTB for the 'dummy,virt' platform
 #set -x
 	#echo "DTB_BLOB_IMG = ${DTB_BLOB_IMG}"
 	[[ -f ${DTB_BLOB_IMG} && -n "${DTB_BLOB_IMG}" ]] && RUNCMD="${RUNCMD} -dtb ${DTB_BLOB_IMG}"
-elif [ "${ARCH_PLATFORM}" = "x86_64" ]; then
-	#SEALS_K_CMDLINE="console=ttyS0 root=/dev/sda init=/sbin/init"
-	SEALS_K_CMDLINE="console=ttyS0 root=/dev/sda init=/bin/busybox sh"
-	RUNCMD="${QEMUPKG} -M ${CPU_MODEL} -m ${SEALS_RAM} \
-		-cpu max ${SMP_EMU} \
-		-kernel ${IMAGES_FOLDER}/bzImage \
-		-hda ${IMAGES_FOLDER}/rfs.img \
-		-append \"${SEALS_K_CMDLINE}\" -nographic -no-reboot"
-fi
 
-# Aarch64:
-# qemu-system-aarch64 -m 512 -M virt -nographic -kernel arch/arm64/boot/Image.gz -append "console=ttyAMA0 root=/dev/mmcblk0 init=/sbin/init" -cpu max  
+elif [ "${ARCH_PLATFORM}" = "x86_64" ]; then
+
+#	INIT="/sbin/init" #"/bin/busybox sh"
+#	SEALS_K_CMDLINE="debug console=ttyS0 console=ttyS1 tsc=reliable no_timer_check nokaslr root=/dev/sda rw init=${INIT}"  #/bin/bash"  #/sbin/init"
+#	echo "SEALS_K_CMDLINE = ${SEALS_K_CMDLINE}"
+	RUNCMD="${QEMUPKG} -M ${CPU_MODEL} -m ${SEALS_RAM} \
+-cpu max ${SMP_EMU} \
+-kernel ${IMAGES_FOLDER}/bzImage \
+-drive file=${IMAGES_FOLDER}/rfs.img,format=raw,id=drive0 \
+-append \"${SEALS_K_CMDLINE}\" \
+-nographic -no-reboot"
+	[[ ${USE_INITRAMFS} -eq 1 ]] && RUNCMD="${RUNCMD} -initrd ${IMAGES_FOLDER}/initrd.img"
+fi
 
 [[ -z "${RUNCMD}" ]] && {
 	echo "${name}: FATAL: no run command defined, aborting..."
@@ -127,23 +131,24 @@ REMEMBER this qemu instance is run with the -S option: it *waits* for a GDB clie
 You are expected to run (in another terminal window):
 $ ${CXX}gdb <path-to-${ARCH}-built-kernel-src-tree>/vmlinux  <-- built w/ -g
 ...
-and then have gdb connect to the target kernel using
+and then have GDB connect to the target kernel using
 (gdb) target remote :1234
 ...
 @@@@@@@@@@@@ NOTE NOTE NOTE @@@@@@@@@@@@"
 fi
 
-echo "${RUNCMD}"
+echo "${RUNCMD}" |tee -a ${LOGFILE_COMMON}
+#echo "${RUNCMD}" > cmd1
 #aecho "${RUNCMD}
 #"
 Prompt "Ok? (after pressing ENTER, give it a moment ...)
 
 Also, please exit the Qemu VM by properly shutting down:
 use the 'poweroff' command to do so.
-(Worst case, typing Ctrl-a x (abruptly) shuts Qemu down).
+(Worst case, typing Ctrl-a x (abruptly) shuts Qemu - and thus the guest platform - down).
 "
 # if we're still here, it's about to run!
-eval ${RUNCMD}
+eval ${RUNCMD} |tee -a ${LOGFILE_COMMON}
 
 aecho "
 ... and done."
