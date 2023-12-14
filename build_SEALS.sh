@@ -210,9 +210,8 @@ if [ ${WIPE_KERNEL_CONFIG} -eq 1 ]; then
     echo "make defconfig"
     make defconfig
     #make mrproper
-	make V=${VERBOSE_BUILD} ARCH=${ARCH} ${PLATFORM} || {
-	   FatalError "Kernel config for platform failed.."
-	}
+    make V=${VERBOSE_BUILD} ARCH=${ARCH} ${PLATFORM} || \
+	FatalError "Kernel config for platform failed.."
 fi
 
 #set -x
@@ -571,8 +570,8 @@ rootfs_xtras()
 
 # Copy configs into the rootfs
 mkdir -p ${ROOTFS_DIR}/configs 2>/dev/null
-cp ${KERNEL_FOLDER}/.config ${ROOTFS_DIR}/configs/kernel_config
-cp ${BB_FOLDER}/.config ${ROOTFS_DIR}/configs/busybox_config
+[[ -f ${KERNEL_FOLDER}/.config ]] && cp ${KERNEL_FOLDER}/.config ${ROOTFS_DIR}/configs/kernel_config
+[[ -f ${BB_FOLDER}/.config ]] && cp ${BB_FOLDER}/.config ${ROOTFS_DIR}/configs/busybox_config
 
 if [ -d ${TOPDIR}/xtras ]; then
 	aecho "SEALS Build: Copying 'xtras' (goodies!) into the root filesystem..."
@@ -662,8 +661,8 @@ if [ ${RFS_FORCE_REBUILD} -eq 1 -o ! -f ${RFS} ]; then
   aecho "SEALS Build: *** Deleting and re-creating raw RFS image file now *** [dd, mkfs.ext4]"
   rm -f ${RFS}
   dd if=/dev/zero of=${RFS} bs=4096 count=${COUNT}
-  mysudo "SEALS Build: root fs image generation: enable mkfs. ${MSG_GIVE_PSWD_IF_REQD}" \
-   mkfs.ext4 -F -L qemu_rootfs_SEALS ${RFS} || FatalError "mkfs failed!"
+  mysudo "SEALS Build: root fs image generation (via mkfs). ${MSG_GIVE_PSWD_IF_REQD}" \
+   mkfs.ext4 -F -L qemu_rfs_SEALS ${RFS} || FatalError "mkfs failed!"
 fi
 
 # Keep FORCE_RECREATE_RFS to 0 by default!!
@@ -672,7 +671,7 @@ local FORCE_RECREATE_RFS=0
 
 sync
 mysudo "SEALS Build: root fs image generation: enable umount. ${MSG_GIVE_PSWD_IF_REQD}" \
- umount ${MNTPT} 2> /dev/null
+ umount ${MNTPT} 2>/dev/null
 mysudo "SEALS Build: root fs image generation: enable mount. ${MSG_GIVE_PSWD_IF_REQD}" \
  mount -o loop ${RFS} ${MNTPT} || {
   wecho "### $name: !WARNING! Loop mounting rootfs image file Failed! ###"
@@ -689,7 +688,7 @@ mysudo "SEALS Build: root fs image generation: enable mount. ${MSG_GIVE_PSWD_IF_
     #dd if=/dev/zero of=${RFS} bs=4096 count=16384
     dd if=/dev/zero of=${RFS} bs=4096 count=${COUNT}
     mysudo "SEALS Build: root fs image generation: enable mkfs (in force_recreate_rfs). ${MSG_GIVE_PSWD_IF_REQD}" \
-     mkfs.ext4 -F -L qemu_rootfs_SEALS ${RFS} || exit 1
+     mkfs.ext4 -F -L qemu_rfs_SEALS ${RFS} || exit 1
     mysudo "SEALS Build: root fs image generation: enable mount (in force_recreate_rfs). ${MSG_GIVE_PSWD_IF_REQD}" \
      mount -o loop ${RFS} ${MNTPT} || {
 	  FatalError " !!! The loop mount RFS failed Again !!! Wow. Too bad. See ya :-/"
@@ -776,58 +775,38 @@ get_yn_reply "4. Run emulated system with Qemu? [y/n] : " y
 display_current_config()
 {
  report_progress
+
   echo -n " Build kernel                          :: "
-  [ ${BUILD_KERNEL} -eq 1 ] && {
-	fg_green ; echo "Yes" ; color_reset
-  } || {
-	fg_red ; echo " No" ; color_reset
-  }
+  yesorno_color ${BUILD_KERNEL}
+
   echo -n "  Wipe kernel config clean             :: "
-  [ ${WIPE_KERNEL_CONFIG} -eq 1 ] && {
-	fg_red ; echo "Yes" ; color_reset
-  } || {
-	fg_green ; echo " No" ; color_reset
-  }
+  yesorno_color ${WIPE_KERNEL_CONFIG}
+
   echo -n " Build Root Filesystem                 :: "
-  [ ${BUILD_ROOTFS} -eq 1 ] && {
-	fg_green ; echo "Yes" ; color_reset
-  } || {
-	fg_red ; echo " No" ; color_reset
-  }
+  yesorno_color ${BUILD_ROOTFS}
+
   echo -n "  Wipe busybox config clean            :: "
-  [ ${WIPE_BUSYBOX_CONFIG} -eq 1 ] && {
-	fg_red ; echo "Yes" ; color_reset
-  } || {
-	fg_green ; echo " No" ; color_reset
-  }
+  yesorno_color ${WIPE_BUSYBOX_CONFIG}
+
   echo -n " Generate rootfs ext4 image            :: "
-  [ ${GEN_EXT4_ROOTFS_IMAGE} -eq 1 ] && {
-	fg_green ; echo "Yes" ; color_reset
-  } || {
-	fg_red ; echo " No" ; color_reset
-  }
+  yesorno_color ${GEN_EXT4_ROOTFS_IMAGE}
+
   echo -n " Backup kernel & rootfs images/configs :: "
-  [ ${SAVE_BACKUP_IMG_CONFIGS} -eq 1 ] && {
-	fg_green ; echo "Yes" ; color_reset
-  } || {
-	fg_red ; echo " No" ; color_reset
-  }
+  yesorno_color ${SAVE_BACKUP_IMG_CONFIGS}
+
   echo -n " Run the Qemu emulator                 :: "
-  [ ${RUN_QEMU} -eq 1 ] && {
-	fg_green ; echo "Yes" ; color_reset
-  } || {
-	fg_red ; echo " No" ; color_reset
-  }
+  yesorno_color ${RUN_QEMU}
 }
 
+# Set up the config.build symbolic (soft) link to point to the appropriate platform build.config.<foo> file
 config_symlink_setup()
 {
 	aecho "config_symlink_setup()"
 	# Match the current config to set it to selected state
 #set -x
 	local arm32_vexpress_state=False arm64_qemuvirt_state=False arm64_rpi3b_cm3_state=False amd64_state=False 
-	local CONFIG_CURR=$(basename $(realpath ${BUILD_CONFIG_FILE}))
-	local CONFIG_FILE=$(ls build.config.* | grep "${CONFIG_CURR}")
+	local CONFIG_CURR="$(basename "$(realpath ${BUILD_CONFIG_FILE})")"
+	local CONFIG_FILE=$(ls "${CONFIG_CURR}")
 	[[ -z "${CONFIG_FILE}" ]] && FatalError "Couldn't get config file" || true
 
 	case "${CONFIG_FILE}" in
@@ -1009,21 +988,6 @@ Press 'Yes' (or Enter) to proceed, 'No' (or Esc) to abort
    fi
  fi
 
- local s1="Build kernel?                                    N"
- [ ${BUILD_KERNEL} -eq 1 ] && s1="Build kernel?                                    Y"
- local s1_2=" Wipe kernel config?                             N"
- [ ${WIPE_KERNEL_CONFIG} -eq 1 ] && s1_2=" Wipe kernel config?                     Y"
- local s2="Build root filesystem?                           N"
- [ ${BUILD_ROOTFS} -eq 1 ] && s2="Build root filesystem?                           Y"
- local s2_2=" Wipe busybox config?                            N"
- [ ${WIPE_BUSYBOX_CONFIG} -eq 1 ] && s2_2=" Wipe busybox config?                   Y"
- local s3="Generate ext4 rootfs image?                      N"
- [ ${GEN_EXT4_ROOTFS_IMAGE} -eq 1 ] && s3="Generate ext4 rootfs image?             Y"
- local s4="Backup kernel/busybox images and config files?   N"
- [ ${SAVE_BACKUP_IMG_CONFIGS} -eq 1 ] && s4="Save/Backup kernel/busybox images and config files?   Y"
- local s5="Run QEMU ARM emulator?                           N"
- [ ${RUN_QEMU} -eq 1 ] && s5="Run QEMU ARM emulator?                         Y"
-
 if [ ${GUI_MODE} -eq 1 ] ; then
  #--- YAD
  local disp_kernel="FALSE"
@@ -1130,7 +1094,7 @@ install_deb_pkgs()
     set -e
     if [ ${ret} -ne 0 ]; then
 	   # installing libgmp3-dev libmpc-dev regardless of ARCH=arm here... should be ok?
-	   sudo apt install ${pkg}
+	   sudo apt -y install ${pkg}
     fi
 done
 }
@@ -1235,8 +1199,7 @@ Pl install the package (with dnf/yum/rpm) & re-run.  Aborting..."
 testColor()
 {
   ShowTitle "testing... KERNEL: Configure and Build [kernel ver ${KERNELVER}] now ..."
-  #FatalError
-#  FatalError "Testing ; the libncurses5-dev dev library and headers does not seem to be installed."
+#  FatalError "Testing ; the libncurses-dev dev library and headers does not seem to be installed."
   Echo "Echo : a quick test ..."
   decho "decho : a quick test ..."
   iecho "cecho : a quick test ..."
@@ -1280,10 +1243,10 @@ TESTMODE=0
   exit 0
 }
 
+config_symlink_setup
 check_installed_pkg
 [ ${GUI_MODE} -eq 1 ] && gui_init
 
-config_setup
 # NOTE: From now on we use the var ROOTFS_DIR as the rootfs dir
 export ROOTFS_DIR=${ROOTFS}
 [[ "${ARCH_PLATFORM}" = "x86_64" ]] && ROOTFS_DIR=${ROOTFS_PC}
@@ -1321,18 +1284,22 @@ config file.
 "
 }
 
+check_folder_createIA ${ROOTFS_DIR}
+check_folder_createIA ${IMAGES_FOLDER}
+check_folder_createIA ${IMAGES_BKP_FOLDER}
+check_folder_createIA ${CONFIGS_FOLDER}
+
+config_setup
+
 # Conditionally verify that the kernel and busybox src trees are indeed under STG
 CHK_SRCTREES=""
 [ ${BUILD_KERNEL} -eq 1 ] && CHK_SRCTREES="${KERNEL_FOLDER}/kernel"
 [ ${BUILD_ROOTFS} -eq 1 ] && CHK_SRCTREES="${CHK_SRCTREES} ${BB_FOLDER}/applets"
-echo "CHK_SRCTREES = ${CHK_SRCTREES}"
-#exit 0
+
 i=1
-#for dir in ${KERNEL_FOLDER}/kernel ${BB_FOLDER}/applets
 for dir in ${CHK_SRCTREES}
 do
   if [ ! -d ${dir} ] ; then
-#    [ $i -eq 1 ] && {
      [[ ${dir} = *kernel* ]] && {
 	   err="kernel"
 	   errdir=${KERNEL_FOLDER}
@@ -1355,13 +1322,6 @@ IMPORTANT ::
   fi
   let i=i+1
 done
-
-check_folder_createIA ${ROOTFS_DIR}
-check_folder_createIA ${IMAGES_FOLDER}
-check_folder_createIA ${IMAGES_BKP_FOLDER}
-check_folder_createIA ${CONFIGS_FOLDER}
-
-#config_setup
 
 ### Which of the functions below run depends on the
 # config specified in the Build Config file!
