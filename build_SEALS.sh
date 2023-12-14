@@ -72,12 +72,21 @@ export name=$(basename $0)
 #############################
 export BUILD_CONFIG_FILE=./build.config
 [[ ! -f ${BUILD_CONFIG_FILE} ]] && {
-	echo "*** FATAL *** Couldn't find build.config (is the relevant config file present?)"
+	echo "
+*** FATAL ***              Couldn't find build.config
+
+Check:
+- Is the relevant board config file present?
+- Does the symbolic link 'build.config' point to it?
+
+Tip: If new to SEALS, we urge you, read the documentation here and then proceed:
+ https://github.com/kaiwan/seals/wiki
+ https://github.com/kaiwan/seals/wiki/SEALs-HOWTO"
 	exit 1
 }
 source ${BUILD_CONFIG_FILE} || {
-	echo "${name}: ${BUILD_CONFIG_FILE} missing, creating it"
-	ln -sf build.config.vexpress build.config || exit 1
+	echo "${name}: ${BUILD_CONFIG_FILE} missing, creating it (to the default platform, the AArch32 VExpress)"
+	ln -sf build.config.arm32_vexpress build.config || exit 1  # set to default
 }
 source ./common.sh || {
 	echo "${name}: source failed! ./common.sh missing or invalid?"
@@ -283,7 +292,7 @@ if [ ${WIPE_BUSYBOX_CONFIG} -eq 1 ]; then
 	make V=${VERBOSE_BUILD} ARCH=${ARCH} CROSS_COMPILE=${CXX} defconfig
 fi
 
-aecho "Edit the BusyBox config if required, Save & Exit..."
+aecho "Edit the BusyBox config as required, Save & Exit..."
 Prompt " " ${MSG_EXITING}
 
 USE_QT=n   # make 'y' to use a GUI Qt configure environment
@@ -412,8 +421,8 @@ aecho "SEALS Build: copying across shared objects, etc to SEALS /lib /sbin /usr 
 SYSROOT=${GCC_SYSROOT}/
 echo "[sanity check: SYSROOT = ${SYSROOT} ]"
 if [ -z "${SYSROOT}" -o ! -d ${SYSROOT} -o "${SYSROOT}" = "/" ]; then
-	cd ${TOPDIR}
-	FatalError "Toolchain shared library locations invalid (NULL or '/')? Aborting..."
+	  cd ${TOPDIR}
+	  FatalError "Toolchain shared library locations invalid (NULL or '/')? Aborting..."
 fi
 
 # Quick solution: just copy _all_ the shared libraries, etc from the toolchain
@@ -638,6 +647,9 @@ mysudo "SEALS Build: root fs image generation: enable copying into SEALS root fs
     echo; mount |grep "${MNTPT}" ; echo; df -h |grep "${MNTPT}" ; echo
  } |tee -a ${LOGFILE_COMMON} || true
 rm -f ${ROOTFS_DIR}/${LOGFILE_COMMON}
+aecho " Now copying across all rootfs data to ${RFS} ..."
+sudo cp -au ${ROOTFS_DIR}/* ${MNTPT}/ || FatalError "Copying all rootfs content failed"
+
 mysudo "SEALS Build: root fs image generation: enable unmount. ${MSG_GIVE_PSWD_IF_REQD}" \
  umount ${MNTPT}
 sync
@@ -654,12 +666,14 @@ save_images_configs()
 ShowTitle "BACKUP: kernel, busybox images and config files now (as necessary) ..."
 cd ${TOPDIR}
 unalias cp 2>/dev/null || true
-cp -afu ${IMAGES_FOLDER}/ ${IMAGES_BKP_FOLDER} # backup!
-#cp -u ${KERNEL_FOLDER}/$(basename ${KIMG}) ${IMAGES_FOLDER}/
-cp -u ${KERNEL_FOLDER}/${KIMG} ${IMAGES_FOLDER}/
+
+cp -afu ${IMAGES_FOLDER}/ ${IMAGES_BKP_FOLDER} || FatalError "copying images to backup folder failed"
+ # backup!
+cp -u ${KERNEL_FOLDER}/${KIMG} ${IMAGES_FOLDER}/ || FatalError "copying kernel image to backup folder failed"
 [ -f ${DTB_BLOB_PATHNAME} ] && cp -u ${DTB_BLOB_PATHNAME} ${IMAGES_FOLDER}/ || true
-cp ${KERNEL_FOLDER}/.config ${CONFIGS_FOLDER}/kernel_config
-cp ${BB_FOLDER}/.config ${CONFIGS_FOLDER}/busybox_config
+cp ${KERNEL_FOLDER}/.config ${CONFIGS_FOLDER}/kernel_config || FatalError "copying k config to backup folder failed"
+cp ${BB_FOLDER}/.config ${CONFIGS_FOLDER}/busybox_config || FatalError "copying bb config to backup folder failed"
+
 aecho " ... and done."
 } # end save_images_configs()
 
@@ -668,7 +682,7 @@ aecho " ... and done."
 run_qemu_SEALS()
 {
 	[[ ! -f ${TOPDIR}/run-qemu.sh ]] && {
-	  FatalError " !!! Run script run-qemu.sh not found? Aborting..."
+	  FatalError "run script run-qemu.sh not found? Aborting..."
 	}
 	${TOPDIR}/run-qemu.sh 0
 } # end run_qemu_SEALS()
@@ -773,9 +787,9 @@ config_symlink_setup()
 	esac
 
 	# Fmt of radio btn: Bool                        "label str"                  value_when_selected 
-	local OUT=$(yad --on-top  --center --title "Select the target machine to deploy via Qemu; press Esc / Cancel to keep the current one" \
+	local OUT=$(yad --on-top  --center --title "Select the target machine to deploy via Qemu; press Esc / Cancel to keep the current one, or select a new target platform to build" \
 			--width 500 --height 210  \
-			--text "The current machine is the one that's now selected; press Esc / Cancel to keep the current one" \
+			--text "The current machine is the one that's now selected; press Esc / Cancel to keep the current one, or select a new target platform to build" \
 			--list --radiolist --columns=3 \
 			--column "   Select   " --column "   Machine   " --column "   Machine number - Do Not Display":HD  \
 			${arm32_vexpress_state} "ARM-32 Versatile Express (vexpress-cortex a15)" arm32_vexpress   \
@@ -788,7 +802,7 @@ config_symlink_setup()
 	if [ -z "${OUT}" -o $? = "1" ]; then return; fi;  # Cancel clicked (or Esc); keep current m/c and return
 
 	# Retrieve the just-selected machine
-	local TARGET MACH=$(echo ${OUT} | cut -d '|' -f1)
+	local TARGET MACH=$(echo ${OUT} | cut -d '|' -f1) MACH_STR
 	local MACH_CURR=$(echo ${CONFIG_CURR} |cut -d'.' -f3)
 	# Short circuit, return if it's the same machine that's selected
 	if [ "${MACH}" = "${MACH_CURR}" ]; then return; fi;
@@ -796,10 +810,14 @@ config_symlink_setup()
 	# (Re)create the build.config soft link to point to the selected machine's config file
 	#  ln [OPTION]... [-T] TARGET LINK_NAME
 	case "${MACH}" in
-	  arm32_vexpress) TARGET=build.config.arm32_vexpress ;;
-	  arm64_qemuvirt) TARGET=build.config.arm64_qemuvirt ;;
-	  arm64_rpi3b_cm3) TARGET=build.config.arm64_rpi3b_cm3 ;;
-	  amd64) TARGET=build.config.amd64 ;;
+	  arm32_vexpress) TARGET=build.config.arm32_vexpress
+			  MACH_STR="AArch32: ARM Versatile Express for Cortex-A15" ;;
+	  arm64_qemuvirt) TARGET=build.config.arm64_qemuvirt
+			  MACH_STR="AArch64: (ARM-64) Qemu Virtual Machine" ;;
+	  arm64_rpi3b_cm3) TARGET=build.config.arm64_rpi3b_cm3
+			   MACH_STR="AArch32: Raspberry Pi 3B" ;;
+	  amd64) TARGET=build.config.amd64
+		 MACH_STR="x86-64 or AMD64: Qemu Standard PC (i440FX + PIIX, 1996)" ;;
 	esac
 	[[ ! -f ${TARGET} ]] && FatalError "Couldn't find the required build.config file : ${TARGET}"
 	ln -sf ${TARGET} build.config || FatalError "Couldn't setup new build.config symlink"
@@ -813,7 +831,7 @@ config_symlink_setup()
 	GUI_MODE=${saved_guimode}
 
 	yad --center --title "Target Machine Confirmation" --text-info \
-			--text="CONFIRM :: Target machine is now set to ${MACH}" \
+			--text="CONFIRM :: Target machine is now set to ${MACH_STR}" \
 			--width 500 --height 50  \
 			--wrap --justify=center --button=OK:0
 #set +x
@@ -1029,7 +1047,7 @@ else # console mode
 
   seals_menu_consolemode
   becho "
-  Confirm your choices pl ::
+  Confirm your choices please ::
 "
   display_current_config
 
@@ -1044,8 +1062,9 @@ install_deb_pkgs()
 {
  # For libncurses lib: have to take into account whether running on Ubuntu/Deb
  # or Fedora/RHEL/CentOS
- which dpkg > /dev/null
+ lsb_release -a|grep -w "Ubuntu" >/dev/null 2>&1
  if [ $? -ne 0 ] ; then
+	echo "install_deb_pkgs(): this build host isn't Ubuntu/Debian, returning..."
 	return
  fi
  # Ubuntu/Debian
@@ -1086,8 +1105,8 @@ check_installed_pkg()
    (as specified in your build.config: ${CXX}).
    *** It doesn't seem to be installed ***
 
-We insist you install a complete proper toolchain (Linux x86_64 host to Aach32 or
-AArch64 target). To do so, pl see:
+We insist you install a complete proper toolchain (Linux x86_64 host to AArch32 or
+AArch64 target) as appropriate. To do so, please read:
 
 https://github.com/kaiwan/seals/wiki/SEALs-HOWTO
 
@@ -1107,7 +1126,7 @@ It appears to not have the toolchain 'sysroot' libraries, sbin and usr
 components within it. This could (and usually does) happen if it was installed
 via a simple package manager cmd similar to 'sudo apt install ${ARCH}-linux-gnueabi'.
 
-We insist you install a complete proper toolchain; to do so, pl follow the
+We insist you install a complete proper toolchain; to do so, please follow the
 detailed instructions provided here:
 https://github.com/kaiwan/seals/wiki/SEALs-HOWTO
 
@@ -1119,9 +1138,8 @@ fi
  which ${CXX}gcc > /dev/null || {
    FatalError "Cross toolchain does not seem to be valid! PATH issue?
 
-Tip 1: If new to SEALS, we urge you, Please read the documentation here and then proceed:
+Tip 1: If new to SEALS, we urge you, read the documentation here and then proceed:
  https://github.com/kaiwan/seals/wiki
- https://github.com/kaiwan/seals/wiki/HOWTO-Install-required-packages-on-the-Host-for-SEALS
  https://github.com/kaiwan/seals/wiki/SEALs-HOWTO
 
 Tip 2: Install the cross toolchain first, update the build.config to reflect it and rerun.
@@ -1198,7 +1216,7 @@ if [ $# -ge 1 -a "${mode_opt}" = "-c" ] ; then
 	GUI_MODE=0
 fi
 [ ${GUI_MODE} -eq 1 ] && echo "[+] Running in GUI mode.. (use '-c' option switch to run in console-only mode)" || echo "[+] Running in console mode.."
-echo "[+] ${name}: initializing, pl wait ..."
+echo "[+] ${name}: initializing, please wait ..."
 
 #testColor
 #exit 0
@@ -1236,18 +1254,20 @@ report_progress
 !!! SEALS Staging folder (STG) not present !!!
 Currently, STG is set to \"${STG}\"
 
-IMP ::
-  Fix this by running the install script (install.sh) first.
-  First verify that the staging folder pathname is correct within your SEALS config file.
+IMPORTANT ::
+  Fix this by:
+  - First verifying that the staging folder pathname is correct within your SEALS build config file
+  - Then running the install script (install.sh).
 
-(FYI, we expect a project 'staging area' is setup and pre-populated with appropriate content,
-i.e., the source code for their resp projects:
+FYI, we expect a project 'staging area' is setup and pre-populated with appropriate content,
+i.e., the source code for their resp projects, as follows:
 STG              : the project staging folder
-  KERNEL_FOLDER  : kernel source tree
-  BB_FOLDER      : busybox source tree
-).
-You must fix this by running the install.sh script.
-Tip: the place to update these folders is within the above-mentioned
+     KERNEL_FOLDER  : kernel source tree
+     BB_FOLDER      : busybox source tree
+
+*You must fix this by running the install.sh script*
+
+Tip: the place to update these folder pathnames is within the above-mentioned
 config file.
 "
 }
@@ -1272,14 +1292,15 @@ do
 	   errdir=${BB_FOLDER}
 	}
 	FatalError "
-Expect the ${err} source tree here:
+We expect the ${err} source tree to be present here:
 ${errdir}
 
 It appears to be invalid or missing!
 
-IMP ::
-  Fix this by running the install script (install.sh) first.
-  First verify that the ${err} source version is correct within your SEALS config file.
+IMPORTANT ::
+  Fix this by:
+  - First verifying that the ${err} source version is correct within your SEALS build config file
+  - Then running the install script (install.sh).
 
 "
   fi
