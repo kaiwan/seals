@@ -356,19 +356,22 @@ cat > etc/inittab << @MYMARKER@
 # Earlier ensured that CONFIG_BASH_IS_ASH=y (so that we can run bash)
 if [[ "${ARCH}" = "arm" ]]; then
    cat >> etc/inittab << @MYMARKER@
-::respawn:env PS1='ARM \w \$ ' ${SHELL2RUN}
-#::respawn:env PS1='ARM64 \w \$ ' /bin/bash
+::respawn:env PS1='arm \w \$ ' ${SHELL2RUN}
+@MYMARKER@
+# this one - rpi3b - should come before the 'arm64' one...
+elif [[ "${ARM_PLATFORM_STR}"="Qemu Rpi3B" ]]; then
+   cat >> etc/inittab << @MYMARKER@
+::respawn:env PS1='rpi3b \w \$ ' ${SHELL2RUN}
 @MYMARKER@
 elif [[ "${ARCH}" = "arm64" ]]; then
    cat >> etc/inittab << @MYMARKER@
-::respawn:env PS1='ARM64 \w \$ ' ${SHELL2RUN}
-#::respawn:env PS1='ARM64 \w \$ ' /bin/bash
+::respawn:env PS1='arm64 \w \$ ' ${SHELL2RUN}
+@MYMARKER@
+elif [[ "${ARCH_PLATFORM}" = "x86_64" ]]; then
+   cat >> etc/inittab << @MYMARKER@
+::respawn:env PS1='pc \w \$ ' ${SHELL2RUN}
 @MYMARKER@
 fi
-
-#::askfirst:env PS1='ARM \w \$ ' /bin/sh
-#::askfirst:/bin/sh
-#::askfirst:-/bin/sh
 
 cat >> etc/inittab << @MYMARKER@
 ::restart:/sbin/init
@@ -379,11 +382,11 @@ cat >> etc/inittab << @MYMARKER@
 cat > etc/init.d/rcS << @MYMARKER@
 echo "SEALS: /etc/init.d/rcS running now ..."
 /bin/mount -a
-# remount / as rw; requires CONFIG_LBDAF !
-/bin/mount -o remount,rw /
+## remount / as rw; requires CONFIG_LBDAF (old stuff)
+#/bin/mount -o remount,rw /
 
-# networking
-ifconfig eth0 192.168.1.100 netmask 255.255.255.0 up
+# networking : don't try until n/w is properly setup in SEALS
+#ifconfig eth0 192.168.1.100 netmask 255.255.255.0 up
 
 # Misc
 if [ $(id -u) -eq 0 ]; then
