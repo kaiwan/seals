@@ -143,12 +143,45 @@ export DTB_BLOB_PATHNAME=${KERNEL_FOLDER}/arch/${ARCH}/boot/dts/${DTB_BLOB} # ge
 
 install_kernel_modules()
 {
+# Have the kernel modules been generated?
+echo -n "
+Checking kernel modules ...  "
+find ${KERNEL_FOLDER} -name "*.ko" >/dev/null 2>&1 || 
+        FatalError "Dependency: need to build+install the kernel+modules for correct root fs generation.
+  Please enable the kernel build step and retry."
+echo "[Yes]"
+set_kernelimg_var
 echo "[+] Install kernel modules
      ( into dir: ${KMODDIR}/lib/modules/$(kernel_uname_r)/ )"
-[[ -z "${KMODDIR}" ]] && set_kernelimg_var
+
 [[ ! -d ${KMODDIR} ]] && mkdir -p ${KMODDIR}
-sudo make INSTALL_MOD_PATH=${KMODDIR} modules_install || FatalError "Kernel modules install step failed"
+cd ${KERNEL_FOLDER} || FatalError "cd to kernel dir failed"
+sudo make INSTALL_MOD_PATH=${KMODDIR} modules_install || \
+  FatalError "Kernel modules install step failed; have you performed the kernel build step?"
 }
+
+# x86-64 only, and invoked only if USE_INITRAMFS=1 in the board config file
+setup_initramfs()
+{
+local INITRD=${ROOTFS_DIR}/initrd.img
+echo "[+] PC (x86-64/AMD64): Install initramfs (initrd)"
+[[ -z "${KMODDIR}" ]] && set_kernelimg_var
+which mkinitramfs >/dev/null 2>&1 && {
+	rm -f ${INITRD}
+	echo "Generating (Ubuntu-flavor) initramfs image..."
+	cd ${KERNEL_FOLDER} || FatalError "cd to kernel dir failed"
+	mkinitramfs -o ${ROOTFS_DIR}/initrd.img || FatalError "failed to generate initramfs image"
+	sudo chown root:root ${ROOTFS_DIR}/initrd.img
+	cp -au ${ROOTFS_DIR}/initrd.img ${IMAGES_FOLDER}/ || FatalError "copying initrd to images failed?"
+	ls -lh ${IMAGES_FOLDER}/initrd.img
+	cd -
+} || FatalError "Cannot generate initramfs (mkinitramfs missing or it's not an Ubuntu build host?)"
+# TODO - Fedora/CentOS/RH - use mkinird
+
+echo "Installing boot files into the root fs..."
+sudo make INSTALL_PATH=${ROOTFS_DIR} install || FatalError "PC: 'sudo make install' step failed"
+}
+
 #------------------ b u i l d _ k e r n e l ---------------------------
 build_kernel()
 {
@@ -219,6 +252,8 @@ eval ${CMD} || {
 } && true
 
 install_kernel_modules
+[[ "${ARCH_PLATFORM}" = "x86_64" && ${USE_INITRAMFS} -eq 1 ]] && setup_initramfs
+#  echo "[-] Skipping initramfs generation"
 set_kernelimg_var
 ls -lh ${KIMG}*
 cp -u ${KIMG}* ${IMAGES_FOLDER}/
