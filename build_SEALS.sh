@@ -143,11 +143,12 @@ set -u
 #	$ make INSTALL_MOD_PATH=/frodo modules_install
 #	=> Install dir: /frodo/lib/modules/$(KERNELRELEASE)/kernel/
 # ...
-export KMODDIR=${ROOTFS_DIR}/   #lib/modules/$(kernel_uname_r)
+export KMODDIR=${ROOTFS_DIR}
 #echo "KMODDIR = ${KMODDIR}"
 
 # Device Tree Blob (DTB) pathname
-export DTB_BLOB_PATHNAME=${KERNEL_FOLDER}/arch/${ARCH}/boot/dts/${DTB_BLOB} # gen within kernel src tree
+[[ "${ARCH_PLATFORM}" != "x86_64" ]] && \
+  export DTB_BLOB_PATHNAME=${KERNEL_FOLDER}/arch/${ARCH}/boot/dts/${DTB_BLOB} || true  # gen within kernel src tree
 }
 
 install_kernel_modules()
@@ -239,7 +240,7 @@ fi
 # SYSTEM_REVOCATION_KEYS config option, else the build fails
 echo "[+] scripts/config --disable SYSTEM_REVOCATION_KEYS"
 scripts/config --disable SYSTEM_REVOCATION_KEYS || echo "Warning! Disabling SYSTEM_REVOCATION_KEYS failed"
-echo "[+] scripts/config --disable WERROR" # 'treat warnings as errors'
+echo "[+] scripts/config --disable WERROR" # turn off 'treat warnings as errors'
 scripts/config --disable WERROR || echo "Warning! Disabling WERROR failed"
 
 ShowTitle "Kernel Build:"
@@ -263,12 +264,17 @@ eval ${CMD} || {
 install_kernel_modules
 [[ "${ARCH_PLATFORM}" = "x86_64" && ${USE_INITRAMFS} -eq 1 ]] && setup_initramfs
 #  echo "[-] Skipping initramfs generation"
+
+# Refresh our variables!
 set_kernelimg_var
+
+#echo "KIMG = ${KIMG}"
 ls -lh ${KIMG}*
-cp -u ${KIMG}* ${IMAGES_FOLDER}/
-[ -f ${DTB_BLOB_PATHNAME} ] && {
+cp -u ${KIMG}* ${IMAGES_FOLDER}/ || FatalError "copying kernel image failed"
+
+[[ "${ARCH_PLATFORM}" != "x86_64" && -f ${DTB_BLOB_PATHNAME} ]] && {
    echo; ls -lh ${DTB_BLOB_PATHNAME}
-   cp -u ${DTB_BLOB_PATHNAME} ${IMAGES_FOLDER}/
+   cp -u ${DTB_BLOB_PATHNAME} ${IMAGES_FOLDER}/ || FatalError "copying DTB failed"
 } || true
 aecho "... and done."
 cd ${TOPDIR}
@@ -283,8 +289,8 @@ cd ${BB_FOLDER} || exit 1
 ShowTitle "BUSYBOX: Configure and Build Busybox now ... [$(basename ${BB_FOLDER})]"
 iecho " [Sanity chk: ROOTFS_DIR=${ROOTFS_DIR}]"
 # safety check!
-if [ -z "${ROOTFS_DIR}" ]; then
-	FatalError "SEALS: ROOTFS has dangerous value of null or '/'. Aborting..."
+if [ -z "${ROOTFS_DIR}" -o ! -d ${ROOTFS_DIR} -o "${ROOTFS_DIR}" = "/" ]; then
+	FatalError "SEALS: ROOTFS_DIR has dangerous value of null or '/'. Aborting..."
 fi
 
 if [ ${WIPE_BUSYBOX_CONFIG} -eq 1 ]; then
@@ -325,17 +331,10 @@ eval ${CMD} || {
   FatalError "Building and/or Installing busybox failed!"
 } && true
 
-
-#////
-#make V=${VERBOSE_BUILD} -j${CPU_CORES} ARCH=${ARCH} CROSS_COMPILE=${CXX} install || {
-#  FatalError "Building and/or Installing busybox failed!"
-#}
-
 mysudo "SEALS Build:Step 1 of ${STEPS}: Copying of required busybox files. ${MSG_GIVE_PSWD_IF_REQD}" \
- cp -af ${BB_FOLDER}/_install/* ${ROOTFS_DIR}/ || {
+ cp -af ${BB_FOLDER}/_install/* ${ROOTFS_DIR}/ || \
   FatalError "Copying required folders from busybox _install/ failed! 
  [Tip: Ensure busybox has been successfully built]. Aborting..."
-}
 aecho "SEALS Build: busybox files copied across successfully ..."
 } # end build_copy_busybox()
 
@@ -417,48 +416,94 @@ setup_lib_in_rootfs()
  report_progress
 aecho "SEALS Build: copying across shared objects, etc to SEALS /lib /sbin /usr ..."
 
+if [[ "${ARCH_PLATFORM}" = "x86_64" ]] ; then
+  #echo "@@@ x86-64 ROOTFS lib @@@"
+  # if busybox built as a dynamic executable... requires:
+	# linux-vdso.so.1   <---------- via kernel so ignore
+	# libm.so.6 => /lib/x86_64-linux-gnu/libm.so.6
+	# libresolv.so.2 => /lib/x86_64-linux-gnu/libresolv.so.2
+	# libc.so.6 => /lib/x86_64-linux-gnu/libc.so.6
+	# /lib64/ld-linux-x86-64.so.2
+
+# libgcc* ??
+# busybox says
+#...
+# Static linking against glibc, can't use --gc-sections
+#Trying libraries: crypt m resolv rt
+# Library crypt is not needed, excluding it
+# Library m is needed, can't exclude it (yet)
+# Library resolv is needed, can't exclude it (yet)
+# Library rt is not needed, excluding it
+# Library m is needed, can't exclude it (yet)
+# Library resolv is needed, can't exclude it (yet)
+#Final link with: m resolv
+
+  # Loader: /lib64/ld-linux-x86-64.so.2 ->  /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2
+  mkdir -p ${ROOTFS_DIR}/lib/x86_64-linux-gnu
+  cp -au /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 ${ROOTFS_DIR}/lib64/ || FatalError "copying ld-linux* failed"
+
+  #cp -au /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 ${ROOTFS_DIR}/lib/x86_64-linux-gnu/
+
+  # std c lib: libc.so.6 => /lib/x86_64-linux-gnu/libc.so.6
+  cp -au /lib/x86_64-linux-gnu/libc.so.6  ${ROOTFS_DIR}/lib/x86_64-linux-gnu/ || FatalError "copying glibc failed"
+
+  # libresolv
+  cp -au /lib/x86_64-linux-gnu/libresolv.so.2 ${ROOTFS_DIR}/lib/x86_64-linux-gnu/ || FatalError "copying libresolv failed"
+
+  # libm
+  cp -au /lib/x86_64-linux-gnu/libm.so.6 ${ROOTFS_DIR}/lib/x86_64-linux-gnu/ || FatalError "copying libm failed"
+
+  return
+fi
+
+#--- NON-X86
+
 # First, get the 'sysroot' from the compiler itself
 SYSROOT=${GCC_SYSROOT}/
-echo "[sanity check: SYSROOT = ${SYSROOT} ]"
+echo "[Sanity check:
+ROOTFS_DIR=${ROOTFS_DIR}
+SYSROOT = ${SYSROOT} ]"
+
+set +u
 if [ -z "${SYSROOT}" -o ! -d ${SYSROOT} -o "${SYSROOT}" = "/" ]; then
 	  cd ${TOPDIR}
 	  FatalError "Toolchain shared library locations invalid (NULL or '/')? Aborting..."
 fi
+set -u
 
+# 'Which (shared) libraries do we copy into the rootfs?'
 # Quick solution: just copy _all_ the shared libraries, etc from the toolchain
 # into the rfs/lib.
-mysudo "SEALS Build:Step 2 of ${STEPS}: [SEALS rootfs]:setup of library objects. ${MSG_GIVE_PSWD_IF_REQD}" \
+# EXCEPTION : the x86_64
+set +u
+if [[ "${ARCH_PLATFORM}" != "x86_64" ]] ; then
+ mysudo "SEALS Build:Step 2 of ${STEPS}: [SEALS rootfs]:setup of library objects. ${MSG_GIVE_PSWD_IF_REQD}" \
   cp -a ${SYSROOT}/lib/* ${ROOTFS_DIR}/lib || {
    FatalError "Copying required libs [/lib] from toolchain failed!"
-}
-mysudo "SEALS Build:Step 3 of ${STEPS}: [SEALS rootfs]:setup of /sbin. ${MSG_GIVE_PSWD_IF_REQD}" \
+ }
+ mysudo "SEALS Build:Step 3 of ${STEPS}: [SEALS rootfs]:setup of /sbin. ${MSG_GIVE_PSWD_IF_REQD}" \
   cp -a ${SYSROOT}/sbin/* ${ROOTFS_DIR}/sbin || {
    FatalError "Copying required libs [/sbin] from toolchain failed!"
-}
-mysudo "SEALS Build:Step 4 of ${STEPS}: [SEALS rootfs]:setup of /usr. ${MSG_GIVE_PSWD_IF_REQD}" \
+ }
+ mysudo "SEALS Build:Step 4 of ${STEPS}: [SEALS rootfs]:setup of /usr. ${MSG_GIVE_PSWD_IF_REQD}" \
   cp -a ${SYSROOT}/usr/* ${ROOTFS_DIR}/usr || {
    FatalError "Copying required libs [/sbin] from toolchain failed!"
-}
-sudo mkdir -p ${ROOTFS_DIR}/lib64 || true
-mysudo "SEALS Build:Step 4.2 of ${STEPS}: [SEALS rootfs]:setup of /lib64. ${MSG_GIVE_PSWD_IF_REQD}" \
+ }
+ sudo mkdir -p ${ROOTFS_DIR}/lib64 || true
+ mysudo "SEALS Build:Step 4.2 of ${STEPS}: [SEALS rootfs]:setup of /lib64. ${MSG_GIVE_PSWD_IF_REQD}" \
   cp -a ${SYSROOT}/lib64/* ${ROOTFS_DIR}/lib64 || {
    FatalError "Copying required libs [/sbin] from toolchain failed!"
-}
-mysudo "SEALS Build:Step 4.3 of ${STEPS}: [SEALS rootfs]:setup of /var. ${MSG_GIVE_PSWD_IF_REQD}" \
+ }
+ mysudo "SEALS Build:Step 4.3 of ${STEPS}: [SEALS rootfs]:setup of /var. ${MSG_GIVE_PSWD_IF_REQD}" \
   cp -a ${SYSROOT}/var/* ${ROOTFS_DIR}/var || {
    FatalError "Copying required libs [/sbin] from toolchain failed!"
-}
+ }
   # RELOOK: 
   # $ ls rootfs/usr/
   # bin/  include/  lib/  libexec/  sbin/  share/
   # $ 
   # usr/include - not really required?
-
-# /lib/modules/`uname -r` required for rmmod to function
-# FIXME - when kernel ver has '-extra' it doesn't take it into account..
-local KDIR=$(echo ${KERNELVER} | cut -d'-' -f2)
-# for 'rmmod'
-mkdir -p ${ROOTFS_DIR}/lib/modules/${KDIR} || FatalError "rmmod setup failure!"
+fi
 } # end setup_lib_in_rootfs
 
 #------ s e t u p _ d e v _ i n _ r o o t f s -------------------------
@@ -548,6 +593,17 @@ if [ -d ${TOPDIR}/xtras ]; then
 fi
 } # end rootfs_xtras
 
+# r o o t f s _ d i r s ( )
+# Create the minimal rootfs directories
+rootfs_dirs()
+{
+cd ${ROOTFS_DIR}
+mkdir -p dev etc/init.d lib lib64 ${MYPRJ} proc root/dev run srv sys tmp 2>/dev/null || true
+chmod 1777 tmp || true
+chmod 0700 root || true
+rmdir home/root 2>/dev/null || true
+}
+
 #------------------ b u i l d _ r o o t f s ---------------------------
 #
 # NOTE: The root filesystem is now populated in the ${ROOTFS_DIR} folder under ${TOPDIR}
@@ -560,24 +616,22 @@ mysudo "SEALS Build: reset SEALS root fs. ${MSG_GIVE_PSWD_IF_REQD}" \
  chown -R ${LOGNAME}:${LOGNAME} ${ROOTFS_DIR}/*
 
 #---------Generate necessary pieces for the rootfs
-build_copy_busybox
-setup_etc_in_rootfs
-setup_lib_in_rootfs
-setup_dev_in_rootfs
-rootfs_xtras
+   build_copy_busybox
+   rootfs_dirs
+   setup_etc_in_rootfs
+   setup_lib_in_rootfs
+   setup_dev_in_rootfs
+   rootfs_xtras
+#else
+#   pc_build_rootfs_debootstrap
 
-mysudo "SEALS Build: enable final setup of SEALS root fs. ${MSG_GIVE_PSWD_IF_REQD}" \
-  chown -R root:root ${ROOTFS}/* || {
-   FatalError "SEALS Build: chown on rootfs/ failed!"
-}
-#mysudo "SEALS Build: enable final setup of SEALS root fs. ${MSG_GIVE_PSWD_IF_REQD}" \
 aecho "SEALS Build: enable final setup of SEALS root fs. ${MSG_GIVE_PSWD_IF_REQD}"
 sudo chown -R root:root ${ROOTFS_DIR}/* || FatalError "SEALS Build: chown on ${ROOTFS_DIR}/ failed!"
 
 cd ${TOPDIR}/
 ShowTitle "Done! Platform root filesystem toplevel content follows:"
-ls -l ${ROOTFS_DIR}/
-local RFS_ACTUAL_SZ_MB=$(du -ms ${ROOTFS_DIR}/ |awk '{print $1}')
+ls -lh ${ROOTFS_DIR}/
+local RFS_ACTUAL_SZ_MB=$(du -ms ${ROOTFS_DIR}/ 2>/dev/null |awk '{print $1}')
 aecho "SEALS root fs: actual size = ${RFS_ACTUAL_SZ_MB} MB"
 } # end build_rootfs()
 
@@ -640,13 +694,6 @@ mysudo "SEALS Build: root fs image generation: enable mount. ${MSG_GIVE_PSWD_IF_
   fi
  }
 
-aecho " Now copying across rootfs data to ${RFS} ..."
-mysudo "SEALS Build: root fs image generation: enable copying into SEALS root fs image. ${MSG_GIVE_PSWD_IF_REQD}" \
- cp -au ${ROOTFS_DIR}/* ${MNTPT}/ || FatalError "Copying all rootfs content failed"
- [ ${DEBUG} -eq 1 ] && {
-    echo; mount |grep "${MNTPT}" ; echo; df -h |grep "${MNTPT}" ; echo
- } |tee -a ${LOGFILE_COMMON} || true
-rm -f ${ROOTFS_DIR}/${LOGFILE_COMMON}
 aecho " Now copying across all rootfs data to ${RFS} ..."
 sudo cp -au ${ROOTFS_DIR}/* ${MNTPT}/ || FatalError "Copying all rootfs content failed"
 
@@ -665,6 +712,7 @@ save_images_configs()
  report_progress
 ShowTitle "BACKUP: kernel, busybox images and config files now (as necessary) ..."
 cd ${TOPDIR}
+set_kernelimg_var
 unalias cp 2>/dev/null || true
 
 cp -afu ${IMAGES_FOLDER}/ ${IMAGES_BKP_FOLDER} || FatalError "copying images to backup folder failed"
@@ -1117,8 +1165,7 @@ Thanks.
  }
 
  GCC_SYSROOT=$(${CXX}gcc --print-sysroot) || true
- local buildconfig=$(basename $(realpath build.config))
- if [[ "${buildconfig}" != "build.config.amd64" ]] ; then
+ if [[ "${ARCH_PLATFORM}" != "x86_64" ]] ; then
 	if [ -z "${GCC_SYSROOT}" -o "${GCC_SYSROOT}" = "/" ] ; then
 		FatalError "There is an issue with the provided toolchain.
 
@@ -1149,7 +1196,6 @@ env vars are not setup. So run from a root shell where the PATH is correctly set
 Aborting..."
  }
 
- #export QEMUPKG=qemu-system-${ARCH}
  [ "${ARCH}" = "arm" ] && QEMUPKG=qemu-system-arm
  [ "${ARCH}" = "arm64" ] && QEMUPKG=qemu-system-aarch64
  check_deps_fatal "${QEMUPKG} mkfs.ext4 lzop bison flex bc yad make"
@@ -1168,8 +1214,8 @@ Aborting..."
 (Required for kernel config UI).
 Pl install the package (with dnf/yum/rpm) & re-run.  Aborting..."
    }
- else # Debian / Ubuntu
-	install_deb_pkgs libncurses5-dev libssl-dev libgmp3-dev libmpc-dev
+ else # Debian / Ubuntu - probably   :-)
+	install_deb_pkgs libncurses-dev libssl-dev libgmp3-dev libmpc-dev
  fi
 
  # Terminal 'color' support?
@@ -1201,7 +1247,7 @@ testColor()
 
 ### "main" here
 
-mysudo
+mysudo  # warmup sudo
 mysudo "SEALS Build:setup logfile ${LOGFILE_COMMON}. ${MSG_GIVE_PSWD_IF_REQD}" \
   touch ${LOGFILE_COMMON}
 mysudo "" \
@@ -1324,10 +1370,16 @@ check_folder_createIA ${CONFIGS_FOLDER}
   build_kernel
 }
 [ ${BUILD_ROOTFS} -eq 1 ] && {
-  check_folder_AIA ${BB_FOLDER}
+  [[ ! -d ${BB_FOLDER} ]] && FatalError "Busybox source folder not found?"
   build_rootfs
 }
-[ ${GEN_EXT4_ROOTFS_IMAGE} -eq 1 ] && generate_rootfs_img_ext4
+[ ${GEN_EXT4_ROOTFS_IMAGE} -eq 1 ] && {
+  # First ensure that kernel modules have been generated into the rootfs
+  if [[ ${BUILD_KERNEL} -eq 0 ]] ; then
+     [[ -z $(ls -A ${ROOTFS_DIR}/lib/modules/"$(kernel_uname_r)") ]] && install_kernel_modules
+  fi
+  generate_rootfs_img_ext4
+}
 [ ${SAVE_BACKUP_IMG_CONFIGS} -eq 1 ] && save_images_configs
 [ ${RUN_QEMU} -eq 1 ] && run_qemu_SEALS
 
