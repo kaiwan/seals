@@ -43,7 +43,7 @@ set -a   # auto export all vars
 #--------GENERIC CONFIG OPTIONS------------------------------------------------------------
 ##################### UPDATE as required
 # @@@@@
-CONFIG_NAME_STR="SEALs config file for generic Aarch64 Virt system"
+CONFIG_NAME_STR="SEALs config file for generic AArch64 (ARM64) Virt system"
 COLOR=1        # terminal color support? Assume yes..
 GUI_MODE=0     # auto-detects GUI / console mode
 DEBUG=0        # set to 1 to get debug messages displayed
@@ -60,8 +60,8 @@ TOPDIR=$(pwd)
 ### Locations on Disk ###
 ### UPDATE ### on your system!
 # @@@@@
-STG=${PWD}/staging_arm64_qemuvirt  # here, a soft link to the actual staging folder
- # Recommendation: if running a cloud-sync service (like Dropbox), keep the
+STG=~/seals_staging/seals_staging_aarch64
+ # Recommendation: if running a cloud-sync service (like pCloud/Dropbox), keep the
  # staging area outside it.
 ROOTFS=${STG}/rootfs
 IMAGES_FOLDER=${STG}/images
@@ -76,7 +76,6 @@ VERBOSE_BUILD=0
 # @@@@@
 # Select the CPU arch (to build the kernel for); the value to specify is the
 # name of the dir under <kernel-src>/arch/XXX
-#ARCH=arm
 ARCH=arm64
 QEMUPKG=qemu-system-aarch64
 [[ "${ARCH}" = "arm64" ]] && QEMUPKG=qemu-system-aarch64
@@ -139,7 +138,7 @@ PATH=$PATH:${CXX_LOC}/bin
 # source of the Linux kernel into ${KERNEL_FOLDER} , ver ${KERNELVER}.
 # (Update the variables below to reflect your settings and installation).
 # @@@@@
-KERNELVER=6.1.5
+KERNELVER=6.1.25
 KERNEL_FOLDER=${STG}/linux-${KERNELVER}/
 
 # @@@@@
@@ -150,7 +149,7 @@ DTB_BLOB=
 
 # @@@@@
 # SEALs kernel command-line
-SEALS_K_CMDLINE="console=ttyAMA0 root=/dev/vda init=/sbin/init"
+SEALS_K_CMDLINE="console=ttyAMA0 root=/dev/vda rw init=/sbin/init"
 # if 512M RAM, reserve 32M for crashk, else if 256M RAM, reserve 16M
 K_CMDLINE_XTRA=""
 #K_CMDLINE_XTRA="crashkernel=32M" # works with 32M not 16M [?]
@@ -172,8 +171,10 @@ RFS_FORCE_REBUILD=0
 # Rootfs size: Recommendation: if using a kdump kernel, as a rough thumb rule,
 # make it ~ 150% of the size of RAM on the platform (so for eg. if the RAM is 512M,
 # make the rootfs size ~ >= 768 MB).
-# Else (no kdump), 512 MB is fine for the Vexpress.
-RFS_SZ_MB=512
+# Else (no kdump), 512 MB is fine for the ARM-32 Vexpress.
+# Increase RFS size for the AArch64 (esp since modules can take up close to 250 MB!)
+RFS_SZ_MB=1024
+MYPRJ=myprj
 #------------------------------------------------------------------------------
 
 #--------MISC / REMAINING Options------------------------------------------------------------

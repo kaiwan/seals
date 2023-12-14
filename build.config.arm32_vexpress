@@ -60,7 +60,7 @@ TOPDIR=$(pwd)
 ### Locations on Disk ###
 ### UPDATE ### on your system!
 # @@@@@
-STG=/big/scratchpad/SEALS_staging/SEALS_staging_vexpress
+STG=~/seals_staging/seals_staging_arm32
  # Recommendation: if running a cloud-sync service (like Dropbox), keep the
  # staging area outside it.
 ROOTFS=${STG}/rootfs
@@ -77,6 +77,7 @@ VERBOSE_BUILD=0
 # Select the CPU arch (to build the kernel for); the value to specify is the
 # name of the dir under <kernel-src>/arch/XXX
 ARCH=arm
+ARCH_PLATFORM=""
 #ARCH=arm64
 QEMUPKG=qemu-system-${ARCH}
 [[ "${ARCH}" = "arm64" ]] && QEMUPKG=qemu-system-aarch64
@@ -127,7 +128,7 @@ CXX=arm-none-linux-gnueabihf- # toolchain prefix
 # CXX_LOC is the location of the x86-to-ARM toolchain on disk
 # (used to setup the PATH and locate the ARM shared libraries within the toolchain)
 # @@@@@
-CXX_LOC=/big/scratchpad/SEALS_staging/gcc-arm-10.2-2020.11-x86_64-arm-none-linux-gnueabihf/bin
+CXX_LOC=~/tc/arm-gnu-toolchain-13.2.Rel1-x86_64-arm-none-linux-gnueabihf/bin
 # Keep your toolchain in the PATH
 PATH=$PATH:${CXX_LOC}/bin
 #------------------------------------------------------------------------------
@@ -138,7 +139,7 @@ PATH=$PATH:${CXX_LOC}/bin
 # source of the Linux kernel into ${KERNEL_FOLDER} , ver ${KERNELVER}.
 # (Update the variables below to reflect your settings and installation).
 # @@@@@
-KERNELVER=6.1.5
+KERNELVER=6.1.25
 KERNEL_FOLDER=${STG}/linux-${KERNELVER}/
 
 # @@@@@
@@ -149,7 +150,7 @@ DTB_BLOB=vexpress-v2p-ca15_a7.dtb
 
 # @@@@@
 # SEALs kernel command-line
-SEALS_K_CMDLINE="console=ttyAMA0 root=/dev/mmcblk0 init=/sbin/init"
+SEALS_K_CMDLINE="console=ttyAMA0 root=/dev/mmcblk0 rw init=/sbin/init"
 # if 512M RAM, reserve 32M for crashk, else if 256M RAM, reserve 16M
 K_CMDLINE_XTRA=""
 #K_CMDLINE_XTRA="crashkernel=32M" # works with 32M not 16M [?]
@@ -173,6 +174,7 @@ RFS_FORCE_REBUILD=0
 # make the rootfs size ~ >= 768 MB).
 # Else (no kdump), 512 MB is fine for the Vexpress.
 RFS_SZ_MB=512
+MYPRJ=myprj
 #------------------------------------------------------------------------------
 
 #--------MISC / REMAINING Options------------------------------------------------------------
