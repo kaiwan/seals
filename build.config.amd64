@@ -86,8 +86,7 @@ VERBOSE_BUILD=0
 # @@@@@
 BB_VER="1.33.2"
   # 1.29 : build failing with a linker error
-BB_FOLDER=${STG}/busybox-${BB_VER}
-BB_FOLDER_ALT=${STG}/busybox # the src seems to reside only in the dir named 'busybox' and ! 'busybox-<ver#>'  (?)
+BB_FOLDER=${STG}/busybox  #-${BB_VER}
 ROOTFS=${STG}/rootfs
 IMAGES_FOLDER=${STG}/images
 IMAGES_BKP_FOLDER=${STG}/images_bkp

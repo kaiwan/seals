@@ -60,14 +60,7 @@ if [[ ${ans} -eq 0 ]] ; then  # ans 'y'
    mkdir -p ${BB_FOLDER} # abs pathname #|| FatalError "Creating the staging dir failed (permission issues?). Aborting..."
    cd ${STG}
    runcmd "git clone --depth=1 https://github.com/mirror/busybox"
-   [[ ! -d ${BB_FOLDER}/applets ]] && {
-		# [1] Pecuiliar! busybox src gets installed under the dir 'busybox' NOT 'busybox-<ver#>'
-		# BB_FOLDER_ALT is set to $STG/busybox
-		[[ ! -d ${BB_FOLDER_ALT}/applets ]] && FatalError "Failed to install busybox source."
-   }
-   # Because of [1]:
    rmdir ${BB_FOLDER} || true
-   #ln -sf busybox ${BB_FOLDER}
    #BB_INSTALLED=1
    aecho "[+] Busybox source tree installed"
 fi
@@ -97,6 +90,8 @@ Pl change the kernel ver (in the build.config) and rerun"
    #K_PL=$(echo ${KERNELVER} | cut -d'.' -f3)
    K_URL_BASE=https://mirrors.edge.kernel.org/pub/linux/kernel
    K_URL_TARXZ=${K_URL_BASE}/v${K_MJ}.x/linux-${KERNELVER}.tar.xz
+
+# TODO / FIXME : if the tar.xz file exists, don't wget it...
 
    [[ -d ${KERNEL_FOLDER} ]] && {
      aecho "Deleting old content..."
