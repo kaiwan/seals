@@ -55,7 +55,7 @@ if [[ ${ans} -eq 0 ]] ; then  # ans 'y'
    aecho "Installing the busybox source tree"
    [[ -d ${BB_FOLDER} ]] && {
      aecho "Deleting old content..."
-		rm -rf ${BB_FOLDER} $(dirname ${BB_FOLDER})/busybox
+		rm -rf ${BB_FOLDER} "$(dirname ${BB_FOLDER})/busybox"
    }
    mkdir -p ${BB_FOLDER} # abs pathname #|| FatalError "Creating the staging dir failed (permission issues?). Aborting..."
    cd ${STG}
@@ -100,7 +100,7 @@ Pl change the kernel ver (in the build.config) and rerun"
 
    [[ -d ${KERNEL_FOLDER} ]] && {
      aecho "Deleting old content..."
-     rm -f $(basename ${K_URL_TARXZ})*
+     rm -f "$(basename ${K_URL_TARXZ})"*
      rm -rf ${KERNEL_FOLDER}
    }
 
@@ -109,7 +109,7 @@ Pl change the kernel ver (in the build.config) and rerun"
    # TODO - verify integrity
    # Uncompress
    echo "tar xf $(basename ${K_URL_TARXZ})"
-   tar xf $(basename ${K_URL_TARXZ}) || FatalError "Failed to extract kernel source."
+   tar xf "$(basename ${K_URL_TARXZ})" || FatalError "Failed to extract kernel source."
    #KSRC_INSTALLED=1
    aecho "[+] Kernel source tree linux-${KERNELVER} installed"
 fi

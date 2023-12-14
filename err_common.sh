@@ -159,13 +159,13 @@ ${msgpost_con}"
 #  $2 : string to display on signal trap [optional]
 Prompt()
 {
-  local msg="*** User Abort detected!  ***"
+  local msg="*** User Abort detected!  ***" x
 
  trap 'wecho "${msg}" ; dumpstack ; color_reset ; exit 3' HUP INT QUIT
 
  [ ${COLOR} -eq 1 ] && fg_magenta
- echo "$1
- [Press ENTER to continue, or Ctrl-C to abort now...]"
+ echo -n "$1
+ [Press ENTER to continue, or Ctrl-C to abort now...] "
 
  # Failed with: read: read error: 0: Resource temporarily unavailable
  # sol: https://stackoverflow.com/questions/54775816/read-read-error-0-resource-temporarily-unavailable
