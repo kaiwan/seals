@@ -1,0 +1,146 @@
+#!/bin/bash
+# Part of the SEALS project
+# cleanall
+# *CAREFUL*! WIPES all builds
+# Set Bash unofficial 'strict mode'; _really_ helps catch bugs
+# ref: http://redsymbol.net/articles/unofficial-bash-strict-mode/
+set -euo pipefail
+name=$(basename $0)
+
+# Fetch the SEALs env
+source ./build.config || {
+	echo "${name}: ./build.config file missing or invalid? using defaults if they exist..."
+	if [ -d ./images ]; then
+		STG=./
+	else
+		echo "No ./images/ dir, aborting..."
+		exit 1
+	fi
+}
+source ./common.sh || {
+	echo "${name}: source failed! ./common.sh missing or invalid?"
+	exit 1
+}
+
+
+clean_kernel()
+{
+  aecho "Cleaning kernel source tree now..."
+  [[ ! -d  ${KERNEL_FOLDER} ]] && {
+	echo "*** ERROR: kernel folder \"${KERNEL_FOLDER}\" not found ***"
+	return
+  }
+  cd ${KERNEL_FOLDER} || FatalError "cd to kernel folder failed"
+  local CMD="make mrproper"
+  runcmd "${CMD}"
+  cd ${TOPDIR}
+}
+
+clean_bb()
+{
+  aecho "Cleaning Busybox source tree now..."
+  [[ ! -d  ${BB_FOLDER} ]] && {
+	echo "*** ERROR: busybox folder \"${BB_FOLDER}\" not found ***"
+	return
+  }
+  cd ${BB_FOLDER} || FatalError "cd to busybox folder failed"
+  local CMD="make mrproper"
+  runcmd "${CMD}"
+  cd ${TOPDIR}
+}
+
+clean_rootfs()
+{
+  aecho "About to Wipe rootfs source tree now..."
+  [[ ! -d  ${ROOTFS_DIR} ]] && {
+	echo "*** ERROR: rootfs folder \"${ROOTFS_DIR}\" not found ***"
+	return
+  }
+  cd ${ROOTFS_DIR} || FatalError "cd to rootfs folder failed"
+  # !!! BE VERY CAREFUL !!!
+  local CMD="sudo rm -rf *"
+  get_yn_reply "PLEASE RECHECK and CONFIRM !? Completely wipe root fs staging folder (here: ${ROOTFS_DIR})" n
+  [[ $? -eq 0 ]] && {
+	echo "In $(pwd)"
+	runcmd "${CMD}"
+  }
+  cd ${TOPDIR}
+}
+
+clean_images()
+{
+  aecho "Wiping the images folder now..."
+  [[ ! -d  ${IMAGES_FOLDER} ]] && {
+	echo "*** ERROR: images folder \"${IMAGES_FOLDER}\" not found ***"
+	return
+  }
+  cd ${IMAGES_FOLDER} || FatalError "cd to images folder failed"
+  # !!! BE VERY CAREFUL !!!
+  local CMD="sudo rm -rf *"
+  [[ $? -eq 0 ]] && {
+	echo "In $(pwd)"
+	runcmd "${CMD}"
+  }
+  cd ${TOPDIR}
+}
+
+clean_images_bkp()
+{
+  aecho "Wiping the images backup folder now..."
+  [[ ! -d  ${IMAGES_BKP_FOLDER} ]] && {
+	echo "*** ERROR: images backup folder \"${IMAGES_BKP_FOLDER}\" not found ***"
+	return
+  }
+  cd ${IMAGES_BKP_FOLDER} || FatalError "cd to images backup folder failed"
+  # !!! BE VERY CAREFUL !!!
+  local CMD="sudo rm -rf *"
+  [[ $? -eq 0 ]] && {
+	echo "In $(pwd)"
+	runcmd "${CMD}"
+  }
+  cd ${TOPDIR}
+}
+
+
+
+### --- 'main'
+TOPDIR=$(pwd)
+ShowTitle "SEALS :: CLEAN ALL Script"
+
+echo "FYI, this is the current SEALS config:
+"
+./show_curr_config.sh
+Prompt "" #[Enter] to continue, ^C to abort..."
+
+echo
+get_yn_reply "COMPLETELY CLEAN kernel source tree (here: ${KERNEL_FOLDER})
+ (this will also wipe any kernel config files) 
+ [make mrproper] ?" n
+[[ $? -eq 0 ]] && clean_kernel
+
+echo
+get_yn_reply "COMPLETELY CLEAN busybox source tree (here: ${BB_FOLDER})
+ (this will also wipe any busybox config files) 
+ [make mrproper] ?" n
+[[ $? -eq 0 ]] && clean_bb
+
+echo
+[[ "${ARCH_PLATFORM}" != "x86_64" ]] && ROOTFS_DIR=${ROOTFS} || ROOTFS_DIR=${ROOTFS_PC}
+get_yn_reply "COMPLETELY WIPE root fs staging folder (here: ${ROOTFS_DIR})
+?" n
+[[ $? -eq 0 ]] && clean_rootfs
+
+echo
+get_yn_reply "COMPLETELY WIPE images folder (here: ${IMAGES_FOLDER})
+?" n
+[[ $? -eq 0 ]] && clean_images
+
+echo
+get_yn_reply "COMPLETELY WIPE images backup folder (here: ${IMAGES_BKP_FOLDER})
+?" n
+[[ $? -eq 0 ]] && clean_images_bkp
+
+# configs?
+#CONFIGS_FOLDER=${STG}/configs
+
+exit 0
