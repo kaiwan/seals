@@ -195,7 +195,6 @@ sudo make INSTALL_PATH=${ROOTFS_DIR} install || FatalError "PC: 'sudo make insta
 #------------------ b u i l d _ k e r n e l ---------------------------
 build_kernel()
 {
-
  report_progress
 cd ${KERNEL_FOLDER} || exit 1
 ShowTitle "KERNEL: Configure and Build [kernel ver ${KERNELVER}] now ..."
@@ -216,7 +215,7 @@ fi
 
 #set -x
 aecho "[Optional] Kernel Manual Configuration:
-Edit the kernel config if required, Save & Exit...
+Edit the kernel config as required, Save & Exit...
 "
 [ "${ARCH}" = "arm64" ] && aecho "TIP: On AArch64, with recent kernels, *all* platforms will be selected by default.
 (Can see them within the 'Platform selection' menu).
@@ -358,7 +357,7 @@ if [[ "${ARCH}" = "arm" ]]; then
 ::respawn:env PS1='arm \w \$ ' ${SHELL2RUN}
 @MYMARKER@
 # this one - rpi3b - should come before the 'arm64' one...
-elif [[ "${ARM_PLATFORM_STR}"="Qemu Rpi3B" ]]; then
+elif [[ "${ARM_PLATFORM_STR}" = "Qemu Rpi3B" ]]; then
    cat >> etc/inittab << @MYMARKER@
 ::respawn:env PS1='rpi3b \w \$ ' ${SHELL2RUN}
 @MYMARKER@
@@ -728,7 +727,7 @@ aecho " ... and done."
 } # end save_images_configs()
 
 #-------------- r u n _ q e m u _ S E A L S ---------------------------
-# Use the wrapper script 'run-qemu.sh'
+# Wrapper over the run-qemu.sh script
 run_qemu_SEALS()
 {
 	[[ ! -f ${TOPDIR}/run-qemu.sh ]] && {
@@ -756,8 +755,8 @@ get_yn_reply " a) Wipe Linux kernel current configuration clean? : " n
 
 get_yn_reply "2. Build Root Filesystem? : " y
 [ $? -eq 0 ] && BUILD_ROOTFS=1
-#get_yn_reply " a) Wipe Busybox current configuration clean? [y/n] : " n
-#[ $? -eq 0 ] && WIPE_BUSYBOX_CONFIG=1
+
+# First-time busybox build? then ensure config is wiped
 [ ! -d ${BB_FOLDER}/_install ] && {
   echo "First-time busybox build (?), recommend keeping wipe-config On"
 }
@@ -1036,7 +1035,6 @@ To change settings permenantly, please edit the build.config file.
    --text="<span foreground='blue'><i>${MSG_CONFIG_VOLATILE}</i></span>")
 
  BUILD_KERNEL=$(echo "${yad_dothis}" |awk -F"|" '{print $1}')
- #echo "gui :: BUILD_KERNEL = ${BUILD_KERNEL}"
  WIPE_KERNEL_CONFIG=$(echo "${yad_dothis}" |awk -F"|" '{print $2}')
  BUILD_ROOTFS=$(echo "${yad_dothis}" |awk -F"|" '{print $3}')
  WIPE_BUSYBOX_CONFIG=$(echo "${yad_dothis}" |awk -F"|" '{print $4}')
@@ -1086,7 +1084,6 @@ install_deb_pkgs()
  local pkg
  for pkg in "$@"
  do
-	#echo "pkg=${pkg}"
     set +e  # Bash strict mode side effects
     dpkg -l |grep ${pkg} >/dev/null 2>&1
 	  # don't use grep -q here: see https://stackoverflow.com/a/19120438/779269
@@ -1220,9 +1217,7 @@ mysudo "" \
   chown ${USER}:${USER} ${LOGFILE_COMMON}
 
 GUI_MODE=$(is_gui_supported) # || true
-#is_gui_supported || true
-#[ $? -eq 1 ] && GUI_MODE=1 || GUI_MODE=0
-# testing... if we pass '-c' on cmdline, force console mode
+# If we pass '-c' on cmdline, force console mode
 mode_opt=${1:--g}
 if [ $# -ge 1 -a "${mode_opt}" = "-c" ] ; then
 	GUI_MODE=0
@@ -1239,7 +1234,6 @@ unalias cp 2>/dev/null || true
 TESTMODE=0
 [ ${TESTMODE} -eq 1 ] && {
   FatalError "some issue blah ..."
-  #config_setup
   exit 0
 }
 
@@ -1256,8 +1250,9 @@ export ROOTFS_DIR=${ROOTFS}
 # !NOTE!
 # The script expects that these folders are pre-populated with 
 # appropriate content, i.e., the source code for their resp projects:
-# KERNEL_FOLDER  : kernel source tree
-# BB_FOLDER      : busybox source tree
+# STG       : staging folder (where all build work happens)
+#   KERNEL_FOLDER  : kernel source tree
+#   BB_FOLDER      : busybox source tree
 ###
 report_progress
 
