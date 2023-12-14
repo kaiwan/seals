@@ -155,7 +155,7 @@ ${msgpost_con}"
 # Interactive: prompt the user to continue by pressing ENTER or
 # abort by pressing Ctrl-C
 # Parameter(s):
-#  $1 : string to display (string)
+#  $1 : string to display (string)       [required]
 #  $2 : string to display on signal trap [optional]
 Prompt()
 {

@@ -29,17 +29,6 @@ source ./common.sh || {
 	exit 1
 }
 
-# yesorno
-#  $1 : variable to test
-#   if 0, eval to 'no'
-#   if 1, eval to 'yes'
-yesorno()
-{
- [[ $# -ne 1 ]] && return
- [[ $1 -eq 0 ]] && echo "no"
- [[ $1 -eq 1 ]] && echo "yes"
-}
-
 show_curr_build_config()
 {
 local gccver=$(${CXX}gcc --version |head -n1 |cut -f2- -d" ")

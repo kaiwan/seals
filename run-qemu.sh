@@ -58,12 +58,6 @@ echo "TIP:
 ShowTitle "
 RUN: Running ${QEMUPKG} now ..."
 
-#KIMG=${IMAGES_FOLDER}/zImage
-#[ "${ARCH}" = "arm64" ] && KIMG=${IMAGES_FOLDER}/Image.gz
-#set +u
-#[ "${ARCH_PLATFORM}" = "x86_64" ] && KIMG=${IMAGES_FOLDER}/bzImage
-#set -u
-
 # Device Tree Blob (DTB) pathname
 DTB_BLOB_IMG=""
 [[ ! -z "${DTB_BLOB}" ]] && {
@@ -99,8 +93,6 @@ elif [ "${ARCH}" = "arm64" ]; then
 
 elif [ "${ARCH_PLATFORM}" = "x86_64" ]; then
 
-#	INIT="/sbin/init" #"/bin/busybox sh"
-#	SEALS_K_CMDLINE="debug console=ttyS0 console=ttyS1 tsc=reliable no_timer_check nokaslr root=/dev/sda rw init=${INIT}"  #/bin/bash"  #/sbin/init"
 #	echo "SEALS_K_CMDLINE = ${SEALS_K_CMDLINE}"
 	RUNCMD="${QEMUPKG} -M ${CPU_MODEL} -m ${SEALS_RAM} \
 -cpu max ${SMP_EMU} \
