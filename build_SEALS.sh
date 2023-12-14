@@ -3,11 +3,12 @@
 # The SEALS Opensource Project
 # SEALS : Simple Embedded Arm Linux System
 # Author and Maintainer : Kaiwan N Billimoria
+#  https://amazon.com/author/kaiwanbillimoria
 # Project URL:
 # https://github.com/kaiwan/seals
 #----------------------------------------------------------------------
 # Important:
-# To get started, pl read:
+# To get started, please read:
 #  https://github.com/kaiwan/seals/wiki
 # (and follow the links on the right panel of the Wiki page).
 #----------------------------------------------------------------------
@@ -43,13 +44,20 @@
 # [+] installer- for busybox & kernel source trees
 # [ ] signals (like SIGINT ^C, SIGQUIT ^\, etc) not being handled within the Qemu guest ?
 #         (I think we need 'getty' running for this... ?)
-# [ ] GUI for target machine selection
-# [.] GUI for target machine selection
+# [+] GUI for target machine selection
 # [.] AMD64 / x86_64 platform
-# [ ] do the kbuild outside k src tree
-#----------------------------------------------------------------------
-# RELOOK
-# [ ] mysudo func()?
+# [ ] Kernel
+#    [ ] Do the kbuild outside k src tree (w/ the O=... );
+#        this way we can reuse the same k src tree for diff builds!
+#    [ ] x86/pc: option to perform the 'localmodconfig' build (quicker)
+# [ ] Only GUI menu for target board selection; fix for console mode (in config_symlink_setup())
+# [.] Testing/Q&A: Add test/ folder
+#   [+] shellcheck
+#   [.] for all boards: generate everything & run
+# [ ] Minor / various / misc
+#   [ ] unattended run (non-interactive)
+#   [ ] use sudo, not via wrapper mysudo
+#
 #----------------------------------------------------------------------
 
 # Turn on Bash 'strict mode'!
