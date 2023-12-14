@@ -56,25 +56,22 @@ TOPDIR=$(pwd)
 ### Locations on Disk ###
 ### UPDATE ### on your system!
 # @@@@@
-STG=~/seals_staging/seals_staging_amd64    #  big/scratchpad/SEALS_staging/stg_x86_64
+STG=~/seals_staging/seals_staging_pc
  # Recommendation: if running a cloud-sync service (like pCloud/Dropbox),
  # keep the staging area outside it.
 
 # Okay, so under the ${STG} folder, we expect you have extracted the
 # Toolchain: the toolchain to use; expect that it is installed and the PATH is setup..
-# TODO - if arch is x86 ...
 # @@@@@
-USE_NATIVE_TOOLCHAIN=1   # set to 1 for x86[_64] / AMD64, else 0
-#CXX=one-linux-gnueabihf-      # toolchain prefix
+# For the PC, we don't need a special toolchain; the native one on the build host is fine!
 CXX=""
 # CXX_LOC is the location of the x86-to-ARM toolchain on disk
 # (used to setup the PATH and locate the ARM shared libraries within the toolchain)
 # @@@@@
-#CXX_LOC=/opt/gcc-arm-10.3-2021.07-x86_64-arm-none-linux-gnueabihf
 CXX_LOC=""
 
 # Toolchain in the PATH
-PATH=$PATH:${CXX_LOC}/bin
+#PATH=$PATH:${CXX_LOC}/bin
 
 # Verbose build? (if 1, we run as 'make V=1 ...')
 VERBOSE_BUILD=0
@@ -86,8 +83,10 @@ VERBOSE_BUILD=0
 # @@@@@
 BB_VER="1.33.2"
   # 1.29 : build failing with a linker error
-BB_FOLDER=${STG}/busybox  #-${BB_VER}
+BB_FOLDER=${STG}/busybox
+SHELL2RUN=/bin/sh  #/bin/bash
 ROOTFS=${STG}/rootfs
+ROOTFS_PC=${STG}/rootfs_pc
 IMAGES_FOLDER=${STG}/images
 IMAGES_BKP_FOLDER=${STG}/images_bkp
 CONFIGS_FOLDER=${STG}/configs
@@ -126,19 +125,24 @@ ARCH_PLATFORM=x86_64
 #ARCH_PLATFORM_OPT=vexpress-a9
 
 # For this platform - AMD64 (or x86_64) - many options are simply NULL
-ARCH="x86"  #x86_64"
+ARCH="x86"
 CPU_MODEL="pc"   # -M option to Qemu ; becomes 'Standard PC (i440FX + PIIX, 1996) (alias of pc-i440fx-7.2)'
 ARM_PLATFORM=""
 ARM_PLATFORM_STR=""
 DTB_BLOB=""
+DTB_BLOB_PATHNAME=""
 
 ### UPDATE ### on your system!
 # Okay, so under the ${STG} folder (or other), we expect you have extracted the 
 # source of the Linux kernel into ${KERNEL_FOLDER} , ver ${KERNELVER}.
 # (Update the variables below to reflect your settings and installation).
 # @@@@@
-KERNELVER=6.1.25
+KERNELVER=6.6.6   #6.1.25
 KERNEL_FOLDER=${STG}/linux-${KERNELVER}/
+
+# @@@@@
+# Set to 1 to build the initramfs image and use it at boot
+USE_INITRAMFS=0
 
 # @@@@@
 # DTB: specify the Device Tree Blob <filename>.dtb
@@ -149,7 +153,9 @@ KERNEL_FOLDER=${STG}/linux-${KERNELVER}/
 # @@@@@
 # SEALs (virtual) "Hardware"
 SEALS_RAM=1024  # MB
-## RootFS
+
+#####
+# ROOTFS
 # !Careful! Set to 1 to force a rebuild of the rootfs; implies OVERWRITING any
 # existing rootfs
 RFS_FORCE_REBUILD=0
@@ -159,14 +165,14 @@ RFS_FORCE_REBUILD=0
 # Else (no kdump), 512 MB is fine for the Vexpress.
 RFS_SZ_MB=512
 
-# PC - AMD64 / x86_64 - SPECIAL CASE:
-# Download, extract and build the rootfs from a base image
-PC_ROOTFS_BASEIMG_URL=https://cdimage.ubuntu.com/ubuntu-base/releases/23.04/release/ubuntu-base-23.04-base-amd64.tar.gz
+MYPRJ=myprj
 
 #####
 # @@@@@
 # SEALs kernel command-line
-SEALS_K_CMDLINE="console=ttyS0 root=/dev/sda init=/sbin/init"
+SEALS_K_CMDLINE="console=ttyS0 console=ttyS1 tsc=reliable no_timer_check nokaslr root=/dev/sda rw init=/sbin/init"  #/bin/bash"  #/sbin/init"
+#SEALS_K_CMDLINE="debug console=ttyS0 console=ttyS1 tsc=reliable no_timer_check nokaslr root=/dev/sda rw init=${INIT}"  #/bin/bash"  #/sbin/init"
+
 # if 512M RAM, reserve 32M for crashk, else if 256M RAM, reserve 16M
 #K_CMDLINE_XTRA="crashkernel=32M" # works with 32M not 16M [?]
 #K_CMDLINE_XTRA="initcall_debug ignore_loglevel debug"
