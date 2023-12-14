@@ -1,0 +1,1 @@
+../show_curr_config.sh
