@@ -42,6 +42,31 @@ ${SEP}"
 eval "$@"
 }
 
+# yesorno
+#  $1 : variable to test
+#   if 0, say 'no'
+#   if 1, say 'yes'
+yesorno()
+{
+ [[ $# -ne 1 ]] && return
+ [[ $1 -eq 0 ]] && echo "no"
+ [[ $1 -eq 1 ]] && echo "yes"
+}
+
+# yesorno_color
+#  $1 : variable to test
+#   if 0, say 'no' in red color
+#   if 1, say 'yes' in green color
+yesorno_color()
+{
+ [[ $# -ne 1 ]] && return
+ [[ ${1} -eq 1 ]] && {
+	fg_green ; echo "Yes" ; color_reset
+  } || {
+	fg_red ; echo " No" ; color_reset
+  }
+}
+
 is_gui_supported()
 {
  local GUI_MODE=0
