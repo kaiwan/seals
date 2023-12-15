@@ -111,7 +111,7 @@ Here's an example showing some selections made:
 
 ![main menu sample selection](tutorial_pics/menu-selected4.png)
 
-FAQ> What do the 'Wipe kernel / busybox config' options do?<br>
+FAQ> What do the `Wipe kernel / busybox config (Careful!)` options do?<br>
 Ans> Essentially, they have the underlying kbuild menu system to run it's `make ARCH=<whatever> defconfig` thus setting all config values to their default. So, it's typically useful to do this the first time you're performing the build. Once you've saved your won config, you can disable these toggles, thereby keeping your config (also, FYI, the config files, among others, can be saved / backed up (the second-to-last option).<br>
 If running in console (non-gui, on a terminal window) mode, it still works and will interactively ask you to select what you want it to do.
 
@@ -124,7 +124,7 @@ You'll have to install it on your build host (which can be a Linux VM, np). [The
 # Issues, Contribution
 This project, like most FOSS ones, is ever-evolving... I urge you to not hesitate, to write in your comments, suggestions or anything.
 Please do raise issues or bugs in the [Issues section of the GitHub repo](https://github.com/kaiwan/seals/issues).
-Any contributions would be awesome ! I solicit your participation and help to make this project better!
+Any contributions would be awesome (have a look at the current `Issues`)! I solicit your participation and help to make this project better!
 
 [0]: https://github.com/kaiwan/seals/wiki 
 [1]: https://github.com/kaiwan/seals/wiki/SEALs-HOWTO "SEALS HOWTO Page"
