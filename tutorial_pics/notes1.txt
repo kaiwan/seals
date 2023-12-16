@@ -1,0 +1,12 @@
+[Sat_16Dec2023_13:05:08.512144803] Doing: time make V=0 -j12 ARCH=arm CROSS_COMPILE=arm-none-linux-gnueabihf- all
+  SYNC    include/config/auto.conf.cmd
+*
+* Restart config...
+*
+*
+* Kernel Features
+*
+Symmetric Multi-Processing (SMP) [Y/n/?] y
+  Allow booting SMP kernel on uniprocessor systems (SMP_ON_UP) [Y/n/?] y
+
+
