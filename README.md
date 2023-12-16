@@ -42,6 +42,7 @@ git clone https://github.com/kaiwan/seals.git
 ```
 - Run the `run_and_log` script.
 <hr>
+
 # A very brief tutorial on getting going with SEALS
 
 I assume you're running in GUI mode (via Xorg or Xwayland).
