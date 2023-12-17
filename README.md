@@ -51,13 +51,6 @@ I assume you're running in GUI mode (via Xorg or Xwayland).
 
  *Step 2.* If you immediately run the `run_and_log` script, it typically results in an error, saying that the "staging, busybox and kernel source folders" aren't present.
 This is typically the case when you start out.
-
-To fix this, install these folders and their source trees by running the `install.sh` script; here's a screenshot:
-
-![install script](tutorial_pics/install.png)
-
-(The script detects and deletes old source if required).
-When it's done, you should have the Linux busybox project and the Linux kernel source tree installed.
 <br>
 
 ***FAQ: Where are the staging and other folders designated?*** <br>
@@ -79,6 +72,14 @@ Here's a snippet from the `build.config.arm32_vexpress` file showing how these f
 
 You're free to edit it... typically, just set the `STG` variable  to point to your staging location on your build host's disk, the rest follow under it... (In a similar fashion, the board config files use simple shell variables to designate various board attributes, the root fs and kernel stuff, and more; you must browse through them.
 
+So, back to the setup. To fix possible errors the first time you run SEALS, install the busybox and kernel folders and their source trees **by running the `install.sh` script**; here's a screenshot:
+
+![install script](tutorial_pics/install.png)
+
+(The script detects and deletes old source if required).
+When it's done, you should have the Linux busybox project and the Linux kernel source tree installed.
+<br>
+
 You can change the target board of course... by either manually updating the soft link, or, better, via our GUI! These are the 'prebuilt' target board config files we provide:<br>
 
     $ ls build.config*
@@ -86,10 +87,10 @@ You can change the target board of course... by either manually updating the sof
 
 The one that the `build.config` soft link points to is the current one, the one that will get built and run (via Qemu). You can even define your own board config files using these as a template! (of course, introducing new variables will require your editing the `build_SEALS.sh` script as well). When you do do this and it works, consider contributing it!
 
-
+<br>
 
  *Step 3.* Run the `run_and_log` script. 
-Now, if you do NOT have the staging, busybox and kernel source folders installed (Step 2), you'll get the following (or similar) error message (notice how it's both via the GUI and on the console (terminal window)):
+Now, *if you do NOT* have the staging, busybox and kernel source folders installed (*Step 2*), you'll get the following (or similar) error message (notice how it's both via the GUI and on the console (terminal window)):
 
 ![first time error](tutorial_pics/first-time-error.png)
 
@@ -101,7 +102,7 @@ Now, if you do NOT have the staging, busybox and kernel source folders installed
 
 ).
 
-Assuming these folders and the sources are in place, execution continues...
+Assuming these folders and the sources are in place (typically achived by running the `install.sh` script), all will be well and execution continues...
 The `build_SEALS.sh` script is the primary script (invoked by the `run_and_log` script) and the first thing it does is show you the currently selected target platform, and allows you to change it via this gui:
 
 ![select target board](tutorial_pics/select_platform.png)
