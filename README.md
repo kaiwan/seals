@@ -29,13 +29,14 @@ From v0.3, SEALS also supports the x86_64 / amd64 PC platform (so it isn't stric
 
 # Getting Started
 Please, FIRST READ<br>
-    - the Tutorial below. <br>
+    - [the SEALS Getting Going! Tutorial](https://github.com/kaiwan/seals#a-very-brief-tutorial-on-getting-going-with-seals) <br>
+
 Then, in the Wiki section, the:<br>
     - [SEAL's Wiki page - intro to SEALS][0], and <br>
     - [SEAL's HOWTO page][1] <br>
-to better understand how to build and use this project.**
+to better understand how to build and use this project.
 
-SEALS can prove very useful for developers / testers to prototype, try things out in a custom ARM/Linux or emulated x86 PC simple guest system.
+*SEALS can prove very useful for developers / testers to prototype, try things out in a custom ARM/\*Linux or emulated x86 PC simple guest system.*
 <hr>
 
 ## Install
