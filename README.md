@@ -15,31 +15,29 @@ The SEALS project consists of scripts that will enable you to build a simple
 yet complete skeletal ARM\*/Linux system, emulated using the powerful [QEMU][2]
 emulator. The SEALS scripts automate the following tasks:
 
-\*ARM can now be AArch32 or AArch64 platforms. <br>
-From v0.3, SEALS also supports the x86_64 / amd64 PC platform (so it isn't strictly only 'ARM' now!)
-
 - Using a simple ASCII text config file to precisely customize your environment
 - Using a cross-compiler
 - ARM\* / Linux kernel config and build
 - Creating a skeletal root filesystem from scratch
 - Integrating the components together, using QEMU (qemu-system-arm,
   particularly) to run the same in an emulated environment.
+
+\*ARM can now be AArch32 or AArch64 platforms. <br>
+From v0.3, SEALS also supports the x86_64 / amd64 PC platform (so it isn't strictly only 'ARM' now!)
 <hr>
 # Getting Started
-**Please FIRST READ
+Please, FIRST READ<br>
     - the Tutorial below. <br>
 Then, in the Wiki section, the:<br>
     - [SEAL's Wiki page - intro to SEALS][0], and <br>
     - [SEAL's HOWTO page][1] <br>
- to better understand how to build and use this project.**
+to better understand how to build and use this project.**
 
-Very useful for developers / testers to try things out in a custom ARM/Linux or emulated x86 PC simple guest system.
+SEALS can prove very useful for developers / testers to prototype, try things out in a custom ARM/Linux or emulated x86 PC simple guest system.
 <hr>
 ## Install
-- Clone this repository
-```shell
-git clone https://github.com/kaiwan/seals.git
-```
+- Clone this repository:<br>
+`git clone https://github.com/kaiwan/seals.git`
 - Run the `run_and_log` script.
 <hr>
 
