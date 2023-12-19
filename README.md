@@ -3,6 +3,7 @@ SEALS
 SEALS is an abbreviation for _Simple Embedded ARM Linux System_.
 It uses the powerful and FOSS *Qemu* (quick emulator!) to emulate a few target boards, helping us learn how to build a small (skeletal, really) embedded Linux system pretty muc from scratch!
 <hr>
+
 **NEW! (Oct 2023) : SEALS now supports:**<br>
 - A simple GUI at startup to select the target machine to deploy<br>
 - New machines (platforms)!<br>
@@ -25,6 +26,7 @@ emulator. The SEALS scripts automate the following tasks:
 \*ARM can now be AArch32 or AArch64 platforms. <br>
 From v0.3, SEALS also supports the x86_64 / amd64 PC platform (so it isn't strictly only 'ARM' now!)
 <hr>
+
 # Getting Started
 Please, FIRST READ<br>
     - the Tutorial below. <br>
@@ -35,6 +37,7 @@ to better understand how to build and use this project.**
 
 SEALS can prove very useful for developers / testers to prototype, try things out in a custom ARM/Linux or emulated x86 PC simple guest system.
 <hr>
+
 ## Install
 - Clone this repository:<br>
 `git clone https://github.com/kaiwan/seals.git`
@@ -145,7 +148,8 @@ Ans> The (cross) toolchain is a required component when using any of the ARM-bas
 You'll have to install it on your build host (which can be a Linux VM, np). [The detailed documentation to do so is in the Wiki section](https://github.com/kaiwan/seals/wiki/SEALs-HOWTO).
 
 <hr>
-**Example screenshots**
+
+#Example screenshots
 All are wrt the default build config platform, the ARM-32 Versatile Express:
 (FYI, all carried out in an x86_64 Ubuntu 23.04 VirtualBox guest).
 
