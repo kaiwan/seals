@@ -4,7 +4,7 @@ SEALS is an abbreviation for _Simple Embedded ARM Linux System_.
 It uses the powerful and FOSS *Qemu* (quick emulator!) to emulate a few target boards, helping us learn how to build a small (skeletal, really) embedded Linux system pretty muc from scratch!
 <hr>
 
-**NEW! (Oct 2023) : SEALS now supports:**<br>
+**NEW! (Oct / Dec 2023) : SEALS now supports:**<br>
 - A simple GUI at startup to select the target machine to deploy<br>
 - New machines (platforms)!<br>
     - the good 'ol PC (x86_64 or amd64)     [Dec 2023]<br>
@@ -150,7 +150,8 @@ You'll have to install it on your build host (which can be a Linux VM, np). [The
 
 <hr>
 
-#Example screenshots
+
+# Example screenshots
 All are wrt the default build config platform, the ARM-32 Versatile Express:
 (FYI, all carried out in an x86_64 Ubuntu 23.04 VirtualBox guest).
 
