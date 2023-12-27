@@ -196,10 +196,12 @@ All are wrt the default build config platform, the ARM-32 Versatile Express:
  
 ![gen ext4 image sample](tutorial_pics/gen_rootfs.png)
 
-** Running it!** 
 
-  * Some sample output just prior to running the AArch32 Vexpress target board under Qemu (notice the complete Qemu command line!):
- 
+# Running it!
+
+  * Some sample output just prior to running the AArch32 Vexpress target board under Qemu  (via it's GUI menu; notice the complete Qemu command line!):
+(You can also run it via the `run-qemu.sh 0` command).
+
 ![pre run sample](tutorial_pics/run1.png)
 
   * Some sample output when running the AArch32 Vexpress target board under Qemu (notice the kernel startup, all the kernel printk's being emitted as it boots...) :
