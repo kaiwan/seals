@@ -45,7 +45,7 @@
 # [ ] signals (like SIGINT ^C, SIGQUIT ^\, etc) not being handled within the Qemu guest ?
 #         (I think we need 'getty' running for this... ?)
 # [+] GUI for target machine selection
-# [.] AMD64 / x86_64 platform
+# [+] PC : AMD64 / x86_64 platform
 # [ ] Kernel
 #    [ ] Do the kbuild outside k src tree (w/ the O=... );
 #        this way we can reuse the same k src tree for diff builds!
@@ -53,7 +53,7 @@
 # [ ] Only GUI menu for target board selection; fix for console mode (in config_symlink_setup())
 # [.] Testing/Q&A: Add test/ folder
 #   [+] shellcheck
-#   [.] for all boards: generate everything & run
+#   [+] for all boards: generate everything & run
 # [ ] Minor / various / misc
 #   [ ] unattended run (non-interactive)
 #   [ ] use sudo, not via wrapper mysudo
@@ -824,7 +824,7 @@ config_symlink_setup()
 			${arm32_vexpress_state} "ARM-32 Versatile Express (vexpress-cortex a15)" arm32_vexpress   \
 			${arm64_qemuvirt_state} "ARM-64 Qemu Virt" arm64_qemuvirt   \
 			${arm64_rpi3b_cm3_state} "ARM-64 Raspberry Pi 3B (CM3)" arm64_rpi3b_cm3   \
-			${amd64_state} "x86_64 (or AMD64) Qemu Virt" amd64   \
+			${amd64_state} "PC (x86_64 or AMD64) Qemu Standard PC (i440FX + PIIX, 1996)" amd64   \
 			--print-column=2 --print-column 3 \
 			--buttons-layout=center --button="Select":2  --button=gtk-cancel:1)
 
