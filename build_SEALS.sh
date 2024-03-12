@@ -196,7 +196,7 @@ sudo make INSTALL_PATH=${ROOTFS_DIR} install || FatalError "PC: 'sudo make insta
 build_kernel()
 {
  report_progress
-cd ${KERNEL_FOLDER} || exit 1
+cd ${KERNEL_FOLDER} || FatalError "Couldn't cd to kernel source tree dir \"${KERNEL_FOLDER}\""
 ShowTitle "KERNEL: Configure and Build [kernel ver ${KERNELVER}] now ..."
 
 if [ -z "${ARM_PLATFORM}" ] ; then  # arm64 and x86_64
@@ -236,6 +236,10 @@ fi
 
 # Tip- On many Ubuntu/Deb systems, we need to turn Off the
 # SYSTEM_REVOCATION_KEYS config option, else the build fails
+echo "[+] scripts/config --disable SYSTEM_REVOCATION_LISTS"
+scripts/config --disable SYSTEM_REVOCATION_LISTS || echo "Warning! Disabling SYSTEM_REVOCATION_LISTS failed"
+echo "[+] scripts/config --disable SYSTEM_REVOCATION_LIST"
+scripts/config --disable SYSTEM_REVOCATION_LIST || echo "Warning! Disabling SYSTEM_REVOCATION_LIST failed"
 echo "[+] scripts/config --disable SYSTEM_REVOCATION_KEYS"
 scripts/config --disable SYSTEM_REVOCATION_KEYS || echo "Warning! Disabling SYSTEM_REVOCATION_KEYS failed"
 echo "[+] scripts/config --disable WERROR" # turn off 'treat warnings as errors'
@@ -896,7 +900,7 @@ ARM Platform : ${ARM_PLATFORM_STR}
 Platform RAM : ${SEALS_RAM} MB
 
 RootFS force rebuild : ${RFS_FORCE_REBUILD}
-RootFS size  : ${RFS_SZ_MB} MB [note: new size applied only on 'RootFS force rebuild']
+RootFS size  : ${RFS_SZ_MB} MB [note: new size applied only on 'RootFS force rebuild' being True (1)]
 
 Linux kernel to use : ${KERNELVER}
 Linux kernel codebase location : ${KERNEL_FOLDER}
@@ -938,7 +942,7 @@ ARM Platform : ${ARM_PLATFORM_STR}
 Platform RAM : ${SEALS_RAM} MB
 <span foreground='blue'>\
 RootFS force rebuild : ${RFS_FORCE_REBUILD}
-RootFS size  : ${RFS_SZ_MB} MB     [note: new size applied only on 'RootFS force rebuild']
+RootFS size  : ${RFS_SZ_MB} MB     [note: new size applied only on 'RootFS force rebuild' being True (1)]
 </span>\
 Linux kernel to use : ${KERNELVER}
 Linux kernel codebase location : ${KERNEL_FOLDER}
@@ -1266,7 +1270,7 @@ IMPORTANT ::
 
 FYI, we expect a project 'staging area' is setup and pre-populated with appropriate content,
 i.e., the source code for their resp projects, as follows:
-STG              : the project staging folder
+ STG              : the project staging folder
      KERNEL_FOLDER  : kernel source tree
      BB_FOLDER      : busybox source tree
 
