@@ -176,7 +176,7 @@ setup_initramfs()
 local INITRD=${ROOTFS_DIR}/initrd.img
 echo "[+] PC (x86-64/AMD64): Install initramfs (initrd)"
 [[ -z "${KMODDIR}" ]] && set_kernelimg_var
-which mkinitramfs >/dev/null 2>&1 && {
+hash mkinitramfs >/dev/null 2>&1 && {
 	rm -f ${INITRD}
 	echo "Generating (Ubuntu-flavor) initramfs image..."
 	cd ${KERNEL_FOLDER} || FatalError "cd to kernel dir failed"
@@ -1112,7 +1112,7 @@ check_installed_pkg()
 #set -x
  # Toolchain
  set +e
- which ${CXX}gcc >/dev/null 2>&1
+ hash ${CXX}gcc >/dev/null 2>&1
  res=$?
  set -e
  [[ ${res} -ne 0 ]] && {
@@ -1150,7 +1150,7 @@ Thanks.
    fi
 fi
 
- which ${CXX}gcc > /dev/null || {
+ hash ${CXX}gcc > /dev/null || {
    FatalError "Cross toolchain does not seem to be valid! PATH issue?
 
 Tip 1: If new to SEALS, we urge you, read the documentation here and then proceed:
@@ -1185,7 +1185,7 @@ Pl install the package (with dnf/yum/rpm) & re-run.  Aborting..."
  fi
 
  # Terminal 'color' support?
- which tput > /dev/null || {
+ hash tput > /dev/null || {
    COLOR=0
    wecho "tput does not seem to be installed, no color support..."
  } && {
@@ -1230,7 +1230,7 @@ echo "[+] ${name}: initializing, please wait ..."
 #testColor
 #exit 0
 
-which tput >/dev/null 2>&1 && color_reset
+hash tput >/dev/null 2>&1 && color_reset
 unalias cp 2>/dev/null || true
 
 TESTMODE=0

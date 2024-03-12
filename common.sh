@@ -80,7 +80,7 @@ is_gui_supported()
 # If we're not in a GUI (X Windows) display, abort (reqd for yad)
 gui_init()
 {
- which xdpyinfo > /dev/null 2>&1 || {
+ hash xdpyinfo > /dev/null 2>&1 || {
    FatalError "xdpyinfo (package x11-utils) does not seem to be installed. Aborting...
  [Tip: try running as a regular user, not root]"
  }
@@ -88,7 +88,7 @@ gui_init()
    FatalError "Sorry, we're not running in a GUI display environment. Aborting...
  [Tip: try running as a regular user, not root]"
  }
- which xrandr > /dev/null 2>&1 || {
+ hash xrandr > /dev/null 2>&1 || {
    FatalError "xrandr (package x11-server-utils) does not seem to be installed. Aborting..."
  }
 
@@ -342,7 +342,7 @@ lastchar=$(echo "${prcs_name:${len}:1}")
 }
 
 #---------- c h e c k _ d e p s ---------------------------------------
-# Checks passed packages - are they installed? (just using 'which';
+# Checks passed packages - are they installed? (just using 'hash';
 # using the pkg management utils (apt/dnf/etc) would be too time consuming)
 # Parameters:
 #  $1 : 1 => fatal error, exit
@@ -352,19 +352,20 @@ lastchar=$(echo "${prcs_name:${len}:1}")
 check_deps()
 {
 local util needinstall=0
-#report_progress
-
 local severity=$1
 shift
 
-for util in "$@"
+for util in $@
 do
- which ${util} > /dev/null 2>&1 || {
+ set +e
+ hash ${util} > /dev/null 2>&1
+ [[ $? -ne 0 ]] && {
    [ ${needinstall} -eq 0 ] && wecho "The following utilit[y|ies] or package(s) do NOT seem to be installed:"
    iecho "[!]  ${util}"
    needinstall=1
    continue
  }
+ set -e
 done
 [ ${needinstall} -eq 1 ] && {
    [ ${severity} -eq 1 ] && {
