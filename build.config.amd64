@@ -57,6 +57,7 @@ TOPDIR=$(pwd)
 ### UPDATE ### on your system!
 # @@@@@
 STG=~/seals_staging/seals_staging_pc
+STG=~/SEALS_staging/stg_x86_64/
  # Recommendation: if running a cloud-sync service (like pCloud/Dropbox),
  # keep the staging area outside it.
 
@@ -137,7 +138,7 @@ DTB_BLOB_PATHNAME=""
 # source of the Linux kernel into ${KERNEL_FOLDER} , ver ${KERNELVER}.
 # (Update the variables below to reflect your settings and installation).
 # @@@@@
-KERNELVER=6.6.6   #6.1.25
+KERNELVER=6.1.25
 KERNEL_FOLDER=${STG}/linux-${KERNELVER}/
 
 # @@@@@
@@ -163,7 +164,7 @@ RFS_FORCE_REBUILD=0
 # make it ~ 150% of the size of RAM on the platform (so for eg. if the RAM is 512M,
 # make the rootfs size ~ >= 768 MB).
 # Else (no kdump), 512 MB is fine for the Vexpress.
-RFS_SZ_MB=512
+RFS_SZ_MB=1024  #512
 
 MYPRJ=myprj
 
