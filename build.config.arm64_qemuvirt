@@ -77,8 +77,7 @@ VERBOSE_BUILD=0
 # Select the CPU arch (to build the kernel for); the value to specify is the
 # name of the dir under <kernel-src>/arch/XXX
 ARCH=arm64
-QEMUPKG=qemu-system-aarch64
-[[ "${ARCH}" = "arm64" ]] && QEMUPKG=qemu-system-aarch64
+QEMUNAME=qemu-system-aarch64
 
 CPU_MODEL=cortex-a57
 SEALS_RAM=512  # MB

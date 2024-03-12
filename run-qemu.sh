@@ -56,7 +56,7 @@ echo "TIP:
 *** If another hypervisor (like VirtualBox) is running, Qemu run with KVM support won't work properly ***
 "
 ShowTitle "
-RUN: Running ${QEMUPKG} now ..."
+RUN: Running ${QEMUNAME} now ..."
 
 # Device Tree Blob (DTB) pathname
 DTB_BLOB_IMG=""
@@ -72,7 +72,7 @@ DTB_BLOB_IMG=""
 
 RUNCMD=""
 if [ "${ARCH}" = "arm" ]; then
-   RUNCMD="${QEMUPKG} -m ${SEALS_RAM} -M ${ARM_PLATFORM_OPT} \
+   RUNCMD="${QEMUNAME} -m ${SEALS_RAM} -M ${ARM_PLATFORM_OPT} \
 -cpu max ${SMP_EMU} -cpu ${CPU_MODEL} \
 -kernel ${IMAGES_FOLDER}/zImage \
 -drive file=${IMAGES_FOLDER}/rfs.img,if=sd,format=raw \
@@ -81,7 +81,7 @@ if [ "${ARCH}" = "arm" ]; then
 
 elif [ "${ARCH}" = "arm64" ]; then
 
-	RUNCMD="${QEMUPKG} -m ${SEALS_RAM} -M ${ARM_PLATFORM_OPT} \
+	RUNCMD="${QEMUNAME} -m ${SEALS_RAM} -M ${ARM_PLATFORM_OPT} \
 -cpu max ${SMP_EMU} -cpu ${CPU_MODEL} \
 -kernel ${IMAGES_FOLDER}/Image.gz \
 -drive file=${IMAGES_FOLDER}/rfs.img,format=raw,id=drive0 \
@@ -94,7 +94,7 @@ elif [ "${ARCH}" = "arm64" ]; then
 elif [ "${ARCH_PLATFORM}" = "x86_64" ]; then
 
 #	echo "SEALS_K_CMDLINE = ${SEALS_K_CMDLINE}"
-	RUNCMD="${QEMUPKG} -M ${CPU_MODEL} -m ${SEALS_RAM} \
+	RUNCMD="${QEMUNAME} -M ${CPU_MODEL} -m ${SEALS_RAM} \
 -cpu max ${SMP_EMU} \
 -kernel ${IMAGES_FOLDER}/bzImage \
 -drive file=${IMAGES_FOLDER}/rfs.img,format=raw,id=drive0 \
@@ -111,7 +111,7 @@ fi
 # Run it!
 if [ ${KGDB_MODE} -eq 1 ]; then
 	# KGDB/QEMU cmdline
-	ShowTitle "Running ${QEMUPKG} in KGDB mode now ..."
+	ShowTitle "Running ${QEMUNAME} in KGDB mode now ..."
 	RUNCMD="${RUNCMD} -s -S"
 	# qemu-system-xxx(1) :
 	#  -S  Do not start CPU at startup (you must type 'c' in the monitor).

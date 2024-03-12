@@ -199,10 +199,7 @@ WIPE_KERNEL_CONFIG=0
 # @@@@@
 WIPE_BUSYBOX_CONFIG=0
 
-
-###
-# Config vars for when we run QEMU:
-QEMUPKG=qemu-system-${ARCH_PLATFORM}
+QEMUNAME=qemu-system-x86_64
 KGDB_MODE=0  # make '1' to have qemu run with the '-s -S' switch (waits for client GDB to 'connect')
 SMP_EMU_MODE=1  # make '1' to have qemu run w/ 2 emulated cores 
 

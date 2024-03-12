@@ -78,7 +78,7 @@ VERBOSE_BUILD=0
 # name of the dir under <kernel-src>/arch/XXX
 ARCH=arm64
 ARCH_PLATFORM=""
-QEMUPKG=qemu-system-aarch64
+QEMUNAME=qemu-system-aarch64
 
 CPU_MODEL=cortex-a53
 SEALS_RAM=1G

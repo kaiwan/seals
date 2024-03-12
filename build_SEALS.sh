@@ -1160,9 +1160,7 @@ env vars are not setup. So run from a root shell where the PATH is correctly set
 Aborting..."
  }
 
- [ "${ARCH}" = "arm" ] && QEMUPKG=qemu-system-arm
- [ "${ARCH}" = "arm64" ] && QEMUPKG=qemu-system-aarch64
- check_deps_fatal "${QEMUPKG} mkfs.ext4 lzop bison flex bc yad make"
+ check_deps_fatal "${QEMUNAME} mkfs.ext4 lzop bison flex bc yad make"
   # lzop(1) required for the IMX6 kernel build
  [ ${GUI_MODE} -eq 1 ] && check_deps_fatal "yad xrandr"
 

@@ -78,9 +78,7 @@ VERBOSE_BUILD=0
 # name of the dir under <kernel-src>/arch/XXX
 ARCH=arm
 ARCH_PLATFORM=""
-#ARCH=arm64
-QEMUPKG=qemu-system-${ARCH}
-[[ "${ARCH}" = "arm64" ]] && QEMUPKG=qemu-system-aarch64
+QEMUNAME=qemu-system-arm
 
 CPU_MODEL=cortex-a15
 SEALS_RAM=512  # MB
