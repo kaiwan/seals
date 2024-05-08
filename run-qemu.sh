@@ -40,7 +40,7 @@ fi
 KGDB_MODE=0
 [ $# -ne 1 ] && {
   echo "Usage: ${name} boot-option
- boot-option == 0 : normal console boot
+ boot-option == 0 : normal console boot; use this unless you want a KGDB session
  boot-option == 1 : console boot in KGDB mode (-s -S, waits for GDB client to connect)
                     Expect you've configured a kernel for KGDB and have the vmlinux handy;
 If booting in KGDB mode, the emulator will wait (via the embedded GDB server within the kernel!);
