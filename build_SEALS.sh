@@ -299,6 +299,10 @@ if [ ${WIPE_BUSYBOX_CONFIG} -eq 1 ]; then
 	ShowTitle "BusyBox default config:"
 	make V=${VERBOSE_BUILD} ARCH=${ARCH} CROSS_COMPILE=${CXX} defconfig
 fi
+[[ ${TINY_BUSYBOX_CONFIG} -eq 1 ]] && {
+	ShowTitle "BusyBox 'tiny' config - begin with all options set to No:"
+	make V=${VERBOSE_BUILD} ARCH=${ARCH} CROSS_COMPILE=${CXX} allnoconfig
+}
 
 aecho "Edit the BusyBox config as required, Save & Exit..."
 Prompt " " ${MSG_EXITING}
@@ -766,6 +770,8 @@ get_yn_reply "2. Build Root Filesystem? : " y
 }
 get_yn_reply " a) Wipe Busybox current configuration clean? : " n
 [ $? -eq 0 ] && WIPE_BUSYBOX_CONFIG=1 || WIPE_BUSYBOX_CONFIG=0
+get_yn_reply " a) Set all Busybox config options to Off/No by default? : " n
+[ $? -eq 0 ] && TINY_BUSYBOX_CONFIG=1 || TINY_BUSYBOX_CONFIG=0
 
 get_yn_reply " b) Generate Root Filesystem ext4 image? [y/n] : " y
 [ $? -eq 0 ] && GEN_EXT4_ROOTFS_IMAGE=1
@@ -790,6 +796,8 @@ display_current_config()
 
   echo -n "  Wipe busybox config clean            :: "
   yesorno_color ${WIPE_BUSYBOX_CONFIG}
+  echo -n "  Tiny busybox config                  :: "
+  yesorno_color ${TINY_BUSYBOX_CONFIG}
 
   echo -n " Generate rootfs ext4 image            :: "
   yesorno_color ${GEN_EXT4_ROOTFS_IMAGE}
@@ -1005,6 +1013,9 @@ if [ ${GUI_MODE} -eq 1 ] ; then
  local disp_bbwipe="FALSE"
  [ ${WIPE_BUSYBOX_CONFIG} -eq 1 ] && disp_bbwipe="TRUE"
 
+ local disp_bbtiny="FALSE"
+ [ ${TINY_BUSYBOX_CONFIG} -eq 1 ] && disp_bbtiny="TRUE"
+
  local disp_genrfsimg="FALSE"
  [ ${GEN_EXT4_ROOTFS_IMAGE} -eq 1 ] && disp_genrfsimg="TRUE"
 
@@ -1029,10 +1040,11 @@ To change settings permenantly, please edit the build.config file.
    --field=" Wipe kernel config (Careful!*)":CHK \
    --field="Build Root Filesystem":CHK \
    --field=" Wipe busybox config (Careful!*)":CHK \
+   --field=" Begin with all options set to Off (to get an tiny-as-poss busybox)":CHK \
    --field="Generate Root Filesystem EXT4 image file":CHK \
    --field="Backup the kernel and root fs images and configs":CHK \
    --field="Run QEMU":CHK \
-   ${disp_kernel} ${disp_kwipe} ${disp_rootfs} ${disp_bbwipe} \
+   ${disp_kernel} ${disp_kwipe} ${disp_rootfs} ${disp_bbwipe} ${disp_bbtiny} \
    ${disp_genrfsimg} ${disp_bkp} ${disp_run} \
    --title="${PRJ_TITLE} : Configure this Run" \
    --center --width=${CAL_WIDTH} --on-top --no-escape \
@@ -1042,9 +1054,10 @@ To change settings permenantly, please edit the build.config file.
  WIPE_KERNEL_CONFIG=$(echo "${yad_dothis}" |awk -F"|" '{print $2}')
  BUILD_ROOTFS=$(echo "${yad_dothis}" |awk -F"|" '{print $3}')
  WIPE_BUSYBOX_CONFIG=$(echo "${yad_dothis}" |awk -F"|" '{print $4}')
- GEN_EXT4_ROOTFS_IMAGE=$(echo "${yad_dothis}" |awk -F"|" '{print $5}')
- SAVE_BACKUP_IMG_CONFIGS=$(echo "${yad_dothis}" |awk -F"|" '{print $6}')
- RUN_QEMU=$(echo "${yad_dothis}" |awk -F"|" '{print $7}')
+ TINY_BUSYBOX_CONFIG=$(echo "${yad_dothis}" |awk -F"|" '{print $5}')
+ GEN_EXT4_ROOTFS_IMAGE=$(echo "${yad_dothis}" |awk -F"|" '{print $6}')
+ SAVE_BACKUP_IMG_CONFIGS=$(echo "${yad_dothis}" |awk -F"|" '{print $7}')
+ RUN_QEMU=$(echo "${yad_dothis}" |awk -F"|" '{print $8}')
 
  # yad has the (rather unpleasant) side-effect of changing our build
  # variables to the strings "TRUE" or "FALSE"; we'd like it to be integer
@@ -1054,6 +1067,7 @@ To change settings permenantly, please edit the build.config file.
  [ "${WIPE_KERNEL_CONFIG}" = "TRUE" ] && WIPE_KERNEL_CONFIG=1 || WIPE_KERNEL_CONFIG=0
  [ "${BUILD_ROOTFS}" = "TRUE" ] && BUILD_ROOTFS=1 || BUILD_ROOTFS=0
  [ "${WIPE_BUSYBOX_CONFIG}" = "TRUE" ] && WIPE_BUSYBOX_CONFIG=1 || WIPE_BUSYBOX_CONFIG=0
+ [ "${TINY_BUSYBOX_CONFIG}" = "TRUE" ] && TINY_BUSYBOX_CONFIG=1 || TINY_BUSYBOX_CONFIG=0
  [ "${GEN_EXT4_ROOTFS_IMAGE}" = "TRUE" ] && GEN_EXT4_ROOTFS_IMAGE=1 || GEN_EXT4_ROOTFS_IMAGE=0
  [ "${SAVE_BACKUP_IMG_CONFIGS}" = "TRUE" ] && SAVE_BACKUP_IMG_CONFIGS=1 || SAVE_BACKUP_IMG_CONFIGS=0
  [ "${RUN_QEMU}" = "TRUE" ] && RUN_QEMU=1 || RUN_QEMU=0
