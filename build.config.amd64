@@ -191,14 +191,17 @@ RUN_QEMU=0
 
 
 ### "WIPE_*_CONFIG" directives
-# Set var to 'y' implies any existing kernel configuration is wiped out.
-# Suggestion: set to 'y' for the FIRST build with a clean kernel source tree..
+# Set var to '1' implies any existing kernel configuration is wiped out.
+# Suggestion: set to '1' for the FIRST build with a clean kernel source tree..
 # @@@@@
 WIPE_KERNEL_CONFIG=0
-# Set var to 'y' implies any existing busybox configuration is wiped out.
-# Suggestion: set to 'y' for the FIRST build with a clean busybox source tree..
+
+# Set var to '1' implies that the busybox configuration will be set to have
+# all config options OFF/No by default.
+# Suggestion: set to '1' when you want an 'as tiny as possible' busybox binary
+# and know how to configure it
 # @@@@@
-WIPE_BUSYBOX_CONFIG=0
+TINY_BUSYBOX_CONFIG=0
 
 QEMUNAME=qemu-system-x86_64
 KGDB_MODE=0  # make '1' to have qemu run with the '-s -S' switch (waits for client GDB to 'connect')
