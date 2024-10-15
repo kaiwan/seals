@@ -171,7 +171,8 @@ MYPRJ=myprj
 #####
 # @@@@@
 # SEALs kernel command-line
-SEALS_K_CMDLINE="console=ttyS0 console=ttyS1 tsc=reliable no_timer_check nokaslr root=/dev/sda rw init=/sbin/init"  #/bin/bash"  #/sbin/init"
+SERIAL_CONSOLE=ttyS0
+SEALS_K_CMDLINE="console=${SERIAL_CONSOLE} console=ttyS1 tsc=reliable no_timer_check nokaslr root=/dev/sda rw init=/sbin/init"  #/bin/bash"  #/sbin/init"
 #SEALS_K_CMDLINE="debug console=ttyS0 console=ttyS1 tsc=reliable no_timer_check nokaslr root=/dev/sda rw init=${INIT}"  #/bin/bash"  #/sbin/init"
 
 # if 512M RAM, reserve 32M for crashk, else if 256M RAM, reserve 16M

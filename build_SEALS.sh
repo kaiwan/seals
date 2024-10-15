@@ -358,24 +358,28 @@ cat > etc/inittab << @MYMARKER@
 #::respawn:/sbin/getty 115200 ttyS0
 @MYMARKER@
 
+# Using '${SERIAL_CONSOLE}::askfirst:...' ensures that
+#  (a) the correct serial console (besides /dev/console ) is used allowing for signal handling ^C/^\/...
+#      (btw, SERIAL_CONSOLE=ttyAMA0 or ttyS0 by default; it's in the build.config_foo file)
+#  (b) 'askfirst' has it prompt for a shell & if Enter pressed it's spawned
 # Custom prompt str (PS1)!
 # Earlier ensured that CONFIG_BASH_IS_ASH=y (so that we can run bash)
 if [[ "${ARCH}" = "arm" ]]; then
    cat >> etc/inittab << @MYMARKER@
-::respawn:env PS1='arm \w \$ ' ${SHELL2RUN}
+${SERIAL_CONSOLE}::askfirst:env PS1='arm \w \$ ' ${SHELL2RUN}
 @MYMARKER@
 # this one - rpi3b - should come before the 'arm64' one...
 elif [[ "${ARM_PLATFORM_STR}" = "Qemu Rpi3B" ]]; then
    cat >> etc/inittab << @MYMARKER@
-::respawn:env PS1='rpi3b \w \$ ' ${SHELL2RUN}
+${SERIAL_CONSOLE}::askfirst:env PS1='rpi3b \w \$ ' ${SHELL2RUN}
 @MYMARKER@
 elif [[ "${ARCH}" = "arm64" ]]; then
    cat >> etc/inittab << @MYMARKER@
-::respawn:env PS1='arm64 \w \$ ' ${SHELL2RUN}
+${SERIAL_CONSOLE}::askfirst:env PS1='arm64 \w \$ ' ${SHELL2RUN}
 @MYMARKER@
 elif [[ "${ARCH_PLATFORM}" = "x86_64" ]]; then
    cat >> etc/inittab << @MYMARKER@
-::respawn:env PS1='pc \w \$ ' ${SHELL2RUN}
+${SERIAL_CONSOLE}::askfirst:env PS1='pc \w \$ ' ${SHELL2RUN}
 @MYMARKER@
 fi
 
@@ -542,6 +546,7 @@ mknod -m 666 tty3 c 4 3
 mknod -m 666 tty4 c 4 4
 mknod -m 666 console c 5 1
 mknod -m 666 ttyS0 c 4 64
+mknod -m 666 ttyAMA0 c 204 64
 mknod -m 660 fb0 c 29 0
 
 mknod -m 660 ram b 1 0
@@ -1141,6 +1146,10 @@ AArch64 target) as appropriate. To do so, please read:
 https://github.com/kaiwan/seals/wiki/SEALs-HOWTO
 
 It has detailed instructions.
+
+TIPs:
+- is the toolchain in the PATH?
+- have you correctly updated the relevant build.config file?
 
 Thanks.
 "

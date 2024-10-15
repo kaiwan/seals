@@ -149,7 +149,8 @@ DTB_BLOB=broadcom/bcm2837-rpi-cm3-io3.dtb
 
 # @@@@@
 # SEALs kernel command-line
-SEALS_K_CMDLINE="console=ttyAMA0 root=/dev/mmcblk0 rw init=/sbin/init"
+SERIAL_CONSOLE=ttyAMA0
+SEALS_K_CMDLINE="console=${SERIAL_CONSOLE} root=/dev/mmcblk0 rw init=/sbin/init"
 # if 512M RAM, reserve 32M for crashk, else if 256M RAM, reserve 16M
 K_CMDLINE_XTRA=""
 #K_CMDLINE_XTRA="crashkernel=32M" # works with 32M not 16M [?]
