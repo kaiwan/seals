@@ -60,7 +60,8 @@ TOPDIR=$(pwd)
 ### Locations on Disk ###
 ### UPDATE ### on your system!
 # @@@@@
-STG=~/seals_staging/seals_staging_arm32
+STG=$(realpath ~/seals_staging/seals_staging_arm32)
+STG=$(realpath ~/SEALS_staging/SEALS_staging_vexpress/)
  # Recommendation: if running a cloud-sync service (like Dropbox), keep the
  # staging area outside it.
 ROOTFS=${STG}/rootfs

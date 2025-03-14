@@ -60,7 +60,7 @@ TOPDIR=$(pwd)
 ### Locations on Disk ###
 ### UPDATE ### on your system!
 # @@@@@
-STG=~/seals_staging/seals_staging_aarch64
+STG=$(realpath ./SEALS_staging/SEALS_staging_arm64_qemuvirt)
  # Recommendation: if running a cloud-sync service (like pCloud/Dropbox), keep the
  # staging area outside it.
 ROOTFS=${STG}/rootfs

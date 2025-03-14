@@ -56,8 +56,8 @@ TOPDIR=$(pwd)
 ### Locations on Disk ###
 ### UPDATE ### on your system!
 # @@@@@
-STG=~/seals_staging/seals_staging_pc
-STG=~/SEALS_staging/stg_x86_64/
+STG=$(realpath ~/seals_staging/seals_staging_pc)
+STG=$(realpath ~/SEALS_staging/stg_x86_64/)
  # Recommendation: if running a cloud-sync service (like pCloud/Dropbox),
  # keep the staging area outside it.
 
