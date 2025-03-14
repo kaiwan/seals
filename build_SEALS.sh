@@ -196,6 +196,7 @@ sudo make INSTALL_PATH=${ROOTFS_DIR} install || FatalError "PC: 'sudo make insta
 build_kernel()
 {
  report_progress
+local DIR=$(pwd) 
 cd ${KERNEL_FOLDER} || FatalError "Couldn't cd to kernel source tree dir \"${KERNEL_FOLDER}\""
 ShowTitle "KERNEL: Configure and Build [kernel ver ${KERNELVER}] now ..."
 
@@ -272,7 +273,7 @@ set_kernelimg_var
 
 #echo "KIMG = ${KIMG}"
 ls -lh ${KIMG}*
-cp -u ${KIMG}* ${IMAGES_FOLDER}/ || FatalError "copying kernel image failed"
+\cp -f ${KIMG}* ${DIR}/${IMAGES_FOLDER}/ || FatalError "copying kernel image failed"
 
 [[ "${ARCH_PLATFORM}" != "x86_64" && -f ${DTB_BLOB_PATHNAME} ]] && {
    echo; ls -lh ${DTB_BLOB_PATHNAME}
