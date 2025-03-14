@@ -42,8 +42,8 @@
 # [ ] networking
 #     ref- https://github.com/MichielDerhaeg/build-linux
 # [+] installer- for busybox & kernel source trees
-# [ ] signals (like SIGINT ^C, SIGQUIT ^\, etc) not being handled within the Qemu guest ?
-#         (I think we need 'getty' running for this... ?)
+# [+] signals (like SIGINT ^C, SIGQUIT ^\, etc) not being handled within the Qemu guest ?
+#     (Fix: use a console device ttyS0/ttyAMA0; see commit fd38085d05ea82e)
 # [+] GUI for target machine selection
 # [+] PC : AMD64 / x86_64 platform
 # [ ] Kernel
@@ -292,9 +292,10 @@ cd ${BB_FOLDER} || exit 1
 ShowTitle "BUSYBOX: Configure and Build Busybox now ... [$(basename ${BB_FOLDER})]"
 iecho " [Sanity chk: ROOTFS_DIR=${ROOTFS_DIR}]"
 # safety check!
-if [ -z "${ROOTFS_DIR}" -o ! -d ${ROOTFS_DIR} -o "${ROOTFS_DIR}" = "/" ]; then
-	FatalError "SEALS: ROOTFS_DIR has dangerous value of null or '/'. Aborting..."
-fi
+#if [ -z "${ROOTFS_DIR}" -o ! -d ${ROOTFS_DIR} -o "${ROOTFS_DIR}" = "/" ]; then
+[[ -z "${ROOTFS_DIR}" ]] && FatalError "SEALS: ROOTFS_DIR has dangerous value of null. Aborting..."
+[[ "${ROOTFS_DIR}" = "/" ]] && FatalError "SEALS: ROOTFS_DIR has dangerous value of /. Aborting..."
+#[[ ! -d "${ROOTFS_DIR}" ]] && FatalError "SEALS: ROOTFS_DIR is not a directory? Aborting..."
 
 if [ ${WIPE_BUSYBOX_CONFIG} -eq 1 ]; then
 	ShowTitle "BusyBox default config:"
